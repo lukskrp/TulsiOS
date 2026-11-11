@@ -80,10 +80,7 @@ impl Notifier {
         let Some(proxy) = &self.proxy else {
             return Choice::Adopt;
         };
-        let mut actions = match proxy.receive_action_invoked().await {
-            Ok(stream) => Some(stream),
-            Err(_) => None,
-        };
+        let mut actions = proxy.receive_action_invoked().await.ok();
         let body = format!(
             "TulsiOS will install \u{201c}{}\u{201d} for {} declaratively: it becomes part of \
              your system configuration, so it is restored automatically and can be undone \
