@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "gtk3-o": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1764730053,
+        "narHash": "sha256-Q3NH7qMO7oLiJrWKu6JcG5IwAIaL8OCEQ1wH48ICR04=",
+        "owner": "lukskrp",
+        "repo": "GTK3-24-Fork-Imprv",
+        "rev": "8723146fca06edd5584d0a9e16668356af6ce308",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lukskrp",
+        "ref": "gtk-3-24",
+        "repo": "GTK3-24-Fork-Imprv",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1794042290,
@@ -18,6 +35,7 @@
     },
     "root": {
       "inputs": {
+        "gtk3-o": "gtk3-o",
         "nixpkgs": "nixpkgs"
       }
     }

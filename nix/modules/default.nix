@@ -10,5 +10,6 @@
     ./software-center.nix
     ./assistant.nix
     ./ocimum-desktop.nix
+    ./gtk3-o.nix
   ];
 }

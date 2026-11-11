@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process::ExitCode;
 
 use futures_util::StreamExt;
-use tulsi_client::{HistoryEntry, ManagerProxy, Plan};
+use tulsi_client::{HistoryEntry, ManagerProxy, PackageInfo, Plan};
 use tulsi_state::{Browser, Op, State};
 
 /// `println!` that exits quietly when stdout is closed early
@@ -35,6 +35,7 @@ change the system (asks for authorization):
   undo                              revert the most recent change (alias: rollback)
 
 inspect:
+  search WORDS...                   find packages (installed ones are marked *)
   status                            show the managed state
   history [N]                       show the last N changes (default 10)
   validate FILE                     check a state file
@@ -105,6 +106,7 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
             }]
         }
         ["undo" | "rollback"] => return undo(opts).await,
+        ["search", words @ ..] if !words.is_empty() => return search(&words.join(" ")).await,
         ["status"] => {
             let state = State::from_json(&proxy().await?.get_state().await.map_err(dbus)?)
                 .map_err(|e| e.to_string())?;
@@ -274,6 +276,26 @@ fn spawn_tty_auth_agent() -> Option<TtyAgent> {
     // Give the agent a moment to register before polkit is consulted.
     std::thread::sleep(std::time::Duration::from_millis(300));
     Some(TtyAgent(child))
+}
+
+async fn search(query: &str) -> Result<ExitCode, String> {
+    let results: Vec<PackageInfo> =
+        serde_json::from_str(&proxy().await?.search(query, 25).await.map_err(dbus)?)
+            .map_err(|e| format!("bad reply from tulsid: {e}"))?;
+    if results.is_empty() {
+        out!("No packages match \"{query}\".");
+    }
+    for p in results {
+        let mark = if p.installed { '*' } else { ' ' };
+        let unfree = if p.unfree { " [unfree]" } else { "" };
+        out!(
+            "{mark} {:<32} {:<14} {}{unfree}",
+            p.attr,
+            p.version,
+            p.description
+        );
+    }
+    Ok(ExitCode::SUCCESS)
 }
 
 async fn history(n: u32) -> Result<ExitCode, String> {

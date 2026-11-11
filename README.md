@@ -11,12 +11,16 @@ without making you write Nix every time you want to change something.
 - **Ocimum Assistant**: ask in plain language for a configuration change; review the
   diff; approve; done. System actions are also exposed as an MCP server.
 
-> Status: **Phase 2: system daemon and `tulsi` CLI work in the dev VM.** Not a daily
-> OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: **Phase 3: Software Center, `tulsi` CLI and system daemon work in the dev VM;
+> GTK3-O is grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Using it (inside TulsiOS)
 
+Open **Software Center** from the menu: search, click Install or Remove, confirm, and
+undo from the History tab or the bar that appears after a change. Or in a terminal:
+
 ```sh
+tulsi search video player         # search 130k+ nixpkgs packages
 tulsi install vlc gimp            # asks for your password, rebuilds, done
 tulsi remove gimp
 tulsi ext add firefox uBlock0@raymondhill.net
@@ -59,7 +63,9 @@ Without a VM, tulsid also runs on a session bus for quick experiments:
 | `nix/hosts/` | `vm` (dev VM), `iso` (installer, later) |
 | `nix/tests/` | NixOS VM tests |
 | `state/` | State file schema and example |
-| `crates/` | Rust workspace: `tulsi-state`, `tulsi-client`, `tulsi` CLI, `tulsid`, `tulsi-mcp`, GUI apps |
+| `crates/` | Rust workspace: `tulsi-state`, `tulsi-client`, `tulsi` CLI, `tulsid`, `tulsi-mcp` |
+| `apps/` | GTK 3 GUI apps in Python: `ocimum-software-center` |
+| `nix/packages/` | `tulsi-tools`, `gtk3-o` (Ocimum GTK 3 fork, grafted system-wide), package index, apps |
 | `data/` | D-Bus and polkit policy files |
 | `scripts/` | Developer scripts (`vm-e2e.sh`) |
 | `browser/` | Ocimum Bridge WebExtension + native messaging host (Phase 4) |
@@ -69,4 +75,5 @@ Without a VM, tulsid also runs on a session bus for quick experiments:
 ## License
 
 TulsiOS's own code is MIT-licensed ([LICENSE](LICENSE)). The Cinnamon fork under
-`desktop/` keeps its upstream GPL-2.0-or-later license.
+`desktop/` keeps its upstream GPL-2.0-or-later license, and GTK3-O keeps GTK's
+LGPL-2.1-or-later.

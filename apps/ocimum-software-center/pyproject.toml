@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocimum-software-center"
+version = "0.1.0"
+description = "Ocimum Software Center: install and remove software on TulsiOS"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+ocimum-software-center = "ocimum_software_center.app:main"
+
+[tool.setuptools.packages.find]
+include = ["ocimum_software_center*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

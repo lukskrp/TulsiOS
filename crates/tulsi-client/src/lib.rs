@@ -11,6 +11,8 @@
 //! | `Apply(ops: s) -> t` | method | polkit `org.tulsi.apply`; returns job id, 0 = nothing to do |
 //! | `Undo() -> t` | method | polkit `org.tulsi.apply`; reverts the latest change |
 //! | `History(limit: u) -> s` | method | JSON list of [`HistoryEntry`] |
+//! | `Search(query: s, limit: u) -> s` | method | JSON list of [`PackageInfo`], best first |
+//! | `PackageInfo(attr: s) -> s` | method | JSON [`PackageInfo`]; error `NotFound` |
 //! | `Busy` | property | a job is running |
 //! | `Progress(job: t, line: s)` | signal | rebuild output |
 //! | `Finished(job: t, success: b, message: s)` | signal | job result |
@@ -40,6 +42,8 @@ pub trait Manager {
     fn apply(&self, ops: &str) -> zbus::Result<u64>;
     fn undo(&self) -> zbus::Result<u64>;
     fn history(&self, limit: u32) -> zbus::Result<String>;
+    fn search(&self, query: &str, limit: u32) -> zbus::Result<String>;
+    fn package_info(&self, attr: &str) -> zbus::Result<String>;
 
     #[zbus(property)]
     fn busy(&self) -> zbus::Result<bool>;
@@ -63,6 +67,19 @@ pub struct HistoryEntry {
     /// Unix timestamp (seconds).
     pub time: i64,
     pub summary: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PackageInfo {
+    /// nixpkgs attribute path, what goes into state.json.
+    pub attr: String,
+    pub pname: String,
+    pub version: String,
+    pub description: String,
+    /// Needs `nixpkgs.config.allowUnfree`.
+    pub unfree: bool,
+    /// Listed in state.json.
+    pub installed: bool,
 }
 
 /// Connects to the system bus, or the session bus if `TULSI_BUS=session`.

@@ -18,6 +18,12 @@ pub struct Config {
     /// on a session bus.
     #[serde(default = "yes")]
     pub polkit: bool,
+    /// Package search index; enables Search and early rejection of unknown names.
+    #[serde(default)]
+    pub package_index: Option<PathBuf>,
+    /// Mirrors `nixpkgs.config.allowUnfree`; unfree packages are refused otherwise.
+    #[serde(default)]
+    pub allow_unfree: bool,
 }
 
 fn yes() -> bool {

@@ -13,3 +13,6 @@ target/
 
 # dev shell cargo home
 .cargo-home/
+
+# vm-e2e screenshots
+e2e-out/

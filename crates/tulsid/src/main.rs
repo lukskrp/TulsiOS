@@ -8,6 +8,7 @@
 
 mod config;
 mod git;
+mod index;
 mod polkit;
 mod service;
 
@@ -48,7 +49,22 @@ async fn run() -> Result<(), String> {
     let cfg = config::Config::load(&config_path)?;
     git::init_repo(&cfg).await?;
 
-    let manager = service::Manager::new(cfg);
+    // A broken index only disables search; the daemon keeps working.
+    let index = match &cfg.package_index {
+        None => None,
+        Some(path) => match index::Index::load(path) {
+            Ok(idx) => {
+                eprintln!("tulsid: package index: {} packages", idx.len());
+                Some(idx)
+            }
+            Err(e) => {
+                eprintln!("tulsid: warning: {e}; search disabled");
+                None
+            }
+        },
+    };
+
+    let manager = service::Manager::new(cfg, index);
     let builder = if session {
         zbus::connection::Builder::session()
     } else {

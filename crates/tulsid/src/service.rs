@@ -13,14 +13,18 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::{mpsc, Mutex, OwnedMutexGuard};
-use tulsi_client::{Plan, ACTION_APPLY, OBJECT_PATH};
+use tulsi_client::{PackageInfo, Plan, ACTION_APPLY, OBJECT_PATH};
 use tulsi_state::{describe_all, Op, State};
 use zbus::message::Header;
 use zbus::object_server::SignalEmitter;
 use zbus::{interface, Connection};
 
 use crate::config::Config;
+use crate::index::Index;
 use crate::{git, polkit};
+
+/// Upper bound for `Search` results.
+const MAX_SEARCH_RESULTS: u32 = 500;
 
 /// Lines of rebuild output kept for the error message of a failed job.
 const LOG_TAIL: usize = 25;
@@ -33,6 +37,8 @@ pub enum TulsiError {
     NotAuthorized(String),
     Busy(String),
     Invalid(String),
+    NotFound(String),
+    Unavailable(String),
     Failed(String),
 }
 
@@ -46,14 +52,16 @@ type Result<T> = std::result::Result<T, TulsiError>;
 
 pub struct Manager {
     cfg: Arc<Config>,
+    index: Option<Arc<Index>>,
     lock: Arc<Mutex<()>>,
     next_job: AtomicU64,
 }
 
 impl Manager {
-    pub fn new(cfg: Config) -> Self {
+    pub fn new(cfg: Config, index: Option<Index>) -> Self {
         Self {
             cfg: Arc::new(cfg),
+            index: index.map(Arc::new),
             lock: Arc::new(Mutex::new(())),
             next_job: AtomicU64::new(1),
         }
@@ -61,6 +69,59 @@ impl Manager {
 
     fn current_state(&self) -> Result<State> {
         State::load(&self.cfg.state_path()).map_err(|e| TulsiError::Failed(e.to_string()))
+    }
+
+    fn index(&self) -> Result<&Index> {
+        self.index
+            .as_deref()
+            .ok_or_else(|| TulsiError::Unavailable("no package index is configured".into()))
+    }
+
+    /// Rejects unknown or unfree (when not allowed) top-level packages before
+    /// any rebuild. Nested attributes (e.g. python3Packages.x) are not all in
+    /// the index, so those are left to the rebuild to check.
+    fn check_packages(&self, ops: &[Op]) -> Result<()> {
+        let Some(index) = self.index.as_deref() else {
+            return Ok(());
+        };
+        let mut problems = Vec::new();
+        for op in ops {
+            let Op::AddPackage { name } = op else {
+                continue;
+            };
+            if name.contains('.') {
+                continue;
+            }
+            match index.get(name) {
+                None => {
+                    let hints = index.suggest(name, 3);
+                    let hint = if hints.is_empty() {
+                        String::new()
+                    } else {
+                        format!(" (did you mean: {}?)", hints.join(", "))
+                    };
+                    problems.push(format!("unknown package \"{name}\"{hint}"));
+                }
+                Some(info) if info.unfree && !self.cfg.allow_unfree => problems.push(format!(
+                    "\"{name}\" is unfree; enable nixpkgs.config.allowUnfree to install it"
+                )),
+                Some(_) => {}
+            }
+        }
+        if problems.is_empty() {
+            Ok(())
+        } else {
+            Err(TulsiError::Invalid(problems.join("\n")))
+        }
+    }
+
+    fn mark_installed(&self, mut infos: Vec<PackageInfo>) -> Vec<PackageInfo> {
+        if let Ok(state) = self.current_state() {
+            for info in &mut infos {
+                info.installed = state.packages.contains(&info.attr);
+            }
+        }
+        infos
     }
 
     async fn authorize(&self, conn: &Connection, hdr: &Header<'_>) -> Result<()> {
@@ -126,6 +187,7 @@ impl Manager {
     /// What `ops` would change, without applying anything.
     async fn plan(&self, ops: &str) -> Result<String> {
         let ops = parse_ops(ops)?;
+        self.check_packages(&ops)?;
         let old = self.current_state()?;
         let new = old.with_ops(&ops)?;
         let plan = Plan {
@@ -144,6 +206,7 @@ impl Manager {
         ops: &str,
     ) -> Result<u64> {
         let ops = parse_ops(ops)?;
+        self.check_packages(&ops)?;
         self.authorize(conn, &hdr).await?;
         let guard = self.try_lock()?;
         let old = self.current_state()?;
@@ -185,6 +248,23 @@ impl Manager {
             .await
             .map_err(TulsiError::Failed)?;
         Ok(serde_json::to_string(&entries).expect("history serializes"))
+    }
+
+    /// Packages matching `query`, best first, as JSON.
+    async fn search(&self, query: &str, limit: u32) -> Result<String> {
+        let limit = limit.clamp(1, MAX_SEARCH_RESULTS) as usize;
+        let results = self.mark_installed(self.index()?.search(query, limit));
+        Ok(serde_json::to_string(&results).expect("results serialize"))
+    }
+
+    /// Details of one package attribute, as JSON.
+    async fn package_info(&self, attr: &str) -> Result<String> {
+        let info = self
+            .index()?
+            .get(attr)
+            .ok_or_else(|| TulsiError::NotFound(format!("no package \"{attr}\"")))?;
+        let info = self.mark_installed(vec![info]).remove(0);
+        Ok(serde_json::to_string(&info).expect("info serializes"))
     }
 
     #[zbus(property)]

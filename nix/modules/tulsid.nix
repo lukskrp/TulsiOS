@@ -21,6 +21,8 @@ let
     rebuildCommand = cfg.rebuildCommand;
     initialState = if config.tulsi.state.enable then config.tulsi.state.file else null;
     polkit = true;
+    packageIndex = cfg.packageIndex;
+    allowUnfree = config.nixpkgs.config.allowUnfree or false;
   };
 
   flakeTemplate = pkgs.writeText "tulsi-system-flake.nix" ''
@@ -99,6 +101,16 @@ in
       ];
       defaultText = lib.literalExpression ''[ "nixos-rebuild" "switch" "--flake" "''${flakeDir}#''${flakeHost}" ]'';
       description = "Command tulsid runs (in flakeDir) after changing state.json.";
+    };
+
+    packageIndex = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Package search index (JSON, see nix/packages/package-index.nix). Enables
+        `Search` and instant rejection of unknown package names. The TulsiOS
+        flake sets it to an index of the pinned nixpkgs.
+      '';
     };
 
     wheelNoPassword = lib.mkOption {

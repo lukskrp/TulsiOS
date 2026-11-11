@@ -70,14 +70,30 @@ It imports `tulsi.nixosModules.default`, the host module, the user's
 `configuration.nix` and `tulsi/state.json`. The pinned nixpkgs source ships in the system
 closure, so evaluation works offline.
 
+Package search: `Search(query s, limit u) → s` and `PackageInfo(attr s) → s` use an
+index of the pinned nixpkgs (`nix/packages/package-index.nix`). It is generated at build
+time with nixpkgs' own `packages-info.nix`, the source of search.nixos.org, and
+shipped in the closure, so no evaluation happens at runtime. With the index,
+`Plan`/`Apply` reject unknown top-level names with "did you mean" hints, and reject
+unfree packages unless `nixpkgs.config.allowUnfree` is set, all before any rebuild.
+
 ### tulsi CLI, `crates/tulsi-cli`
-`tulsi install|remove PKG…`, `tulsi ext add|remove firefox|chromium ID`,
+`tulsi install|remove PKG…`, `tulsi search WORDS…`, `tulsi ext add|remove firefox|chromium ID`,
 `tulsi service enable|disable NAME`, `tulsi undo`, `tulsi status`, `tulsi history`,
 `--dry-run`. Runs `pkttyagent` for terminal password prompts when no desktop agent exists.
 
-### Ocimum Software Center (Phase 3), `crates/ocimum-software-center`
-GTK4/libadwaita (relm4). Searches nixpkgs metadata, shows installed state, toggles
-install/uninstall, shows rebuild progress and history ("undo last change").
+### Ocimum Software Center, `apps/ocimum-software-center`, `nix/modules/software-center.nix`
+Python + PyGObject on GTK 3 (ADR 0005), so on TulsiOS it runs on GTK3-O. Pages:
+Search (debounced, at most 200 rows), Installed, History. Every change runs Plan →
+confirmation dialog listing the changes → Apply → bottom progress panel streaming the
+rebuild log → success bar with **Undo**. Errors keep the log visible. Also exposes the
+`Gtk.Application` actions `install(s)`, `remove(s)`, `search(s)` and `undo` on the
+session bus, for tests and later the Assistant. These still go through the confirmation dialog.
+
+### GTK3-O, `nix/packages/gtk3-o.nix`, `nix/modules/gtk3-o.nix`
+The Ocimum fork of GTK 3.24 (flake input `gtk3-o`). It is ABI-stable and grafted
+system-wide with `system.replaceDependencies`, so every GTK 3 app uses it without being
+rebuilt (ADR 0006). `checks.gtk3-o-abi` guards against removed exported symbols.
 
 ### Ocimum Bridge (Phase 4), `browser/`
 - Policy blocks imperative installs (`tulsi.browserExtensions.blockImperativeInstalls`).

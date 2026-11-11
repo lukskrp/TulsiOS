@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Software Center
+GenericName=Software Manager
+Comment=Install and remove software on TulsiOS
+Exec=ocimum-software-center
+Icon=system-software-install
+Terminal=false
+Categories=GTK;System;PackageManager;Settings;
+Keywords=install;remove;uninstall;software;package;app;store;nix;
+StartupNotify=true
+StartupWMClass=org.tulsi.SoftwareCenter

@@ -1,16 +1,33 @@
-# ocimum.softwareCenter — GUI to install/uninstall software via tulsi.state (Phase 3).
-{ config, lib, ... }:
-
+# ocimum.softwareCenter — GUI to install and remove software through tulsid.
 {
-  options.ocimum.softwareCenter.enable = lib.mkEnableOption "the Ocimum Software Center (Phase 3, not functional yet)";
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
-  config = lib.mkIf config.ocimum.softwareCenter.enable {
+let
+  cfg = config.ocimum.softwareCenter;
+in
+{
+  options.ocimum.softwareCenter = {
+    enable = lib.mkEnableOption "the Ocimum Software Center";
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.callPackage ../packages/ocimum-software-center.nix { };
+      defaultText = lib.literalExpression "pkgs.callPackage ../packages/ocimum-software-center.nix { }";
+      description = "The Ocimum Software Center package.";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = config.tulsi.daemon.enable;
         message = "ocimum.softwareCenter requires tulsi.daemon.enable = true.";
       }
     ];
-    # TODO(phase-3): add the GTK4 application package and desktop entry.
+    environment.systemPackages = [ cfg.package ];
   };
 }

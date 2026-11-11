@@ -6,7 +6,6 @@ members = [
     "crates/tulsid",
     "crates/tulsi-cli",
     "crates/tulsi-mcp",
-    "crates/ocimum-software-center",
     "crates/ocimum-assistant",
 ]
 
