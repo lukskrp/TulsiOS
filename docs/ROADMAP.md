@@ -7,7 +7,8 @@
 | 2 | `tulsid` + CLI + polkit + git-backed state | `tulsi install <pkg>` works in the VM; `tulsi undo` works | done |
 | 3 | Ocimum Software Center + GTK3-O | install/uninstall from GUI with progress and undo; GTK3-O used system-wide | done |
 | 4 | Declarative browser extensions | store install → notice → adopted into policy (Firefox, Chromium, Chrome, Brave) | done |
-| 5 | `tulsi-mcp` + Ocimum Assistant | plain-language request → diff → approve → applied | next |
+| 5 | `tulsi-mcp` (agent interface) | agent request → plan/diff → human approves → applied; config edits | done |
+| 5b | Ocimum Assistant | chat window: plain-language request → tulsi-mcp → approve → applied | next |
 | 6 | Ocimum Desktop fork | branded Cinnamon fork built from `desktop/`, Tulsi applets | |
 | 7 | Installer ISO + release | Calamares ISO installs TulsiOS on Hyper-V / bare metal | |
 
@@ -43,10 +44,20 @@ Known limits, picked up later:
 - Extensions apply to all users of the machine (policies are system-wide).
 - Extensions installed from sources other than the two official stores stay imperative.
 
-## Next up: Phase 5 tasks
-- [ ] `tulsi-mcp`: MCP server (stdio) over tulsid: `search_packages`, `get_state`, `plan_change`,
-      `apply_change` (always user-approved), `undo`, `history`
-- [ ] Approval UX: apply requests from agents show the plan in a desktop dialog before tulsid runs
-- [ ] Ocimum Assistant (Python/GTK 3): chat window, Claude API provider (pluggable), tool loop over tulsi-mcp
-- [ ] Free-form configuration edits: proposals for `configuration.nix` validated by parse + format + dry-build
-- [ ] Tests: MCP protocol tests; NixOS test driving the assistant with a scripted fake LLM
+## Phase 5 (done): tulsi-mcp
+- [x] MCP server (stdio, JSON-RPC, protocol 2024-11-05 … 2025-11-25), 10 tools (docs/MCP.md)
+- [x] Mandatory approval: `ocimum-approve` desktop dialog (Reject by default) → MCP elicitation → refuse
+- [x] tulsid `GetConfig` / `PlanConfig` / `ApplyConfig`: configuration.nix edits with syntax check, diff,
+      rollback on failed rebuild, history and undo (transactions now cover any managed file)
+- [x] Tests: 9 protocol unit tests (fake backend), `checks.mcp` VM test (approve, deny, invalid input,
+      config edit, failed-rebuild rollback, undo, real dialog), `vm-e2e.sh` agent config edit with a real rebuild
+
+Known limits, picked up later:
+- Validation before approval is syntax-only; option/type errors show up in the rebuild (then rolled back).
+- Approval cannot stop an agent that also has a shell; see docs/MCP.md.
+
+## Next up: Phase 5b, Ocimum Assistant
+- [ ] Chat window (Python/GTK 3) with a Claude API provider (pluggable), tool loop over tulsi-mcp
+- [ ] API key storage in the user keyring (libsecret), model choice, conversation history
+- [ ] Cinnamon panel applet / keyboard shortcut to open it
+- [ ] Tests with a scripted fake LLM provider

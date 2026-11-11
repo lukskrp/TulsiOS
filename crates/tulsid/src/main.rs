@@ -9,6 +9,7 @@
 mod config;
 mod git;
 mod index;
+mod nixfile;
 mod polkit;
 mod service;
 

@@ -173,6 +173,7 @@ in
       path = [
         pkgs.git
         pkgs.coreutils
+        pkgs.diffutils
         config.nix.package
         config.system.build.nixos-rebuild
       ];

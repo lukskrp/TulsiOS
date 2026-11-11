@@ -1,5 +1,6 @@
-//! Git history of the system flake directory. Only `tulsi/state.json` is
-//! ever committed by tulsid; anything else the user changes is left alone.
+//! Git history of the system flake directory. tulsid only ever commits the
+//! files it manages (`tulsi/state.json`, `configuration.nix`, `flake.lock`);
+//! anything else the user changes is left alone.
 
 use std::path::Path;
 
@@ -8,6 +9,17 @@ use tulsi_client::HistoryEntry;
 use tulsi_state::State;
 
 use crate::config::Config;
+
+/// Files whose changes make up tulsid's history.
+pub const MANAGED: [&str; 2] = [Config::STATE_REL, Config::CONFIG_REL];
+
+/// A managed file's contents before and after a change (`None` = absent).
+#[derive(Debug, Clone)]
+pub struct FileChange {
+    pub rel: &'static str,
+    pub old: Option<Vec<u8>>,
+    pub new: Option<Vec<u8>>,
+}
 
 pub async fn git(dir: &Path, args: &[&str]) -> Result<String, String> {
     let out = Command::new("git")
@@ -48,7 +60,7 @@ pub async fn init_repo(cfg: &Config) -> Result<(), String> {
             Some(path) => State::load(path).map_err(|e| e.to_string())?,
             None => State::default(),
         };
-        write_state(&state_path, &initial)?;
+        write_atomic(&state_path, initial.to_json_pretty().as_bytes())?;
         eprintln!("tulsid: created {}", state_path.display());
     } else if let Err(e) = State::load(&state_path) {
         // Keep running so the problem is visible through the API.
@@ -78,34 +90,62 @@ pub async fn init_repo(cfg: &Config) -> Result<(), String> {
         )
         .await?;
         if !staged.trim().is_empty() {
-            commit(dir, "tulsi: track state").await?;
+            commit(dir, "tulsi: track state", &[Config::STATE_REL]).await?;
         }
     }
     Ok(())
 }
 
-/// Atomically replaces the state file.
-pub fn write_state(path: &Path, state: &State) -> Result<(), String> {
-    write_atomic(path, state.to_json_pretty().as_bytes())
+pub fn read(dir: &Path, rel: &str) -> Option<Vec<u8>> {
+    std::fs::read(dir.join(rel)).ok()
+}
+
+/// Writes (or deletes, for `None`) a managed file and stages it, because
+/// flakes only see files git knows about.
+pub async fn put(dir: &Path, rel: &str, contents: Option<&[u8]>) -> Result<(), String> {
+    let path = dir.join(rel);
+    match contents {
+        Some(bytes) => {
+            write_atomic(&path, bytes)?;
+            git(dir, &["add", "--", rel]).await.map(|_| ())
+        }
+        None => {
+            if path.exists() {
+                std::fs::remove_file(&path)
+                    .map_err(|e| format!("cannot remove {}: {e}", path.display()))?;
+            }
+            // Unlike `git add`, this also works if git never knew the file.
+            git(
+                dir,
+                &["rm", "-q", "--cached", "--ignore-unmatch", "--", rel],
+            )
+            .await
+            .map(|_| ())
+        }
+    }
 }
 
 pub fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    let tmp = path.with_extension("json.tmp");
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("cannot create {}: {e}", parent.display()))?;
+    }
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = std::path::PathBuf::from(tmp);
     std::fs::write(&tmp, bytes).map_err(|e| format!("cannot write {}: {e}", tmp.display()))?;
     std::fs::rename(&tmp, path).map_err(|e| format!("cannot replace {}: {e}", path.display()))
 }
 
-/// Commits the state file only; returns the short commit hash.
-/// Also includes `flake.lock` when present: the first rebuild creates it, and
-/// flakes ignore files git does not know about.
-pub async fn commit(dir: &Path, message: &str) -> Result<String, String> {
-    let mut paths = vec![Config::STATE_REL];
+/// Commits `paths` (plus `flake.lock` when present: the first rebuild
+/// creates it) and returns the short commit hash.
+pub async fn commit(dir: &Path, message: &str, paths: &[&str]) -> Result<String, String> {
+    let mut paths: Vec<&str> = paths.to_vec();
     if dir.join("flake.lock").exists() {
         paths.push("flake.lock");
+        git(dir, &["add", "--", "flake.lock"]).await?;
     }
-    let mut add = vec!["add", "--"];
-    add.extend(&paths);
-    git(dir, &add).await?;
+    // The managed files are already staged by `put` (including deletions).
     let mut commit = vec!["commit", "-q", "-m", message, "--"];
     commit.extend(&paths);
     git(dir, &commit).await?;
@@ -117,17 +157,9 @@ pub async fn commit(dir: &Path, message: &str) -> Result<String, String> {
 
 pub async fn history(dir: &Path, limit: u32) -> Result<Vec<HistoryEntry>, String> {
     let n = format!("-n{}", limit.max(1));
-    let out = git(
-        dir,
-        &[
-            "log",
-            &n,
-            "--format=%h%x1f%ct%x1f%s",
-            "--",
-            Config::STATE_REL,
-        ],
-    )
-    .await?;
+    let mut args = vec!["log", &n, "--format=%h%x1f%ct%x1f%s", "--"];
+    args.extend(MANAGED);
+    let out = git(dir, &args).await?;
     Ok(out
         .lines()
         .filter_map(|line| {
@@ -141,18 +173,40 @@ pub async fn history(dir: &Path, limit: u32) -> Result<Vec<HistoryEntry>, String
         .collect())
 }
 
-/// The state before the most recent change, and that change's summary.
-pub async fn previous_state(dir: &Path) -> Result<(State, String), String> {
-    let last = git(
-        dir,
-        &["log", "-n1", "--format=%H%x1f%s", "--", Config::STATE_REL],
-    )
-    .await?;
+/// What undoing the most recent change means: for each managed file it
+/// touched, the version before it. Also returns that change's summary.
+pub async fn undo_changes(dir: &Path) -> Result<(Vec<FileChange>, String), String> {
+    let mut args = vec!["log", "-n1", "--format=%H%x1f%s", "--"];
+    args.extend(MANAGED);
+    let last = git(dir, &args).await?;
     let (hash, summary) = last.trim().split_once('\x1f').ok_or("no history to undo")?;
-    let spec = format!("{hash}^:{}", Config::STATE_REL);
-    let text = git(dir, &["show", &spec])
+    if git(dir, &["rev-parse", "--verify", "-q", &format!("{hash}^")])
         .await
-        .map_err(|_| format!("nothing to undo before \"{summary}\""))?;
-    let state = State::from_json(&text).map_err(|e| e.to_string())?;
-    Ok((state, summary.to_string()))
+        .is_err()
+    {
+        return Err(format!("nothing to undo before \"{summary}\""));
+    }
+
+    let mut args = vec!["show", "--name-only", "--format=", hash, "--"];
+    args.extend(MANAGED);
+    let touched = git(dir, &args).await?;
+    let mut changes = Vec::new();
+    for rel in MANAGED {
+        if !touched.lines().any(|l| l.trim() == rel) {
+            continue;
+        }
+        let before = git(dir, &["show", &format!("{hash}^:{rel}")])
+            .await
+            .ok()
+            .map(String::into_bytes);
+        changes.push(FileChange {
+            rel,
+            old: read(dir, rel),
+            new: before,
+        });
+    }
+    if changes.is_empty() {
+        return Err(format!("nothing to undo in \"{summary}\""));
+    }
+    Ok((changes, summary.to_string()))
 }

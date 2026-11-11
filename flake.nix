@@ -127,6 +127,7 @@
           tulsid = test ./nix/tests/tulsid.nix;
           software-center = test ./nix/tests/software-center.nix;
           browser-extensions = test ./nix/tests/browser-extensions.nix;
+          mcp = test ./nix/tests/mcp.nix;
         };
     };
 }

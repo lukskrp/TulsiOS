@@ -20,8 +20,9 @@ use zbus::object_server::SignalEmitter;
 use zbus::{interface, Connection};
 
 use crate::config::Config;
+use crate::git::FileChange;
 use crate::index::Index;
-use crate::{git, polkit};
+use crate::{git, nixfile, polkit};
 
 /// Upper bound for `Search` results.
 const MAX_SEARCH_RESULTS: u32 = 500;
@@ -147,13 +148,21 @@ impl Manager {
             .map_err(|_| TulsiError::Busy("another change is in progress".into()))
     }
 
+    /// A state.json change as a file change.
+    fn state_change(old: &State, new: &State) -> FileChange {
+        FileChange {
+            rel: Config::STATE_REL,
+            old: Some(old.to_json_pretty().into_bytes()),
+            new: Some(new.to_json_pretty().into_bytes()),
+        }
+    }
+
     /// Starts the transaction in the background and returns its job id.
     fn start_job(
         &self,
         guard: OwnedMutexGuard<()>,
         conn: &Connection,
-        old: State,
-        new: State,
+        changes: Vec<FileChange>,
         message: String,
     ) -> Result<u64> {
         let job = self.next_job.fetch_add(1, Ordering::Relaxed);
@@ -162,7 +171,7 @@ impl Manager {
         tokio::spawn(async move {
             let _guard = guard;
             eprintln!("tulsid: job {job}: {message}");
-            let result = run_transaction(&cfg, &emitter, job, &old, &new, &message).await;
+            let result = run_transaction(&cfg, &emitter, job, &changes, &message).await;
             let (success, text) = match result {
                 Ok(commit) => (true, format!("{message} (commit {commit})")),
                 Err(e) => (false, e),
@@ -217,8 +226,7 @@ impl Manager {
         self.start_job(
             guard,
             conn,
-            old,
-            new,
+            vec![Self::state_change(&old, &new)],
             format!("tulsi: {}", describe_all(&ops)),
         )
     }
@@ -231,15 +239,78 @@ impl Manager {
     ) -> Result<u64> {
         self.authorize(conn, &hdr, ACTION_APPLY).await?;
         let guard = self.try_lock()?;
-        let old = self.current_state()?;
-        let (new, summary) = git::previous_state(&self.cfg.flake_dir)
+        let (changes, summary) = git::undo_changes(&self.cfg.flake_dir)
             .await
             .map_err(TulsiError::Invalid)?;
+        // Never restore a state file tulsid could not read back.
+        for change in &changes {
+            if change.rel == Config::STATE_REL {
+                let text = String::from_utf8_lossy(change.new.as_deref().unwrap_or_default());
+                State::from_json(&text)?;
+            }
+        }
         let summary = summary
             .strip_prefix("tulsi: ")
             .unwrap_or(&summary)
             .to_string();
-        self.start_job(guard, conn, old, new, format!("tulsi: undo {summary}"))
+        self.start_job(guard, conn, changes, format!("tulsi: undo {summary}"))
+    }
+
+    /// The current configuration.nix ("" if it does not exist).
+    async fn get_config(&self) -> Result<String> {
+        let bytes = git::read(&self.cfg.flake_dir, Config::CONFIG_REL).unwrap_or_default();
+        String::from_utf8(bytes)
+            .map_err(|_| TulsiError::Failed("configuration.nix is not UTF-8".into()))
+    }
+
+    /// Checks proposed configuration.nix contents and returns
+    /// `{"changed": bool, "diff": "<unified diff>"}`. Nothing is written.
+    async fn plan_config(&self, contents: &str) -> Result<String> {
+        nixfile::check_syntax(contents)
+            .await
+            .map_err(TulsiError::Invalid)?;
+        let old = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
+        let diff = nixfile::diff(Config::CONFIG_REL, old.as_deref(), contents.as_bytes())
+            .await
+            .map_err(TulsiError::Failed)?;
+        Ok(serde_json::json!({ "changed": !diff.is_empty(), "diff": diff }).to_string())
+    }
+
+    /// Replaces configuration.nix and rebuilds; restores it if the rebuild
+    /// fails. Returns a job id (0 if nothing changed).
+    async fn apply_config(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+        contents: &str,
+        summary: &str,
+    ) -> Result<u64> {
+        nixfile::check_syntax(contents)
+            .await
+            .map_err(TulsiError::Invalid)?;
+        let summary = one_line(summary);
+        if summary.is_empty() {
+            return Err(TulsiError::Invalid(
+                "a short summary of the edit is required".into(),
+            ));
+        }
+        self.authorize(conn, &hdr, ACTION_APPLY).await?;
+        let guard = self.try_lock()?;
+        let old = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
+        if old.as_deref() == Some(contents.as_bytes()) {
+            return Ok(0);
+        }
+        let change = FileChange {
+            rel: Config::CONFIG_REL,
+            old,
+            new: Some(contents.as_bytes().to_vec()),
+        };
+        self.start_job(
+            guard,
+            conn,
+            vec![change],
+            format!("tulsi: edit configuration.nix: {summary}"),
+        )
     }
 
     /// The latest `limit` changes as JSON, newest first.
@@ -306,30 +377,50 @@ fn parse_ops(ops: &str) -> Result<Vec<Op>> {
     Ok(ops)
 }
 
-/// Writes `new`, rebuilds, commits. On failure restores `old`.
-/// Returns the commit hash, or an error message including the log tail.
+/// Collapses a free-text summary into one short line for a commit message.
+fn one_line(text: &str) -> String {
+    let line: String = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    line.chars().take(120).collect()
+}
+
+/// Writes the new file versions, rebuilds, commits. On failure restores the
+/// old versions. Returns the commit hash, or an error including the log tail.
 async fn run_transaction(
     cfg: &Config,
     emitter: &SignalEmitter<'static>,
     job: u64,
-    old: &State,
-    new: &State,
+    changes: &[FileChange],
     message: &str,
 ) -> std::result::Result<String, String> {
-    let state_path = cfg.state_path();
-    git::write_state(&state_path, new)?;
-    // Flakes only see files known to git.
-    git::git(&cfg.flake_dir, &["add", "--", Config::STATE_REL]).await?;
+    let dir = &cfg.flake_dir;
+    let applied = async {
+        for change in changes {
+            git::put(dir, change.rel, change.new.as_deref()).await?;
+        }
+        rebuild(cfg, emitter, job).await
+    }
+    .await;
 
-    match rebuild(cfg, emitter, job).await {
-        Ok(()) => git::commit(&cfg.flake_dir, message).await,
+    match applied {
+        Ok(()) => {
+            let paths: Vec<&str> = changes.iter().map(|c| c.rel).collect();
+            git::commit(dir, message, &paths).await
+        }
         Err(e) => {
-            let restored = git::write_state(&state_path, old)
-                .and(Ok(()))
-                .map_err(|re| format!("{e}\nadditionally failed to restore state: {re}"));
-            let _ = git::git(&cfg.flake_dir, &["add", "--", Config::STATE_REL]).await;
-            restored?;
-            Err(e)
+            let mut problems = Vec::new();
+            for change in changes {
+                if let Err(re) = git::put(dir, change.rel, change.old.as_deref()).await {
+                    problems.push(re);
+                }
+            }
+            if problems.is_empty() {
+                Err(e)
+            } else {
+                Err(format!(
+                    "{e}\nadditionally failed to restore: {}",
+                    problems.join("; ")
+                ))
+            }
         }
     }
 }
@@ -394,7 +485,7 @@ async fn rebuild(
     } else {
         let tail: Vec<String> = tail.into();
         Err(format!(
-            "rebuild failed ({status}); state restored.\n{}",
+            "rebuild failed ({status}); the previous configuration was restored.\n{}",
             tail.join("\n")
         ))
     }

@@ -1,6 +1,6 @@
 [package]
 name = "tulsi-mcp"
-description = "MCP server exposing TulsiOS system actions to agents"
+description = "MCP server exposing TulsiOS system actions to agents, with human approval"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,3 +10,10 @@ name = "tulsi-mcp"
 path = "src/main.rs"
 
 [dependencies]
+tulsi-state.workspace = true
+tulsi-client.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+zbus.workspace = true
+futures-util.workspace = true

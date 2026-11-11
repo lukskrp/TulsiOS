@@ -12,8 +12,9 @@ without making you write Nix every time you want to change something.
 - **Ocimum Assistant**: ask in plain language for a configuration change; review the
   diff; approve; done. System actions are also exposed as an MCP server.
 
-> Status: **Phase 4: Software Center, `tulsi` CLI, system daemon and automatic declarative
-> browser extensions work in the dev VM; GTK3-O is grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: **Phase 5: Software Center, `tulsi` CLI, system daemon, automatic declarative
+> browser extensions and the `tulsi-mcp` agent interface work in the dev VM; GTK3-O is
+> grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Using it (inside TulsiOS)
 
@@ -30,6 +31,16 @@ tulsi -n install obs-studio       # dry run: show what would change
 tulsi history                     # every change is a git commit in /etc/nixos
 tulsi undo                        # revert the latest change
 ```
+
+### Let an AI agent do it
+
+```sh
+claude mcp add tulsi -- tulsi-mcp     # Claude Code; any MCP client works
+```
+
+Then ask: *"install a lightweight video player and enable Bluetooth"*. The agent plans
+the change, you approve it in a dialog that shows exactly what changes, and TulsiOS
+applies it. See [docs/MCP.md](docs/MCP.md).
 
 ## How it works (one paragraph)
 

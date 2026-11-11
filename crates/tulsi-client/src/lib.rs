@@ -13,6 +13,9 @@
 //! | `History(limit: u) -> s` | method | JSON list of [`HistoryEntry`] |
 //! | `Search(query: s, limit: u) -> s` | method | JSON list of [`PackageInfo`], best first |
 //! | `PackageInfo(attr: s) -> s` | method | JSON [`PackageInfo`]; error `NotFound` |
+//! | `GetConfig() -> s` | method | configuration.nix ("" if absent) |
+//! | `PlanConfig(contents: s) -> s` | method | syntax check + JSON [`ConfigPlan`]; nothing written |
+//! | `ApplyConfig(contents: s, summary: s) -> t` | method | polkit `org.tulsi.apply`; job id, 0 = unchanged |
 //! | `Busy` | property | a job is running |
 //! | `Progress(job: t, line: s)` | signal | rebuild output |
 //! | `Finished(job: t, success: b, message: s)` | signal | job result |
@@ -47,6 +50,9 @@ pub trait Manager {
     fn history(&self, limit: u32) -> zbus::Result<String>;
     fn search(&self, query: &str, limit: u32) -> zbus::Result<String>;
     fn package_info(&self, attr: &str) -> zbus::Result<String>;
+    fn get_config(&self) -> zbus::Result<String>;
+    fn plan_config(&self, contents: &str) -> zbus::Result<String>;
+    fn apply_config(&self, contents: &str, summary: &str) -> zbus::Result<u64>;
 
     #[zbus(property)]
     fn busy(&self) -> zbus::Result<bool>;
@@ -70,6 +76,13 @@ pub struct HistoryEntry {
     /// Unix timestamp (seconds).
     pub time: i64,
     pub summary: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigPlan {
+    pub changed: bool,
+    /// Unified diff against the current configuration.nix.
+    pub diff: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

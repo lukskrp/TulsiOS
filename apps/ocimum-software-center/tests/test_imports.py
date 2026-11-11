@@ -9,6 +9,6 @@ gi = pytest.importorskip("gi")
 gi.require_version("Gtk", "3.0")
 
 
-@pytest.mark.parametrize("module", ["client", "rows", "progress", "dialogs", "window", "app"])
+@pytest.mark.parametrize("module", ["client", "rows", "progress", "dialogs", "window", "app", "approve"])
 def test_module_imports(module):
     importlib.import_module(f"ocimum_software_center.{module}")

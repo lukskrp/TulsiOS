@@ -30,7 +30,7 @@ log "building dev VM"
 VM="$(nix build --no-link --print-out-paths "$REPO#nixosConfigurations.tulsi-vm.config.system.build.vm")"
 GTK3O="$(nix eval --raw "$REPO#nixosConfigurations.tulsi-vm.config.ocimum.gtk3o.package.outPath")"
 TOOLS="$(nix build --no-link --print-out-paths --inputs-from "$REPO" \
-  nixpkgs#sshpass nixpkgs#openssh nixpkgs#socat nixpkgs#imagemagick | tr '\n' ':')"
+  nixpkgs#sshpass nixpkgs#openssh nixpkgs#socat nixpkgs#imagemagick nixpkgs#jq | tr '\n' ':')"
 export PATH="${TOOLS//:/\/bin:}$PATH"
 
 log "booting VM headless (disk in $WORK)"
@@ -164,4 +164,25 @@ else
   echo "  (skipped: Firefox did not finish installing from policy within 90 s)"
 fi
 
-log "PASS: install -> available -> undo -> gone; Cinnamon + Software Center on GTK3-O; extension adopted"
+log "agent: configuration.nix edit through tulsi-mcp (approval stand-in: true)"
+mcp_session() { # JSON-RPC requests as args -> responses, one per line
+  { jq -nc '{jsonrpc:"2.0",id:1,method:"initialize",params:{protocolVersion:"2025-06-18",capabilities:{},clientInfo:{name:"vm-e2e",version:"1"}}}'
+    printf '%s\n' "$@"; } | vm 'tulsi-mcp --approver true'
+}
+CONF="$(vm 'cat /etc/nixos/configuration.nix')"
+NEW="$(printf '%s\n' "$CONF" | sed '0,/^{$/s//{\n  programs.htop.enable = true;/')"
+EDIT="$(jq -nc --arg c "$NEW" '{jsonrpc:"2.0",id:2,method:"tools/call",params:{name:"apply_configuration_edit",
+  arguments:{contents:$c,summary:"enable htop",reason:"vm-e2e: the user asked for htop"}}}')"
+OUT="$(mcp_session "$EDIT")"
+echo "$OUT" | jq -r 'select(.id==2) | .result.content[0].text' | head -3
+echo "$OUT" | jq -e 'select(.id==2) | .result.isError == false' >/dev/null || { echo "FAIL: MCP edit failed"; exit 1; }
+vm 'command -v htop' || { echo "FAIL: htop not available after the edit"; exit 1; }
+vm 'tulsi history 2'
+
+UNDO="$(jq -nc '{jsonrpc:"2.0",id:2,method:"tools/call",params:{name:"undo_last_change",arguments:{reason:"vm-e2e cleanup"}}}')"
+mcp_session "$UNDO" | jq -e 'select(.id==2) | .result.isError == false' >/dev/null || { echo "FAIL: MCP undo failed"; exit 1; }
+if vm 'command -v htop' >/dev/null 2>&1; then echo "FAIL: htop still there after undo"; exit 1; fi
+[ "$(vm 'cat /etc/nixos/configuration.nix')" = "$CONF" ] || { echo "FAIL: configuration.nix not restored"; exit 1; }
+echo "  edit -> rebuilt -> htop available -> undo -> gone, file restored"
+
+log "PASS: install -> available -> undo -> gone; Cinnamon + Software Center on GTK3-O; extension adopted; agent config edit"

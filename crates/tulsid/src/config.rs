@@ -44,6 +44,8 @@ impl Config {
 
     /// Path of the state file relative to `flake_dir` (used with git).
     pub const STATE_REL: &'static str = "tulsi/state.json";
+    /// The user's own NixOS settings, editable through ApplyConfig.
+    pub const CONFIG_REL: &'static str = "configuration.nix";
 
     pub fn state_path(&self) -> PathBuf {
         self.flake_dir.join(Self::STATE_REL)

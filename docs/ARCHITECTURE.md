@@ -112,14 +112,24 @@ ADR 0007. `tulsi-extwatch` is a systemd user service in the graphical session
 The Software Center's **Extensions** tab lists declarative extensions and removes
 them. `tulsi ext add|remove` does the same from a terminal.
 
-### tulsi-mcp + Ocimum Assistant (Phase 5)
-`tulsi-mcp` is an MCP server over tulsid with tools `search_packages`, `get_state`,
-`propose_change`, `validate`, `apply`, `rollback`, `list_generations`, `edit_nix_file`.
-`apply` always requires interactive user approval, and agents never get a root shell.
-Free-form Nix edits are AST-aware and must pass parse + format + dry-build before they
-are offered. The Ocimum Assistant (Cinnamon panel applet + chat window) runs the agent
-loop with a pluggable LLM provider (Claude API default; local models later). Any
-external agent can use the same MCP server.
+### tulsi-mcp, `crates/tulsi-mcp` (docs/MCP.md, ADR 0004)
+MCP server (stdio, JSON-RPC; protocol versions 2024-11-05 … 2025-11-25) over tulsid.
+- Read-only tools: `search_packages`, `package_info`, `get_state`, `read_configuration`,
+  `history`, `plan_change`, `propose_configuration_edit`.
+- Change tools: `apply_change`, `apply_configuration_edit`, `undo_last_change`. Each
+  plans first, then asks the human through `ocimum-approve` (desktop dialog, Reject by
+  default) or MCP elicitation, then applies and waits for the rebuild. If no approval
+  channel exists, the change is refused.
+
+tulsid gained `GetConfig`, `PlanConfig` (syntax check via `nix-instantiate --parse` +
+unified diff) and `ApplyConfig`. Transactions now cover any managed file
+(`tulsi/state.json`, `configuration.nix`), so config edits share history, rollback and
+undo with everything else.
+
+### Ocimum Assistant (next)
+Chat window (Python/GTK 3) plus Cinnamon applet that runs the agent loop with a
+pluggable LLM provider (Claude API by default) and uses tulsi-mcp as its only tool
+set.
 
 ### Ocimum Desktop (Phase 6), `desktop/`, `nix/modules/ocimum-desktop.nix`
 Phase 1 wraps stock nixpkgs Cinnamon behind `ocimum.desktop.enable`. Phase 6 adds a
