@@ -1,0 +1,12 @@
+[package]
+name = "tulsi-mcp"
+description = "MCP server exposing TulsiOS system actions to agents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "tulsi-mcp"
+path = "src/main.rs"
+
+[dependencies]

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tulsios.org/schema/state-v1.json",
+  "title": "TulsiOS declarative state",
+  "description": "User-facing system state managed by tulsid, the Ocimum Software Center and the Ocimum Assistant. Consumed by the tulsi.state NixOS module. Keep in sync with crates/tulsi-state.",
+  "type": "object",
+  "required": ["version"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "packages": {
+      "description": "nixpkgs attribute paths, e.g. \"vlc\" or \"python3Packages.requests\".",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_'-]*(\\.[A-Za-z_][A-Za-z0-9_'-]*)*$" }
+    },
+    "browserExtensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "firefox": {
+          "description": "Firefox add-on IDs (GUIDs), e.g. \"uBlock0@raymondhill.net\" or \"{uuid}\".",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^(\\{[0-9a-fA-F-]{36}\\}|[A-Za-z0-9._+-]*@[A-Za-z0-9._-]+)$" }
+        },
+        "chromium": {
+          "description": "Chrome Web Store extension IDs (32 chars a-p). Applied to Chromium, Chrome and Brave.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-p]{32}$" }
+        }
+      }
+    },
+    "services": {
+      "description": "NixOS service toggles: services.<name>.enable.",
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "enable": { "type": "boolean" } }
+      }
+    }
+  }
+}

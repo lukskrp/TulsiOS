@@ -1,0 +1,12 @@
+[package]
+name = "ocimum-assistant"
+description = "Ocimum Assistant agentic configuration app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "ocimum-assistant"
+path = "src/main.rs"
+
+[dependencies]

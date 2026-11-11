@@ -1,0 +1,13 @@
+[package]
+name = "tulsi-cli"
+description = "The `tulsi` command-line tool"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "tulsi"
+path = "src/main.rs"
+
+[dependencies]
+tulsi-state.workspace = true

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "packages": ["hello"],
+  "browserExtensions": {
+    "firefox": ["uBlock0@raymondhill.net"],
+    "chromium": ["cjpalhdlnbpafiamejdnhcphjbkeiagm"]
+  },
+  "services": {}
+}

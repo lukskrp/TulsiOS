@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "packages": ["hello", "vlc", "chromium", "git"],
+  "browserExtensions": {
+    "firefox": ["uBlock0@raymondhill.net"],
+    "chromium": ["cjpalhdlnbpafiamejdnhcphjbkeiagm"]
+  },
+  "services": {
+    "printing": { "enable": true }
+  }
+}
