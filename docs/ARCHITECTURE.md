@@ -41,15 +41,39 @@ is declarative.
 
 ## Components
 
-### tulsid (Phase 2), `crates/tulsid`, `nix/modules/tulsid.nix`
-Root systemd service. Owns `state.json`. D-Bus API `org.tulsi.Manager1`:
-`GetState`, `ProposeChange(patch) → diff`, `Apply(change_id)` (polkit
-`org.tulsi.apply`), `Rollback`, `ListGenerations`, progress signals. Pipeline:
-validate → `nix eval` → `nixos-rebuild dry-build` → `switch` → git commit. Only one
-transaction runs at a time.
+### tulsid, `crates/tulsid`, `nix/modules/tulsid.nix`
+Root systemd service (`tulsi.daemon.enable`). Owns `<flakeDir>/tulsi/state.json`
+(default `/etc/nixos`). D-Bus API `org.tulsi.Manager1` (client: `crates/tulsi-client`):
+
+| Member | Notes |
+|---|---|
+| `GetState() → s` | state.json |
+| `Plan(ops s) → s` | `{changes, state}`, applies nothing |
+| `Apply(ops s) → t` | polkit `org.tulsi.apply`; job id (0 = nothing to do) |
+| `Undo() → t` | polkit `org.tulsi.apply`; reverts the latest change |
+| `History(limit u) → s` | `[{commit, time, summary}]` |
+| `Busy` (property), `Progress(t job, s line)`, `Finished(t job, b ok, s msg)` | job tracking |
+
+`ops` is a JSON list of change operations (`crates/tulsi-state/src/ops.rs`), for example
+`[{"op":"addPackage","name":"vlc"}]`. Other ops: `removePackage`, `addExtension`,
+`removeExtension` (`browser`: `firefox`|`chromium`, `id`), `setService` (`name`, `enable`).
+
+Transaction (one at a time): polkit check → apply ops + validate → write state.json →
+`git add` → rebuild command (default `nixos-rebuild switch --flake <flakeDir>#<host>`;
+output streamed as `Progress`) → on success, commit `state.json` (+ `flake.lock`) as
+`tulsi: <summary>`; on failure, restore the previous state.json and return the log tail.
+Undo commits the previous version of state.json as a new change, so history only grows.
+
+With `tulsi.daemon.bootstrap.enable`, first start generates a system flake in
+`<flakeDir>` whose `tulsi` input is the TulsiOS source the system was built from.
+It imports `tulsi.nixosModules.default`, the host module, the user's
+`configuration.nix` and `tulsi/state.json`. The pinned nixpkgs source ships in the system
+closure, so evaluation works offline.
 
 ### tulsi CLI, `crates/tulsi-cli`
-`tulsi validate|show` now; `tulsi install|remove|ext add|apply|rollback` in Phase 2.
+`tulsi install|remove PKG…`, `tulsi ext add|remove firefox|chromium ID`,
+`tulsi service enable|disable NAME`, `tulsi undo`, `tulsi status`, `tulsi history`,
+`--dry-run`. Runs `pkttyagent` for terminal password prompts when no desktop agent exists.
 
 ### Ocimum Software Center (Phase 3), `crates/ocimum-software-center`
 GTK4/libadwaita (relm4). Searches nixpkgs metadata, shows installed state, toggles

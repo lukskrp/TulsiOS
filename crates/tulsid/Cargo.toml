@@ -10,3 +10,9 @@ name = "tulsid"
 path = "src/main.rs"
 
 [dependencies]
+tulsi-state.workspace = true
+tulsi-client.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+zbus.workspace = true

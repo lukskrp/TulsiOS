@@ -30,7 +30,15 @@
       overlays.default = import ./nix/overlays;
 
       # All TulsiOS NixOS modules (tulsi.state, tulsi.daemon, ocimum.*, ...).
-      nixosModules.default = import ./nix/modules;
+      nixosModules.default =
+        { config, lib, ... }:
+        {
+          imports = [ ./nix/modules ];
+          # A bootstrapped system flake uses this source tree as its input…
+          tulsi.daemon.bootstrap.source = lib.mkDefault self.outPath;
+          # …and needs the pinned nixpkgs source to evaluate offline.
+          system.extraDependencies = lib.mkIf config.tulsi.daemon.bootstrap.enable [ nixpkgs.outPath ];
+        };
 
       packages = forAllSystems (pkgs: {
         inherit (pkgs) tulsi-tools;
@@ -50,6 +58,11 @@
             jq
             git
           ];
+          # Cargo looks up subcommands (fmt, clippy) in $CARGO_HOME/bin before
+          # PATH; keep a user-wide rustup install from shadowing the pinned tools.
+          shellHook = ''
+            export CARGO_HOME="$PWD/.cargo-home"
+          '';
         };
       });
 
@@ -75,6 +88,7 @@
           state-packages = pkgs.testers.runNixOSTest (
             import ./nix/tests/state-packages.nix { inherit self; }
           );
+          tulsid = pkgs.testers.runNixOSTest (import ./nix/tests/tulsid.nix { inherit self; });
         };
     };
 }

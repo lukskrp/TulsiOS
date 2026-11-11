@@ -1,13 +1,27 @@
-# Development VM:
+# Development VM (QEMU):
 #   nix build .#nixosConfigurations.tulsi-vm.config.system.build.vm
 #   ./result/bin/run-tulsi-vm-vm
-{ lib, ... }:
+# Login: tulsi / tulsi. The VM can rebuild itself: try `tulsi install cowsay`.
+# scripts/vm-e2e.sh drives it headless over SSH.
+{ lib, modulesPath, ... }:
 
 {
+  # Imported directly (not via vmVariant) so the configuration the VM
+  # rebuilds from /etc/nixos is the very one it is running.
+  imports = [ (modulesPath + "/virtualisation/qemu-vm.nix") ];
+
   nixpkgs.hostPlatform = "x86_64-linux";
   networking.hostName = "tulsi-vm";
   networking.networkmanager.enable = true;
   time.timeZone = "UTC";
+
+  virtualisation = {
+    memorySize = 6144;
+    cores = 4;
+    diskSize = 16384;
+    # Keep store writes from in-VM rebuilds on disk instead of in RAM.
+    writableStoreUseTmpfs = false;
+  };
 
   ocimum.desktop = {
     enable = true;
@@ -16,7 +30,23 @@
 
   tulsi.state = {
     enable = true;
-    file = ../../../state/example.json;
+    file = lib.mkDefault ../../../state/example.json;
+  };
+
+  tulsi.daemon = {
+    enable = true;
+    wheelNoPassword = true; # dev convenience
+    bootstrap = {
+      enable = true;
+      hostModule = "nix/hosts/vm";
+    };
+    # The VM has no boot loader: activate without creating a boot entry.
+    rebuildCommand = [
+      "nixos-rebuild"
+      "test"
+      "--flake"
+      "/etc/nixos#tulsi-vm"
+    ];
   };
 
   users.users.tulsi = {
@@ -28,23 +58,10 @@
     ];
   };
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
-  # Placeholders so the configuration also evaluates as a real system;
-  # the VM variant (system.build.vm) overrides disks itself.
-  boot.loader.grub.device = lib.mkDefault "nodev";
-  fileSystems."/" = lib.mkDefault {
-    device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
-  };
-
-  virtualisation.vmVariant.virtualisation = {
-    memorySize = 4096;
-    cores = 4;
-    diskSize = 8192;
+  # Dev only: scripts/vm-e2e.sh forwards this to 127.0.0.1 on the host.
+  services.openssh = {
+    enable = true;
+    settings.PasswordAuthentication = true;
   };
 
   system.stateVersion = "26.05";

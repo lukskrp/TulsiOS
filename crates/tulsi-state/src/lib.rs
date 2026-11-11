@@ -9,6 +9,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+mod ops;
+pub use ops::{describe_all, Browser, Op};
+
 pub const CURRENT_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -207,7 +210,9 @@ mod tests {
         assert!(is_valid_attr_path("python3Packages.requests"));
         assert!(!is_valid_attr_path("a..b"));
         assert!(is_valid_firefox_id("uBlock0@raymondhill.net"));
-        assert!(is_valid_firefox_id("{446900e4-71c2-419f-a6a7-df9c091e268b}"));
+        assert!(is_valid_firefox_id(
+            "{446900e4-71c2-419f-a6a7-df9c091e268b}"
+        ));
         assert!(is_valid_chromium_id("cjpalhdlnbpafiamejdnhcphjbkeiagm"));
         assert!(!is_valid_chromium_id("cjpalhdlnbpafiamejdnhcphjbkeiagz"));
     }

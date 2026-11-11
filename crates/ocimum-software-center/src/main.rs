@@ -3,5 +3,8 @@
 //! Placeholder: implemented in Phase 3 (see docs/ROADMAP.md).
 
 fn main() {
-    println!("ocimum-software-center {} (not implemented yet, Phase 3)", env!("CARGO_PKG_VERSION"));
+    println!(
+        "ocimum-software-center {} (not implemented yet, Phase 3)",
+        env!("CARGO_PKG_VERSION")
+    );
 }

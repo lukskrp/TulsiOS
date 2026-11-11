@@ -1,0 +1,12 @@
+[package]
+name = "tulsi-client"
+description = "D-Bus client for tulsid (org.tulsi.Manager1)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+zbus.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tulsi-state.workspace = true

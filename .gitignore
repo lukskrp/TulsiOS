@@ -10,3 +10,6 @@ target/
 .idea/
 *.swp
 .direnv/
+
+# dev shell cargo home
+.cargo-home/
