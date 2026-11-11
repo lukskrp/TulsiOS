@@ -8,8 +8,8 @@
 | 3 | Ocimum Software Center + GTK3-O | install/uninstall from GUI with progress and undo; GTK3-O used system-wide | done |
 | 4 | Declarative browser extensions | store install → notice → adopted into policy (Firefox, Chromium, Chrome, Brave) | done |
 | 5 | `tulsi-mcp` (agent interface) | agent request → plan/diff → human approves → applied; config edits | done |
-| 5b | Ocimum Assistant | chat window: plain-language request → tulsi-mcp → approve → applied | next |
-| 6 | Ocimum Desktop fork | branded Cinnamon fork built from `desktop/`, Tulsi applets | |
+| 5b | Ocimum Assistant | chat window: plain-language request → tulsi-mcp → approve → applied | done |
+| 6 | Ocimum Desktop fork | branded Cinnamon fork built from `desktop/`, Tulsi applets | next |
 | 7 | Installer ISO + release | Calamares ISO installs TulsiOS on Hyper-V / bare metal | |
 
 ## Phase 3 (done)
@@ -56,8 +56,21 @@ Known limits, picked up later:
 - Validation before approval is syntax-only; option/type errors show up in the rebuild (then rolled back).
 - Approval cannot stop an agent that also has a shell; see docs/MCP.md.
 
-## Next up: Phase 5b, Ocimum Assistant
-- [ ] Chat window (Python/GTK 3) with a Claude API provider (pluggable), tool loop over tulsi-mcp
-- [ ] API key storage in the user keyring (libsecret), model choice, conversation history
-- [ ] Cinnamon panel applet / keyboard shortcut to open it
-- [ ] Tests with a scripted fake LLM provider
+## Phase 5b (done): Ocimum Assistant
+- [x] Chat window (Python/GTK 3): streaming answers, thinking summary in the status line, tool activity,
+      Stop, new conversation, example prompts
+- [x] Claude provider (`claude-opus-5-5` default; Sonnet/Haiku selectable; effort low/medium/high),
+      prompt caching, refusal fallbacks, error mapping; pluggable provider interface
+- [x] API key in the keyring (libsecret); falls back to `ANTHROPIC_API_KEY` / `ant auth login`
+- [x] Tests: agent loop, MCP client, Markdown, offline SDK integration (local stand-in API server),
+      `checks.assistant` VM test (scripted model -> real tulsi-mcp -> tulsid -> state)
+
+Known limits, picked up later:
+- No live test against the real Anthropic API in CI (needs a key and costs money); try it with your key.
+- Conversations are not saved between sessions.
+- Panel applet and global keyboard shortcut come with the Cinnamon fork (Phase 6).
+
+## Next up: Phase 6, Ocimum Desktop
+- [ ] `desktop/cinnamon` fork (submodule) built through the overlay; branding and defaults
+- [ ] Panel applet: Assistant button + Software Center launcher; Super+Space opens the Assistant
+- [ ] Default theme, layout and wallpaper for TulsiOS

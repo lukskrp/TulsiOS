@@ -12,9 +12,9 @@ without making you write Nix every time you want to change something.
 - **Ocimum Assistant**: ask in plain language for a configuration change; review the
   diff; approve; done. System actions are also exposed as an MCP server.
 
-> Status: **Phase 5: Software Center, `tulsi` CLI, system daemon, automatic declarative
-> browser extensions and the `tulsi-mcp` agent interface work in the dev VM; GTK3-O is
-> grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: **Phase 5b: Software Center, Assistant, `tulsi` CLI, system daemon, automatic
+> declarative browser extensions and the `tulsi-mcp` agent interface work in the dev VM;
+> GTK3-O is grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Using it (inside TulsiOS)
 
@@ -41,6 +41,9 @@ claude mcp add tulsi -- tulsi-mcp     # Claude Code; any MCP client works
 Then ask: *"install a lightweight video player and enable Bluetooth"*. The agent plans
 the change, you approve it in a dialog that shows exactly what changes, and TulsiOS
 applies it. See [docs/MCP.md](docs/MCP.md).
+
+Or use the built-in **Assistant** (menu → Assistant): the same thing in a chat window,
+using Claude with your API key. See [docs/ASSISTANT.md](docs/ASSISTANT.md).
 
 ## How it works (one paragraph)
 
@@ -76,7 +79,7 @@ Without a VM, tulsid also runs on a session bus for quick experiments:
 | `nix/tests/` | NixOS VM tests |
 | `state/` | State file schema and example |
 | `crates/` | Rust workspace: `tulsi-state`, `tulsi-client`, `tulsi` CLI, `tulsid`, `tulsi-mcp` |
-| `apps/` | GTK 3 GUI apps in Python: `ocimum-software-center` |
+| `apps/` | GTK 3 GUI apps in Python: `ocimum-software-center`, `ocimum-assistant` |
 | `nix/packages/` | `tulsi-tools`, `gtk3-o` (Ocimum GTK 3 fork, grafted system-wide), package index, apps |
 | `data/` | D-Bus and polkit policy files |
 | `scripts/` | Developer scripts (`vm-e2e.sh`) |

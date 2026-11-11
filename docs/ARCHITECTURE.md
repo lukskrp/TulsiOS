@@ -126,10 +126,12 @@ unified diff) and `ApplyConfig`. Transactions now cover any managed file
 (`tulsi/state.json`, `configuration.nix`), so config edits share history, rollback and
 undo with everything else.
 
-### Ocimum Assistant (next)
-Chat window (Python/GTK 3) plus Cinnamon applet that runs the agent loop with a
-pluggable LLM provider (Claude API by default) and uses tulsi-mcp as its only tool
-set.
+### Ocimum Assistant, `apps/ocimum-assistant` (docs/ASSISTANT.md)
+Chat window (Python/GTK 3). It runs `tulsi-mcp` as a subprocess and drives a manual
+tool loop with a pluggable provider: Claude (`claude-opus-5-5` by default, streaming,
+adaptive thinking with summaries, automatic prompt caching, server-side refusal
+fallbacks) or a scripted fake for tests. The API key lives in the user's keyring
+(libsecret). Changes go through tulsi-mcp's approval dialog like any other agent's.
 
 ### Ocimum Desktop (Phase 6), `desktop/`, `nix/modules/ocimum-desktop.nix`
 Phase 1 wraps stock nixpkgs Cinnamon behind `ocimum.desktop.enable`. Phase 6 adds a

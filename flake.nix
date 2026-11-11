@@ -70,6 +70,7 @@
           gtk3-o
           tulsi-package-index
           ocimum-software-center
+          ocimum-assistant
           ;
         default = pkgs.tulsi-tools;
       });
@@ -89,8 +90,10 @@
             (python3.withPackages (ps: [
               ps.pygobject3
               ps.pytest
+              ps.anthropic
             ]))
             gtk3
+            libsecret
             xapp
             gobject-introspection
           ];
@@ -120,7 +123,7 @@
           test = file: pkgs.testers.runNixOSTest (import file { inherit self; });
         in
         {
-          inherit (pkgs) tulsi-tools ocimum-software-center;
+          inherit (pkgs) tulsi-tools ocimum-software-center ocimum-assistant;
           gtk3-o-abi = pkgs.gtk3-o.abiCheck;
           vm-toplevel = self.nixosConfigurations.tulsi-vm.config.system.build.toplevel;
           state-packages = test ./nix/tests/state-packages.nix;
@@ -128,6 +131,7 @@
           software-center = test ./nix/tests/software-center.nix;
           browser-extensions = test ./nix/tests/browser-extensions.nix;
           mcp = test ./nix/tests/mcp.nix;
+          assistant = test ./nix/tests/assistant.nix;
         };
     };
 }

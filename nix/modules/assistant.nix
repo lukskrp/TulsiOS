@@ -1,16 +1,41 @@
-# ocimum.assistant — agentic configuration assistant + MCP server (Phase 5).
-{ config, lib, ... }:
-
+# ocimum.assistant — the Ocimum Assistant chat window.
+#
+# Uses Claude (Anthropic API) by default, with tulsi-mcp as its only tool set:
+# every change is shown in the ocimum-approve dialog before tulsid applies it.
+# The API key is stored in the user's keyring from the app's Settings.
 {
-  options.ocimum.assistant.enable = lib.mkEnableOption "the Ocimum Assistant and tulsi-mcp server (Phase 5, not functional yet)";
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
-  config = lib.mkIf config.ocimum.assistant.enable {
+let
+  cfg = config.ocimum.assistant;
+in
+{
+  options.ocimum.assistant = {
+    enable = lib.mkEnableOption "the Ocimum Assistant";
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.callPackage ../packages/ocimum-assistant.nix { };
+      defaultText = lib.literalExpression "pkgs.callPackage ../packages/ocimum-assistant.nix { }";
+      description = "The Ocimum Assistant package.";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = config.tulsi.daemon.enable;
         message = "ocimum.assistant requires tulsi.daemon.enable = true.";
       }
     ];
-    # TODO(phase-5): panel applet, chat window, LLM provider settings.
+    environment.systemPackages = [ cfg.package ];
+    # Provides the ocimum-approve dialog that tulsi-mcp asks through.
+    ocimum.softwareCenter.enable = lib.mkDefault true;
+    # Where the API key is kept.
+    services.gnome.gnome-keyring.enable = lib.mkDefault true;
   };
 }

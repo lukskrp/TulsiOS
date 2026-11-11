@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Assistant
+GenericName=System Assistant
+Comment=Change your system in plain language; every change is shown to you first
+Exec=ocimum-assistant
+Icon=user-available
+Terminal=false
+Categories=GTK;System;Settings;
+Keywords=ai;assistant;claude;chat;configure;install;settings;
+StartupNotify=true
+StartupWMClass=org.tulsi.Assistant

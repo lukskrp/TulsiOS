@@ -7,7 +7,6 @@ members = [
     "crates/tulsi-cli",
     "crates/tulsi-extwatch",
     "crates/tulsi-mcp",
-    "crates/ocimum-assistant",
 ]
 
 [workspace.package]

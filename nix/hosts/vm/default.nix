@@ -29,6 +29,7 @@
   };
   # GTK3-O is grafted system-wide by default with ocimum.desktop (ocimum.gtk3o).
   ocimum.softwareCenter.enable = true;
+  ocimum.assistant.enable = true;
 
   tulsi.state = {
     enable = true;
