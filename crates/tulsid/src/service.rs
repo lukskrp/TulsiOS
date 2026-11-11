@@ -13,7 +13,7 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::{mpsc, Mutex, OwnedMutexGuard};
-use tulsi_client::{PackageInfo, Plan, ACTION_APPLY, OBJECT_PATH};
+use tulsi_client::{PackageInfo, Plan, ACTION_APPLY, ACTION_EXTENSIONS, OBJECT_PATH};
 use tulsi_state::{describe_all, Op, State};
 use zbus::message::Header;
 use zbus::object_server::SignalEmitter;
@@ -124,18 +124,18 @@ impl Manager {
         infos
     }
 
-    async fn authorize(&self, conn: &Connection, hdr: &Header<'_>) -> Result<()> {
+    async fn authorize(&self, conn: &Connection, hdr: &Header<'_>, action: &str) -> Result<()> {
         if !self.cfg.polkit {
             return Ok(());
         }
         let sender = hdr
             .sender()
             .ok_or_else(|| TulsiError::NotAuthorized("message has no sender".into()))?;
-        if polkit::check(conn, sender.as_str(), ACTION_APPLY).await? {
+        if polkit::check(conn, sender.as_str(), action).await? {
             Ok(())
         } else {
             Err(TulsiError::NotAuthorized(format!(
-                "not authorized for {ACTION_APPLY} (are you an administrator?)"
+                "not authorized for {action} (are you an administrator?)"
             )))
         }
     }
@@ -207,7 +207,7 @@ impl Manager {
     ) -> Result<u64> {
         let ops = parse_ops(ops)?;
         self.check_packages(&ops)?;
-        self.authorize(conn, &hdr).await?;
+        self.authorize(conn, &hdr, required_action(&ops)).await?;
         let guard = self.try_lock()?;
         let old = self.current_state()?;
         let new = old.with_ops(&ops)?;
@@ -229,7 +229,7 @@ impl Manager {
         #[zbus(header)] hdr: Header<'_>,
         #[zbus(connection)] conn: &Connection,
     ) -> Result<u64> {
-        self.authorize(conn, &hdr).await?;
+        self.authorize(conn, &hdr, ACTION_APPLY).await?;
         let guard = self.try_lock()?;
         let old = self.current_state()?;
         let (new, summary) = git::previous_state(&self.cfg.flake_dir)
@@ -282,6 +282,19 @@ impl Manager {
         success: bool,
         message: &str,
     ) -> zbus::Result<()>;
+}
+
+/// Changes that only touch browser extensions use their own polkit action,
+/// which the tulsi.browserExtensions module may allow without a password.
+fn required_action(ops: &[Op]) -> &'static str {
+    let extensions_only = ops
+        .iter()
+        .all(|op| matches!(op, Op::AddExtension { .. } | Op::RemoveExtension { .. }));
+    if extensions_only {
+        ACTION_EXTENSIONS
+    } else {
+        ACTION_APPLY
+    }
 }
 
 fn parse_ops(ops: &str) -> Result<Vec<Op>> {

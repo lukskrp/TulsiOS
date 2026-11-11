@@ -6,8 +6,8 @@
 | 1 | Repo skeleton + state contract | `nix flake check` green; VM boots Cinnamon; editing `state.json` + rebuild installs a package | done |
 | 2 | `tulsid` + CLI + polkit + git-backed state | `tulsi install <pkg>` works in the VM; `tulsi undo` works | done |
 | 3 | Ocimum Software Center + GTK3-O | install/uninstall from GUI with progress and undo; GTK3-O used system-wide | done |
-| 4 | Declarative browser extensions | store click → notice → installed via policy (Firefox, Chromium, Brave) | next |
-| 5 | `tulsi-mcp` + Ocimum Assistant | plain-language request → diff → approve → applied | |
+| 4 | Declarative browser extensions | store install → notice → adopted into policy (Firefox, Chromium, Chrome, Brave) | done |
+| 5 | `tulsi-mcp` + Ocimum Assistant | plain-language request → diff → approve → applied | next |
 | 6 | Ocimum Desktop fork | branded Cinnamon fork built from `desktop/`, Tulsi applets | |
 | 7 | Installer ISO + release | Calamares ISO installs TulsiOS on Hyper-V / bare metal | |
 
@@ -29,10 +29,24 @@ Known limits, picked up later:
 - Nested attributes (e.g. `python3Packages.*`) are not pre-validated; the rebuild still checks them.
 - `tulsid` is not restarted on upgrade (`restartIfChanged = false`); new versions start after a reboot.
 
-## Next up: Phase 4 tasks
-- [ ] `browser/bridge-extension`: Manifest V3 WebExtension for Firefox and Chromium; content
-      scripts on addons.mozilla.org / Chrome Web Store replace "Add to …" with "Install with Ocimum"
-- [ ] `browser/native-host`: native messaging host `org.tulsi.bridge` → tulsid `Plan`/`Apply`
-- [ ] Desktop notification "This extension will be installed declaratively" + confirm
-- [ ] `tulsi.browserExtensions.blockImperativeInstalls` on by default with the bridge force-installed
-- [ ] NixOS test: Firefox + Chromium headless, simulated store click → policy contains the id
+## Phase 4 (done)
+- [x] Design change: adopt store installs instead of a bridge extension (ADR 0007; signing made the bridge impractical)
+- [x] `tulsi-extwatch` user service: watches Firefox and Chromium/Chrome/Brave profiles, store installs only
+- [x] Notice "Extension will be installed declaratively" with a "Keep it imperative" grace period (remembered)
+- [x] polkit action `org.tulsi.extensions`; password-free for active local users (`adopt.withoutPassword`)
+- [x] Software Center **Extensions** tab (list + remove)
+- [x] `checks.browser-extensions` (non-admin adoption, side-loaded ignored, keep honored, packages still need admin)
+- [x] `scripts/vm-e2e.sh`: adoption in Cinnamon with a real rebuild into Firefox policy
+
+Known limits, picked up later:
+- The Extensions tab shows extension ids, not names (state.json stores ids only).
+- Extensions apply to all users of the machine (policies are system-wide).
+- Extensions installed from sources other than the two official stores stay imperative.
+
+## Next up: Phase 5 tasks
+- [ ] `tulsi-mcp`: MCP server (stdio) over tulsid: `search_packages`, `get_state`, `plan_change`,
+      `apply_change` (always user-approved), `undo`, `history`
+- [ ] Approval UX: apply requests from agents show the plan in a desktop dialog before tulsid runs
+- [ ] Ocimum Assistant (Python/GTK 3): chat window, Claude API provider (pluggable), tool loop over tulsi-mcp
+- [ ] Free-form configuration edits: proposals for `configuration.nix` validated by parse + format + dry-build
+- [ ] Tests: MCP protocol tests; NixOS test driving the assistant with a scripted fake LLM

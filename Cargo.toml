@@ -5,6 +5,7 @@ members = [
     "crates/tulsi-client",
     "crates/tulsid",
     "crates/tulsi-cli",
+    "crates/tulsi-extwatch",
     "crates/tulsi-mcp",
     "crates/ocimum-assistant",
 ]

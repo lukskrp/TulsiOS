@@ -3,8 +3,9 @@
 ## Goals
 
 1. Install and uninstall software without writing Nix (Ocimum Software Center).
-2. Browser extensions become declarative automatically: the user clicks "Add", and the OS
-   installs the extension through Nix-managed policy (Ocimum Bridge).
+2. Browser extensions become declarative automatically: the user installs one from the
+   store as usual, the OS says it will be installed declaratively and moves it into
+   Nix-managed policy (`tulsi-extwatch`).
 3. Configuration through an agent: plain-language request → validated diff → user
    approves → rebuild (Ocimum Assistant, `tulsi-mcp`).
 4. Keep NixOS guarantees: reproducible, atomic, rollback-able.
@@ -21,7 +22,7 @@ directly. Every component instead edits one declarative file:
 ```
  Software Center ─┐
  Ocimum Assistant ─┼─ D-Bus ─▶ tulsid ─▶ state.json ─▶ git commit ─▶ nixos-rebuild switch
- Browser bridge  ─┤            (root,     (validated)   (history)     (new generation,
+ tulsi-extwatch  ─┤            (root,     (validated)   (history)     (new generation,
  tulsi CLI       ─┘            polkit)                                 rollback = previous)
 ```
 
@@ -95,15 +96,21 @@ The Ocimum fork of GTK 3.24 (flake input `gtk3-o`). It is ABI-stable and grafted
 system-wide with `system.replaceDependencies`, so every GTK 3 app uses it without being
 rebuilt (ADR 0006). `checks.gtk3-o-abi` guards against removed exported symbols.
 
-### Ocimum Bridge (Phase 4), `browser/`
-- Policy blocks imperative installs (`tulsi.browserExtensions.blockImperativeInstalls`).
-- A force-installed WebExtension injects "Install with Ocimum" on addons.mozilla.org and
-  the Chrome Web Store, and catches blocked-install attempts.
-- It talks over **native messaging** to `tulsi-browser-host`, which calls tulsid.
-- The user sees a desktop notification: *"This extension will be installed declaratively."*
-  On confirm, tulsid adds the ID to `state.json` and rebuilds. Only the policy changes, so
-  this is fast. The browser then picks up the policy (Firefox: restart prompt; Chromium:
-  policy reload).
+### Declarative browser extensions, `crates/tulsi-extwatch`, `nix/modules/browser-extensions.nix`
+ADR 0007. `tulsi-extwatch` is a systemd user service in the graphical session
+(`tulsi.browserExtensions.adopt`, on with tulsid):
+1. It watches Firefox `extensions.json` and Chromium/Chrome/Brave `Secure Preferences`
+   in every profile, checking modification times every 3 s.
+2. A user-installed extension from addons.mozilla.org or the Chrome Web Store that is
+   not yet in `state.json` triggers a notification: *"Extension will be installed
+   declaratively"*, with a **Keep it imperative** button during the grace period.
+3. It calls tulsid `Apply([addExtension])`. Extension-only changes use the polkit action
+   `org.tulsi.extensions`, which is password-free for active local users by default.
+4. The rebuild changes only the browser policy. The notification is replaced with the
+   result: Firefox completes the switch on restart; Chromium applies it automatically.
+
+The Software Center's **Extensions** tab lists declarative extensions and removes
+them. `tulsi ext add|remove` does the same from a terminal.
 
 ### tulsi-mcp + Ocimum Assistant (Phase 5)
 `tulsi-mcp` is an MCP server over tulsid with tools `search_packages`, `get_state`,

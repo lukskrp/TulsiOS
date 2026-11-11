@@ -126,6 +126,7 @@
           state-packages = test ./nix/tests/state-packages.nix;
           tulsid = test ./nix/tests/tulsid.nix;
           software-center = test ./nix/tests/software-center.nix;
+          browser-extensions = test ./nix/tests/browser-extensions.nix;
         };
     };
 }

@@ -6,13 +6,14 @@ without making you write Nix every time you want to change something.
 - **Ocimum Desktop**: a Cinnamon-based desktop (named after *Ocimum*, the basil genus).
 - **Ocimum Software Center**: install and uninstall software from a GUI. Changes are
   declarative and you can roll them back.
-- **Declarative browser extensions**: when you click "Add to Firefox/Chrome", TulsiOS
-  installs the extension through Nix-managed browser policies instead.
+- **Declarative browser extensions**: install an extension from the Firefox or Chrome
+  store as usual; TulsiOS tells you it will be installed declaratively and moves it into
+  Nix-managed browser policy.
 - **Ocimum Assistant**: ask in plain language for a configuration change; review the
   diff; approve; done. System actions are also exposed as an MCP server.
 
-> Status: **Phase 3: Software Center, `tulsi` CLI and system daemon work in the dev VM;
-> GTK3-O is grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: **Phase 4: Software Center, `tulsi` CLI, system daemon and automatic declarative
+> browser extensions work in the dev VM; GTK3-O is grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Using it (inside TulsiOS)
 

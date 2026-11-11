@@ -1,7 +1,12 @@
-# Ocimum Bridge (Phase 4)
+# Browser integration
 
-- `bridge-extension/`: WebExtension (Firefox + Chromium, Manifest V3) force-installed by policy.
-  Injects "Install with Ocimum" on addons.mozilla.org / Chrome Web Store.
-- `native-host/`: native messaging host `org.tulsi.bridge` that forwards requests to tulsid over D-Bus.
+Browser extensions become declarative through **adoption**, not a browser-side
+bridge. See [ADR 0007](../docs/adr/0007-adopt-store-installed-extensions.md).
 
-See docs/ARCHITECTURE.md and docs/adr/0003-browser-extensions-via-policies.md.
+- Watcher: `crates/tulsi-extwatch` (user service, `tulsi.browserExtensions.adopt`)
+- Policies: `nix/modules/tulsi-state.nix` renders `state.json` extensions into Firefox
+  `ExtensionSettings` and Chromium `ExtensionInstallForcelist`
+- Polkit: extension-only changes use `org.tulsi.extensions`
+
+This directory is kept for a possible future signed companion extension, for example
+an "Installed declaratively" badge on store pages. Nothing here is needed today.

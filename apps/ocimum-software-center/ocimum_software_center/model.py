@@ -64,6 +64,19 @@ def ops_remove(attr: str) -> list[dict]:
     return [{"op": "removePackage", "name": attr}]
 
 
+def ops_remove_extension(browser: str, ext_id: str) -> list[dict]:
+    return [{"op": "removeExtension", "browser": browser, "id": ext_id}]
+
+
+BROWSER_TITLES = {"firefox": "Firefox", "chromium": "Chromium, Chrome and Brave"}
+
+
+def extensions_of(state: dict) -> list[tuple[str, str]]:
+    """(browser, id) pairs from a state.json dict, Firefox first."""
+    exts = state.get("browserExtensions") or {}
+    return [(b, i) for b in ("firefox", "chromium") for i in sorted(exts.get(b) or [])]
+
+
 _CHANGE_WORDS = {
     ("+", "package"): "Install",
     ("-", "package"): "Remove",

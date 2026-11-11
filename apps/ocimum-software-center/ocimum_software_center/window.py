@@ -12,18 +12,21 @@ from gi.repository import GLib, Gtk
 from . import dialogs
 from .client import Client, TulsiError
 from .model import (
+    BROWSER_TITLES,
     MAX_RESULTS,
     JobTracker,
     Package,
     describe_change,
     done_text,
+    extensions_of,
     history_title,
     normalize_query,
     ops_install,
     ops_remove,
+    ops_remove_extension,
 )
 from .progress import ProgressPanel
-from .rows import HistoryRow, PackageRow, placeholder
+from .rows import ExtensionRow, HistoryRow, PackageRow, placeholder
 
 WINDOW_TITLE = "Software Center"
 HISTORY_LIMIT = 50
@@ -57,6 +60,7 @@ class Window(Gtk.ApplicationWindow):
         self.client = client
         self.jobs = JobTracker()
         self.installed: set[str] = set()
+        self.extensions: list[tuple[str, str]] = []
         self._search_serial = 0
         self._last_change_was_undo = False
 
@@ -66,6 +70,7 @@ class Window(Gtk.ApplicationWindow):
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE)
         self.stack.add_titled(self._build_search_page(), "search", "Search")
         self.stack.add_titled(self._build_installed_page(), "installed", "Installed")
+        self.stack.add_titled(self._build_extensions_page(), "extensions", "Extensions")
         self.stack.add_titled(self._build_history_page(), "history", "History")
         self.stack.connect("notify::visible-child-name", self._on_page_changed)
 
@@ -135,6 +140,50 @@ class Window(Gtk.ApplicationWindow):
         self.installed_stack.add_named(_scrolled(self.installed_list), "list")
         return self.installed_stack
 
+    def _build_extensions_page(self) -> Gtk.Widget:
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=12)
+        intro = Gtk.Label(
+            label="Extensions you install from the Firefox Add-ons site or the Chrome Web Store "
+            "are made declarative automatically and listed here. Removing one uninstalls it "
+            "from the browser.",
+            xalign=0,
+            wrap=True,
+        )
+        intro.get_style_context().add_class("dim-label")
+        page.pack_start(intro, False, False, 0)
+        self.extensions_stack = Gtk.Stack()
+        self.extensions_stack.add_named(
+            placeholder(
+                "application-x-addon",
+                "No declarative extensions yet",
+                "Install an extension in your browser as usual; it appears here moments later.",
+            ),
+            "empty",
+        )
+        self.extensions_list = _listbox()
+        frame = Gtk.Frame()
+        frame.add(_scrolled(self.extensions_list))
+        self.extensions_stack.add_named(frame, "list")
+        page.pack_start(self.extensions_stack, True, True, 0)
+        return page
+
+    def refresh_extensions(self) -> None:
+        _clear(self.extensions_list)
+        if not self.extensions:
+            self.extensions_stack.set_visible_child_name("empty")
+            return
+        self.extensions_stack.set_visible_child_name("list")
+        for browser, ext_id in self.extensions:
+            row = ExtensionRow(browser, ext_id, BROWSER_TITLES.get(browser, browser))
+            row.set_busy(self.jobs.busy)
+            row.connect("remove-requested", self._on_extension_remove)
+            self.extensions_list.add(row)
+
+    def _on_extension_remove(self, _row, browser: str, ext_id: str) -> None:
+        self.request_change(
+            ops_remove_extension(browser, ext_id), f"Removing {ext_id}", "Remove"
+        )
+
     def _build_history_page(self) -> Gtk.Widget:
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=12)
         top = Gtk.Box(spacing=8)
@@ -157,6 +206,8 @@ class Window(Gtk.ApplicationWindow):
         name = stack.get_visible_child_name()
         if name == "installed":
             self.refresh_installed()
+        elif name == "extensions":
+            self.refresh_extensions()
         elif name == "history":
             self.refresh_history()
         elif name == "search":
@@ -213,9 +264,13 @@ class Window(Gtk.ApplicationWindow):
     def refresh_state(self) -> None:
         def done(state: dict) -> None:
             self.installed = set(state.get("packages", []))
+            self.extensions = extensions_of(state)
             self._sync_rows()
-            if self.stack.get_visible_child_name() == "installed":
+            page = self.stack.get_visible_child_name()
+            if page == "installed":
                 self.refresh_installed()
+            elif page == "extensions":
+                self.refresh_extensions()
 
         self.client.get_state(done, lambda e: self.show_message(e.message, error=True))
 
@@ -338,9 +393,9 @@ class Window(Gtk.ApplicationWindow):
 
     def _set_busy(self) -> None:
         busy = self.jobs.busy
-        for listbox in (self.search_list, self.installed_list):
+        for listbox in (self.search_list, self.installed_list, self.extensions_list):
             for row in listbox.get_children():
-                if isinstance(row, PackageRow):
+                if isinstance(row, (PackageRow, ExtensionRow)):
                     row.set_busy(busy)
         self.history_undo.set_sensitive(not busy)
 

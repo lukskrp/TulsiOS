@@ -26,6 +26,9 @@ pub use tulsi_state::{Browser, Op, State};
 pub const BUS_NAME: &str = "org.tulsi.Manager1";
 pub const OBJECT_PATH: &str = "/org/tulsi/Manager1";
 pub const ACTION_APPLY: &str = "org.tulsi.apply";
+/// Used instead of ACTION_APPLY when a change only adds/removes browser
+/// extensions, so it can be allowed more freely (see tulsi.browserExtensions).
+pub const ACTION_EXTENSIONS: &str = "org.tulsi.extensions";
 
 /// Set `TULSI_BUS=session` to talk to a tulsid running on the session bus
 /// (development without a NixOS machine).

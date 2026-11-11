@@ -30,6 +30,17 @@ def test_ops():
     assert ops_remove("vlc") == [{"op": "removePackage", "name": "vlc"}]
 
 
+def test_extensions():
+    from ocimum_software_center.model import extensions_of, ops_remove_extension
+
+    state = {"browserExtensions": {"chromium": ["b" * 32], "firefox": ["z@x", "a@x"]}}
+    assert extensions_of(state) == [("firefox", "a@x"), ("firefox", "z@x"), ("chromium", "b" * 32)]
+    assert extensions_of({}) == []
+    assert ops_remove_extension("firefox", "a@x") == [
+        {"op": "removeExtension", "browser": "firefox", "id": "a@x"}
+    ]
+
+
 def test_describe_change():
     assert describe_change("+ package vlc") == "Install vlc"
     assert describe_change("- package gimp") == "Remove gimp"

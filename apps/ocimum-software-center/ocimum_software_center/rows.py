@@ -91,6 +91,40 @@ class PackageRow(Gtk.ListBoxRow):
         self.button.set_sensitive(not busy)
 
 
+class ExtensionRow(Gtk.ListBoxRow):
+    """A declaratively installed browser extension with a Remove button."""
+
+    __gsignals__ = {
+        # (browser, id)
+        "remove-requested": (GObject.SignalFlags.RUN_FIRST, None, (str, str)),
+    }
+
+    def __init__(self, browser: str, ext_id: str, browser_title: str):
+        super().__init__(activatable=False, selectable=False)
+        self.browser, self.ext_id = browser, ext_id
+        box = Gtk.Box(spacing=12, margin=10)
+        theme = Gtk.IconTheme.get_default()
+        icon_name = browser if theme.has_icon(browser) else "application-x-addon"
+        icon = Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.DIALOG)
+        icon.set_pixel_size(40)
+        box.pack_start(icon, False, False, 0)
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, valign=Gtk.Align.CENTER)
+        title = _label()
+        title.set_markup(f"<b>{GLib.markup_escape_text(ext_id)}</b>")
+        text.pack_start(title, False, False, 0)
+        text.pack_start(_label(browser_title, css="dim-label"), False, False, 0)
+        box.pack_start(text, True, True, 0)
+        self.button = Gtk.Button(label="Remove", valign=Gtk.Align.CENTER)
+        self.button.get_style_context().add_class("destructive-action")
+        self.button.connect("clicked", lambda _b: self.emit("remove-requested", browser, ext_id))
+        box.pack_end(self.button, False, False, 0)
+        self.add(box)
+        self.show_all()
+
+    def set_busy(self, busy: bool) -> None:
+        self.button.set_sensitive(not busy)
+
+
 class HistoryRow(Gtk.ListBoxRow):
     def __init__(self, entry: dict):
         super().__init__(activatable=False, selectable=False)

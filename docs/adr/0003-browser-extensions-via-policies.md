@@ -1,6 +1,8 @@
 # ADR 0003: Browser extensions are installed through enterprise policies
 
-Status: accepted (2026-11-11)
+Status: accepted (2026-11-11). The "Ocimum Bridge" part is superseded by
+[ADR 0007](0007-adopt-store-installed-extensions.md): store installs are adopted
+by `tulsi-extwatch` instead of being redirected by a bridge extension.
 
 ## Context
 Users install extensions imperatively from web stores. We want these installs to be declarative and reproducible without making the user aware of Nix.

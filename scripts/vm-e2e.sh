@@ -112,7 +112,13 @@ done
 
 log "desktop: Software Center"
 in_session 'nohup ocimum-software-center >/tmp/sc.log 2>&1 &'
-sleep 8
+for i in $(seq 1 30); do
+  in_session "gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
+    --method org.freedesktop.DBus.NameHasOwner org.tulsi.SoftwareCenter" | grep -q true && break
+  [ "$i" -eq 30 ] && { echo "FAIL: Software Center did not start"; vm 'cat /tmp/sc.log'; exit 1; }
+  sleep 2
+done
+sleep 3
 in_session "gdbus call --session --dest org.tulsi.SoftwareCenter --object-path /org/tulsi/SoftwareCenter \
   --method org.gtk.Actions.Activate search \"[<'video player'>]\" '{}'" >/dev/null
 sleep 4
@@ -123,4 +129,39 @@ echo "  ocimum-software-center: $libs"
 [ "$libs" = "$GTK3O" ] || { echo "FAIL: Software Center does not use GTK3-O"; exit 1; }
 vm 'cat /tmp/sc.log' || true
 
-log "PASS: install -> available -> undo -> gone; Cinnamon + Software Center on GTK3-O"
+log "browser: adoption of a store-installed Firefox extension"
+in_session 'systemctl --user is-active tulsi-extwatch'
+# Simulate what Firefox writes after installing Bitwarden from addons.mozilla.org.
+EXT='{446900e4-71c2-419f-a6a7-df9c091e268b}'
+vm "mkdir -p ~/.mozilla/firefox/e2e.default && cat > ~/.mozilla/firefox/e2e.default/extensions.json" <<EOF
+{"schemaVersion": 36, "addons": [{"id": "$EXT", "type": "extension", "location": "app-profile",
+  "sourceURI": "https://addons.mozilla.org/firefox/downloads/file/4440363/bitwarden_password_manager.xpi",
+  "defaultLocale": {"name": "Bitwarden Password Manager"}}]}
+EOF
+sleep 3
+screenshot 03-extension-notice
+for i in $(seq 1 60); do
+  vm "grep -qF '$EXT' /etc/nixos/tulsi/state.json" && break
+  [ "$i" -eq 60 ] && { echo "FAIL: extension was not adopted"; in_session 'journalctl --user -u tulsi-extwatch --no-pager | tail -20'; exit 1; }
+  sleep 5
+done
+# Adoption triggers a real rebuild; wait for it to finish and the policy to change.
+for i in $(seq 1 60); do
+  vm "grep -qF '$EXT' /etc/firefox/policies/policies.json" && break
+  [ "$i" -eq 60 ] && { echo "FAIL: Firefox policy does not contain the extension"; exit 1; }
+  sleep 5
+done
+echo "  state.json and Firefox policy contain $EXT"
+vm 'tulsi history 3'
+sleep 2
+screenshot 04-extension-done
+
+log "browser: Firefox installs the adopted extension from policy (best effort, needs network)"
+if vm "rm -rf /tmp/ffp && mkdir /tmp/ffp && timeout 90 firefox --headless --profile /tmp/ffp about:blank >/dev/null 2>&1; \
+       grep -qF '$EXT' /tmp/ffp/extensions.json"; then
+  echo "  Firefox installed $EXT via policy"
+else
+  echo "  (skipped: Firefox did not finish installing from policy within 90 s)"
+fi
+
+log "PASS: install -> available -> undo -> gone; Cinnamon + Software Center on GTK3-O; extension adopted"
