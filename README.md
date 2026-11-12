@@ -12,9 +12,11 @@ without making you write Nix every time you want to change something.
 - **Ocimum Assistant**: ask in plain language for a configuration change; review the
   diff; approve; done. System actions are also exposed as an MCP server.
 
-> Status: **Phase 5b: Software Center, Assistant, `tulsi` CLI, system daemon, automatic
-> declarative browser extensions and the `tulsi-mcp` agent interface work in the dev VM;
-> GTK3-O is grafted system-wide.** Not a daily OS yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> Status: **Phase 6: built on [tulsipkgs](https://github.com/lukskrp/tulsipkgs), TulsiOS's
+> fork of nixpkgs, with Ocimum Desktop on Cinnamon 6.8. Software Center, Assistant, `tulsi`
+> CLI, system daemon, automatic declarative browser extensions and the `tulsi-mcp` agent
+> interface work in the dev VM; GTK3-O is grafted system-wide.** Not a daily OS yet.
+> See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Using it (inside TulsiOS)
 
@@ -80,15 +82,22 @@ Without a VM, tulsid also runs on a session bus for quick experiments:
 | `state/` | State file schema and example |
 | `crates/` | Rust workspace: `tulsi-state`, `tulsi-client`, `tulsi` CLI, `tulsid`, `tulsi-mcp` |
 | `apps/` | GTK 3 GUI apps in Python: `ocimum-software-center`, `ocimum-assistant` |
-| `nix/packages/` | `tulsi-tools`, `gtk3-o` (Ocimum GTK 3 fork, grafted system-wide), package index, apps |
+| `nix/packages/` | `tulsi-tools`, package index, apps |
 | `data/` | D-Bus and polkit policy files |
 | `scripts/` | Developer scripts (`vm-e2e.sh`) |
 | `browser/` | Ocimum Bridge WebExtension + native messaging host (Phase 4) |
-| `desktop/` | Cinnamon fork for Ocimum Desktop (Phase 6) |
 | `docs/` | Architecture, roadmap, setup, ADRs |
+
+## Related repositories
+
+| Repository | What |
+|---|---|
+| [tulsipkgs](https://github.com/lukskrp/tulsipkgs) | TulsiOS's fork of nixpkgs (branch `tulsi-unstable`); this flake's `nixpkgs` input. Builds the forks below |
+| [ocimum-desktop](https://github.com/lukskrp/ocimum-desktop) | Ocimum Desktop, a hard fork of Cinnamon (branch `ocimum`) |
+| [GTK3-24-Fork-Imprv](https://github.com/lukskrp/GTK3-24-Fork-Imprv) | GTK3-O, the ABI-stable GTK 3.24 fork, grafted system-wide |
+| [OTK](https://github.com/lukskrp/OTK) | OTK, the ABI-breaking GTK 3 fork that installs alongside GTK 3 |
 
 ## License
 
-TulsiOS's own code is MIT-licensed ([LICENSE](LICENSE)). The Cinnamon fork under
-`desktop/` keeps its upstream GPL-2.0-or-later license, and GTK3-O keeps GTK's
-LGPL-2.1-or-later.
+TulsiOS's own code is MIT-licensed ([LICENSE](LICENSE)). Ocimum Desktop keeps
+Cinnamon's GPL-2.0-or-later license; GTK3-O and OTK keep GTK's LGPL-2.1-or-later.

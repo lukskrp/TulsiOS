@@ -1,41 +1,23 @@
 {
   "nodes": {
-    "gtk3-o": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1764730053,
-        "narHash": "sha256-Q3NH7qMO7oLiJrWKu6JcG5IwAIaL8OCEQ1wH48ICR04=",
-        "owner": "lukskrp",
-        "repo": "GTK3-24-Fork-Imprv",
-        "rev": "8723146fca06edd5584d0a9e16668356af6ce308",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lukskrp",
-        "ref": "gtk-3-24",
-        "repo": "GTK3-24-Fork-Imprv",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1794042290,
-        "narHash": "sha256-ziZn2PvCJE5JEEpqTdxXwJpPB+L3YqoCpTAMCzyaP3U=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "f4a03c008967841f2a0b3cb7c436fc6fc31671f6",
+        "lastModified": 1794469598,
+        "narHash": "sha256-JUf6OR+BEoT9nWZ/oSGy2lTMk6SXF53xEZUdlxc2ZiI=",
+        "owner": "lukskrp",
+        "repo": "tulsipkgs",
+        "rev": "1f41fe41c52642c78d55a3c81da2fda56cadd555",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
+        "owner": "lukskrp",
+        "ref": "tulsi-unstable",
+        "repo": "tulsipkgs",
         "type": "github"
       }
     },
     "root": {
       "inputs": {
-        "gtk3-o": "gtk3-o",
         "nixpkgs": "nixpkgs"
       }
     }

@@ -9,7 +9,8 @@
 | 4 | Declarative browser extensions | store install → notice → adopted into policy (Firefox, Chromium, Chrome, Brave) | done |
 | 5 | `tulsi-mcp` (agent interface) | agent request → plan/diff → human approves → applied; config edits | done |
 | 5b | Ocimum Assistant | chat window: plain-language request → tulsi-mcp → approve → applied | done |
-| 6 | Ocimum Desktop fork | branded Cinnamon fork built from `desktop/`, Tulsi applets | next |
+| 6a | tulsipkgs + TulsiOS cache | flake on tulsipkgs; CI builds TulsiOS-owned packages and pushes them to cache.skarptech.org | in progress (cache server pending) |
+| 6b | Ocimum Desktop | hard fork of Cinnamon 6.8 built by tulsipkgs; branding, TulsiOS defaults, Tulsi applets | in progress |
 | 7 | Installer ISO + release | Calamares ISO installs TulsiOS on Hyper-V / bare metal | |
 
 ## Phase 3 (done)
@@ -70,7 +71,23 @@ Known limits, picked up later:
 - Conversations are not saved between sessions.
 - Panel applet and global keyboard shortcut come with the Cinnamon fork (Phase 6).
 
-## Next up: Phase 6, Ocimum Desktop
-- [ ] `desktop/cinnamon` fork (submodule) built through the overlay; branding and defaults
-- [ ] Panel applet: Assistant button + Software Center launcher; Super+Space opens the Assistant
-- [ ] Default theme, layout and wallpaper for TulsiOS
+## Phase 6a (in progress): tulsipkgs and the TulsiOS cache (ADR 0008)
+- [x] tulsipkgs, a hard fork of nixpkgs (branch `tulsi-unstable`), is the flake's `nixpkgs` input
+- [x] `gtk3-o` and `otk` packaged in tulsipkgs (the `gtk3-o` flake input is gone)
+- [x] `tulsi-release.nix` (`built` / `curated`) and `check-upstream.sh`; `tulsi-build` and daily `tulsi-sync` workflows
+- [x] Attic deployment files for cache.skarptech.org (SkarpTech_Website `deploy/attic/`); `tulsi.cache` module
+- [ ] Cache server running; CI secrets set; `tulsi.cache.publicKey` filled in
+- [ ] A clean machine downloads Cinnamon from the TulsiOS cache instead of building it
+
+## Phase 6b (in progress): Ocimum Desktop
+- [x] `lukskrp/ocimum-desktop` branch `ocimum`: hard fork of Cinnamon 6.8.0 with session name, logo,
+      System Info and pinned Software Center / Assistant
+- [x] The whole Cinnamon 6.8 suite built by tulsipkgs; `cinnamon` PAM service for the 6.8 screen locker
+- [x] `ocimum.desktop`: Mint-Y-Dark, basil wallpaper, Super+A opens the Assistant; `checks.ocimum-desktop`
+- [ ] Panel applet for the Assistant; TulsiOS default panel layout
+- [ ] Port Cinnamon 6.8's GTK 4 background daemon to OTK (after OTK gains the GTK 4 features it needs)
+- [ ] Package Velocitty, or choose the default terminal for good
+
+Known limits:
+- Super+Space stays Cinnamon's keyboard-layout switcher, so the Assistant uses Super+A.
+- GTK 4 is in the desktop closure for the background daemon until it is ported to OTK.

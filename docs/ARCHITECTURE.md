@@ -91,8 +91,8 @@ rebuild log → success bar with **Undo**. Errors keep the log visible. Also exp
 `Gtk.Application` actions `install(s)`, `remove(s)`, `search(s)` and `undo` on the
 session bus, for tests and later the Assistant. These still go through the confirmation dialog.
 
-### GTK3-O, `nix/packages/gtk3-o.nix`, `nix/modules/gtk3-o.nix`
-The Ocimum fork of GTK 3.24 (flake input `gtk3-o`). It is ABI-stable and grafted
+### GTK3-O, `nix/modules/gtk3-o.nix`
+The Ocimum fork of GTK 3.24 (package `gtk3-o` in tulsipkgs). It is ABI-stable and grafted
 system-wide with `system.replaceDependencies`, so every GTK 3 app uses it without being
 rebuilt (ADR 0006). `checks.gtk3-o-abi` guards against removed exported symbols.
 
@@ -133,11 +133,21 @@ adaptive thinking with summaries, automatic prompt caching, server-side refusal
 fallbacks) or a scripted fake for tests. The API key lives in the user's keyring
 (libsecret). Changes go through tulsi-mcp's approval dialog like any other agent's.
 
-### Ocimum Desktop (Phase 6), `desktop/`, `nix/modules/ocimum-desktop.nix`
-Phase 1 wraps stock nixpkgs Cinnamon behind `ocimum.desktop.enable`. Phase 6 adds a
-`linuxmint/cinnamon` fork (submodule), built through the overlay by replacing `src`,
-plus branding, theme, default panel layout and Tulsi applets. Other Cinnamon
-components (muffin, nemo, …) are forked only when needed.
+### tulsipkgs and the TulsiOS cache (ADR 0008), `nix/modules/cache.nix`
+The flake's `nixpkgs` input is tulsipkgs (`github:lukskrp/tulsipkgs/tulsi-unstable`),
+TulsiOS's hard fork of nixpkgs: upstream `nixos-unstable`, merged daily, plus the
+software TulsiOS owns (the Ocimum Desktop suite, `gtk3-o`, `otk`). Everything else is
+the unchanged upstream derivation and comes from cache.nixos.org. TulsiOS's own builds
+come from `https://cache.skarptech.org/tulsi` (`tulsi.cache`, used once
+`tulsi.cache.publicKey` is set).
+
+### Ocimum Desktop, `nix/modules/ocimum-desktop.nix`
+Ocimum Desktop is a hard fork of Cinnamon (`github.com/lukskrp/ocimum-desktop`, branch
+`ocimum`, forked from 6.8.0). tulsipkgs builds `cinnamon` from it, with the rest of the
+Cinnamon 6.8 suite. The fork carries the session name, logo, System Info and pinned
+apps; `ocimum.desktop` adds the TulsiOS defaults (Mint-Y-Dark theme, basil wallpaper,
+Super+A for the Assistant) as gsettings/dconf defaults, which users can change.
+`checks.ocimum-desktop` verifies the installed session and these defaults.
 
 ## Security model (summary)
 - Unprivileged UIs → D-Bus → tulsid. Every mutating call is polkit-authorized.

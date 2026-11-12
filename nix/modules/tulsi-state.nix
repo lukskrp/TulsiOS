@@ -13,7 +13,9 @@
 
 let
   cfg = config.tulsi.state;
-  state = lib.importJSON cfg.file;
+  # Only read when enabled: `services` below takes its attribute names from the
+  # file, and the module system needs those names even under mkIf false.
+  state = if cfg.enable then lib.importJSON cfg.file else { };
 
   packageNames = state.packages or [ ];
   firefoxExtensions = state.browserExtensions.firefox or [ ];
