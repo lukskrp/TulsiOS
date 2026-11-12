@@ -22,10 +22,9 @@ in
 
     publicKey = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      # Set once the cache server exists (deploy/attic/setup.sh prints it).
-      default = null;
-      example = "tulsi:AbCd…=";
-      description = "Public signing key of the cache. Without it the cache is not used.";
+      # Printed by deploy/attic/setup.sh on the cache server.
+      default = "tulsi:kyxaHhnwTqig/QD918khKlj2eX70SRcLBdv7hl1miw0=";
+      description = "Public signing key of the cache. Set to null to stop using the cache.";
     };
   };
 

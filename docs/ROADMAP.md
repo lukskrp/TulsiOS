@@ -76,7 +76,7 @@ Known limits, picked up later:
 - [x] `gtk3-o` and `otk` packaged in tulsipkgs (the `gtk3-o` flake input is gone)
 - [x] `tulsi-release.nix` (`built` / `curated`) and `check-upstream.sh`; `tulsi-build` and daily `tulsi-sync` workflows
 - [x] Attic deployment files for cache.skarptech.org (SkarpTech_Website `deploy/attic/`); `tulsi.cache` module
-- [ ] Cache server running; CI secrets set; `tulsi.cache.publicKey` filled in
+- [x] Cache server running; CI secrets set; `tulsi.cache.publicKey` filled in
 - [ ] A clean machine downloads Cinnamon from the TulsiOS cache instead of building it
 
 ## Phase 6b (in progress): Ocimum Desktop

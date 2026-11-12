@@ -30,8 +30,8 @@ from here on Ocimum goes its own way.
     unchanged parts of the desktop. `ci/tulsi/check-upstream.sh` fails if anything in
     it depends on something in `built`, which would make users compile it.
 - **Binary cache**: Attic at `https://cache.skarptech.org/tulsi` on the SkarpTech VPS.
-  The `tulsi.cache` module adds it ahead of cache.nixos.org once its public key is set
-  (`tulsi.cache.publicKey`); until then TulsiOS packages build locally, with a warning.
+  The `tulsi.cache` module adds it next to cache.nixos.org, trusting its public key
+  (`tulsi.cache.publicKey`); without the key TulsiOS packages build locally, with a warning.
 - **Ocimum Desktop** (`github.com/lukskrp/ocimum-desktop`, branch `ocimum`) is a hard
   fork of Cinnamon, currently based on 6.8.0. tulsipkgs builds `cinnamon` from it and
   the rest of the suite at the matching 6.8 releases. Ocimum changes do not have to stay

@@ -138,8 +138,7 @@ The flake's `nixpkgs` input is tulsipkgs (`github:lukskrp/tulsipkgs/tulsi-unstab
 TulsiOS's hard fork of nixpkgs: upstream `nixos-unstable`, merged daily, plus the
 software TulsiOS owns (the Ocimum Desktop suite, `gtk3-o`, `otk`). Everything else is
 the unchanged upstream derivation and comes from cache.nixos.org. TulsiOS's own builds
-come from `https://cache.skarptech.org/tulsi` (`tulsi.cache`, used once
-`tulsi.cache.publicKey` is set).
+come from `https://cache.skarptech.org/tulsi` (`tulsi.cache`).
 
 ### Ocimum Desktop, `nix/modules/ocimum-desktop.nix`
 Ocimum Desktop is a hard fork of Cinnamon (`github.com/lukskrp/ocimum-desktop`, branch
