@@ -40,6 +40,8 @@ from here on Ocimum goes its own way.
   wallpapers) is GTK 4 (≥ 4.18, gtk4-layer-shell). The rule for TulsiOS GUI code stays
   GTK3-O/OTK (ADR 0005). The daemon keeps GTK 4 until OTK has the GTK 4 features it
   needs; then it is ported to OTK and GTK 4 leaves the desktop.
+  *Resolved 2026-11-13:* the daemon is built with OTK (OTK 1 API) and Ocimum is
+  X11-only (ADR 0009).
 - **OTK** (`github.com/lukskrp/OTK`), the ABI-breaking GTK 3 fork, installs side by
   side with GTK 3 (`libotk-3`, `otk-3.0.pc`, GIR `Otk`/`Odk`) and is built by tulsipkgs.
   Its next goal is porting the useful GTK 4 features.
@@ -53,4 +55,5 @@ from here on Ocimum goes its own way.
   that is acceptable because none of them is in `curated`.
 - New Cinnamon releases are no longer merged automatically; taking upstream changes is
   a deliberate porting decision.
-- GTK 4 is in the desktop closure until the background daemon is ported to OTK.
+- GTK 4 was in the desktop closure until the background daemon moved to OTK
+  (2026-11-13); it now arrives only through upstream `ibus`.

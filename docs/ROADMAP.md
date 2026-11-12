@@ -85,9 +85,13 @@ Known limits, picked up later:
 - [x] The whole Cinnamon 6.8 suite built by tulsipkgs; `cinnamon` PAM service for the 6.8 screen locker
 - [x] `ocimum.desktop`: Mint-Y-Dark, basil wallpaper, Super+A opens the Assistant; `checks.ocimum-desktop`
 - [ ] Panel applet for the Assistant; TulsiOS default panel layout
-- [ ] Port Cinnamon 6.8's GTK 4 background daemon to OTK (after OTK gains the GTK 4 features it needs)
+- [x] Background daemon on OTK (OTK 1 API: monitor list model, connector, `gtk_disable_portals()`);
+      Ocimum is X11-only; `checks.ocimum-desktop` checks the painted wallpaper colour live
+- [ ] OTK: port GTK 4's rendering engine as the OSK module (ADR 0009)
 - [ ] Package Velocitty, or choose the default terminal for good
 
 Known limits:
 - Super+Space stays Cinnamon's keyboard-layout switcher, so the Assistant uses Super+A.
-- GTK 4 is in the desktop closure for the background daemon until it is ported to OTK.
+- Cinnamon no longer uses GTK 4, but upstream `ibus` (its GTK 4 input-method module) still
+  brings `gtk4` into the desktop closure, and `xapp` brings the GTK 3 `gtk-layer-shell`.
+- No Wayland session: Ocimum runs on X11 (XLibre to come, ADR 0009).

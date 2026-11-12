@@ -114,7 +114,8 @@ def test_streamed_turn_and_request_shape(api):
     assert body["fallbacks"] == "default"
     assert body["tools"][0]["eager_input_streaming"] is True
     assert FALLBACK_BETA in headers.get("anthropic-beta", "")
-    assert headers["x-api-key"] == "sk-test"
+    # The key is sent as x-api-key (SDK < 2.3) or as a bearer token (2.3+).
+    assert headers.get("x-api-key") == "sk-test" or headers.get("authorization") == "Bearer sk-test"
 
 
 def test_history_with_thinking_blocks_can_be_sent_back(api):
