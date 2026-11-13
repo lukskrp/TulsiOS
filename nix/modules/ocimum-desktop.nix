@@ -36,7 +36,11 @@ in
   config = lib.mkIf cfg.enable {
     services.xserver.enable = true;
     services.xserver.desktopManager.cinnamon.enable = true;
-    services.xserver.displayManager.lightdm.enable = true;
+    # Login screen: greetd + the Ocimum Greeter (ADR 0010). Never LightDM.
+    ocimum.greeter = {
+      enable = true;
+      wallpaper = lib.mkDefault wallpaper;
+    };
     services.displayManager.autoLogin = lib.mkIf (cfg.autoLoginUser != null) {
       enable = true;
       user = cfg.autoLoginUser;

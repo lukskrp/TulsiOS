@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocimum-greeter"
+version = "0.1.0"
+description = "Ocimum Greeter: TulsiOS's login screen for greetd (OTK, on XLibre)"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+ocimum-greeter = "ocimum_greeter.app:main"
+
+[tool.setuptools.packages.find]
+include = ["ocimum_greeter*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

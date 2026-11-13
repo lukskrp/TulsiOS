@@ -64,6 +64,7 @@
           tulsi-package-index
           ocimum-software-center
           ocimum-assistant
+          ocimum-greeter
           ;
         default = pkgs.tulsi-tools;
       });
@@ -116,7 +117,7 @@
           test = file: pkgs.testers.runNixOSTest (import file { inherit self; });
         in
         {
-          inherit (pkgs) tulsi-tools ocimum-software-center ocimum-assistant;
+          inherit (pkgs) tulsi-tools ocimum-software-center ocimum-assistant ocimum-greeter;
           gtk3-o-abi = pkgs.gtk3-o.abiCheck;
           vm-toplevel = self.nixosConfigurations.tulsi-vm.config.system.build.toplevel;
           state-packages = test ./nix/tests/state-packages.nix;
@@ -126,6 +127,7 @@
           mcp = test ./nix/tests/mcp.nix;
           assistant = test ./nix/tests/assistant.nix;
           ocimum-desktop = test ./nix/tests/ocimum-desktop.nix;
+          greeter-login = test ./nix/tests/ocimum-greeter.nix;
         };
     };
 }

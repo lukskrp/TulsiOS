@@ -10,6 +10,7 @@
     ./software-center.nix
     ./assistant.nix
     ./ocimum-desktop.nix
+    ./ocimum-greeter.nix
     ./gtk3-o.nix
     ./cache.nix
   ];

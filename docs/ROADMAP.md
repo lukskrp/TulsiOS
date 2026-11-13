@@ -93,6 +93,11 @@ Known limits, picked up later:
       `OTK_RENDERER=legacy|cairo|gl`; GTK 3's suites give identical results with both renderers
 - [x] XLibre 25.1.11 is the X server (tulsipkgs' `xorg-server`), with XLibre's forks of every
       `xf86-*` driver; `checks.ocimum-desktop` checks the session runs on XLibre's server and drivers
+- [x] Login screen (ADR 0010): greetd + the Ocimum Greeter (OTK) on XLibre, X servers run as
+      the user; no LightDM/SDDM/GDM; `checks.greeter-login` logs in through it
+- [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
+- [ ] `cinnamon-session-quit` (Cinnamon 6.8's Python tool) fails with "Namespace Gtk not available":
+      its typelibs are not wrapped in tulsipkgs' cinnamon-session; the session menu's logout works
 - [ ] OSK: GSK's GL renderer on X11
 - [ ] Package Velocitty, or choose the default terminal for good
 

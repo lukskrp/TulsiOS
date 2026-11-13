@@ -6,4 +6,5 @@ final: prev: {
   tulsi-package-index = final.callPackage ../packages/package-index.nix { nixpkgsSrc = nixpkgs-src; };
   ocimum-software-center = final.callPackage ../packages/ocimum-software-center.nix { };
   ocimum-assistant = final.callPackage ../packages/ocimum-assistant.nix { };
+  ocimum-greeter = final.callPackage ../packages/ocimum-greeter.nix { };
 }
