@@ -89,7 +89,10 @@ Known limits, picked up later:
       Ocimum is X11-only; `checks.ocimum-desktop` checks the painted wallpaper colour live
 - [x] OSK core (ADR 0009): GTK 4.24's render nodes, `.node` format, textures and Cairo renderer as
       `libosk-3` (`osk-3.0`, `Osk-3.0`); GTK 4's GSK tests pass with the Cairo renderer
-- [ ] OSK: `GtkSnapshot` and a widget `snapshot` vfunc in OTK, `OTK_RENDERER=legacy|cairo|gl`
+- [x] OSK: `GtkSnapshot` and the widget `snapshot` vfunc (OTK 2, `libotk-3.so.1`),
+      `OTK_RENDERER=legacy|cairo|gl`; GTK 3's suites give identical results with both renderers
+- [x] XLibre 25.1.11 is the X server (tulsipkgs' `xorg-server`), with XLibre's forks of every
+      `xf86-*` driver; `checks.ocimum-desktop` checks the session runs on XLibre's server and drivers
 - [ ] OSK: GSK's GL renderer on X11
 - [ ] Package Velocitty, or choose the default terminal for good
 
@@ -97,4 +100,5 @@ Known limits:
 - Super+Space stays Cinnamon's keyboard-layout switcher, so the Assistant uses Super+A.
 - Cinnamon no longer uses GTK 4, but upstream `ibus` (its GTK 4 input-method module) still
   brings `gtk4` into the desktop closure, and `xapp` brings the GTK 3 `gtk-layer-shell`.
-- No Wayland session: Ocimum runs on X11 (XLibre to come, ADR 0009).
+- No Wayland session: Ocimum runs on X11, served by XLibre (ADR 0009).
+- `tigervnc` (and Xvfb in build sandboxes) still use Xorg 21.1, as `xorg-server-xorg` in tulsipkgs.

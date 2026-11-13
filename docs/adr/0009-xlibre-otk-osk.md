@@ -15,6 +15,9 @@ ADR 0008), and the project wants its own direction for the display stack and ini
   `-Dwayland=false`; the Wayland code stays in its tree, unbuilt. XLibre has no
   fractional scaling yet; that is future work. XLibre is packaged in tulsipkgs as its
   own track.
+  *Done 2026-11-13:* tulsipkgs' `xorg-server` is XLibre 25.1.11, and every `xf86-*`
+  driver is XLibre's fork (its driver ABI differs from Xorg 21.1's). Xorg 21.1 stays as
+  `xorg-server-xorg` for tigervnc and Xvfb. NixOS's X server module needed no changes.
 - **OTK takes features from GTK 4** where they are worth having, behind the
   `GDK_AVAILABLE_IN_OTK_n` markers and `OTK_API_VERSION`. OTK 1 (2026-11-12): the monitor
   list model, connector names, `gdk_monitor_get_scale()`, `gtk_disable_portals()`, and
@@ -29,6 +32,10 @@ ADR 0008), and the project wants its own direction for the display stack and ini
   *Stage 1 done 2026-11-13:* OTK `3.24.52-otk.3` ships `libosk-3` built from GTK
   4.24.0 (render nodes, `.node` format, textures, colour states, Cairo renderer);
   OSK's `GdkSurface` is ODK's `GdkWindow` and `GdkRGBA` keeps ODK's double components.
+  *Stage 2 done 2026-11-13:* OTK `3.24.52-otk.4` (OTK 2): `GtkSnapshot` in `libosk-3`,
+  `GtkWidgetClass.snapshot` (the first ABI break, so `libotk-3.so.1`),
+  `gtk_widget_snapshot_child()`, and `OTK_RENDERER=legacy|cairo|gl` (gl is cairo until
+  stage 3).
 - **systemd from OpenMandriva** (`github.com/OpenMandrivaAssociation/systemd`): nixpkgs'
   systemd at OpenMandriva's version with their patches that apply outside RPM, installed
   through NixOS's `systemd.package`, so packages linking libsystemd keep coming from
@@ -39,5 +46,5 @@ ADR 0008), and the project wants its own direction for the display stack and ini
 - Wayland-only features (layer shell, fractional-scale-v1) are not ported to OTK.
 - OTK keeps GTK 3's API and source compatibility; OTK-only API is additive until OSK's
   widget stage, which changes `GtkWidgetClass` (allowed: OTK breaks ABI by design).
-- XLibre and the OpenMandriva systemd each need their own packaging and tests before
-  TulsiOS switches to them.
+- The OpenMandriva systemd needs its own packaging and tests before TulsiOS switches to
+  it. XLibre has switched (above).

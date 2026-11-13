@@ -1,6 +1,7 @@
 # Ocimum Desktop: the tulsipkgs Cinnamon fork is what gets installed, the
-# TulsiOS defaults (theme, wallpaper, menu icon, Assistant shortcut) apply, and
-# the session's wallpaper is painted by the OTK background daemon.
+# TulsiOS defaults (theme, wallpaper, menu icon, Assistant shortcut) apply, the
+# session runs on XLibre with XLibre's drivers, and the session's wallpaper is
+# painted by the OTK background daemon.
 { self }:
 {
   name = "ocimum-desktop";
@@ -82,6 +83,20 @@
               "gdbus call --session -d org.Cinnamon -o /org/Cinnamon -m org.Cinnamon.Eval Main.runState' "
               "| grep -q 'true,..2'"
           )
+
+      with subtest("the display server is XLibre, with XLibre's drivers"):
+          version = machine.succeed("X -version 2>&1")
+          assert "XLibre X Server" in version, version
+          pid = machine.succeed("pgrep -o -x X || pgrep -o -x Xorg").strip()
+          exe = machine.succeed(f"readlink /proc/{pid}/exe").strip()
+          assert "-xlibre-xserver-" in exe, exe
+          maps = machine.succeed(f"cat /proc/{pid}/maps")
+          drivers = sorted(set(re.findall(r"/nix/store/[a-z0-9]{32}-([^/]+)/lib/xorg/modules/(\S+_drv\.so)", maps)))
+          machine.log(f"X drivers: {drivers}")
+          # modesetting is built into the server; input goes through XLibre's
+          # libinput fork, from its per-ABI module directory.
+          assert any(p.startswith("xlibre-xserver-") and m.endswith("/modesetting_drv.so") for p, m in drivers), drivers
+          assert any(p.startswith("xf86-input-libinput-") and m == "xlibre-25/input/libinput_drv.so" for p, m in drivers), drivers
 
       with subtest("the background daemon runs on OTK, not GTK 4"):
           machine.wait_until_succeeds("pgrep -f libexec/cinnamon-background-daemon")
