@@ -26,6 +26,9 @@ ADR 0008), and the project wants its own direction for the display stack and ini
   so GTK 4 code ports easily. Stages: core + Cairo renderer; widget `snapshot` with
   `OTK_RENDERER=legacy|cairo|gl`; the GL renderer on X11; later Vulkan and TulsiOS's own
   tuning.
+  *Stage 1 done 2026-11-13:* OTK `3.24.52-otk.3` ships `libosk-3` built from GTK
+  4.24.0 (render nodes, `.node` format, textures, colour states, Cairo renderer);
+  OSK's `GdkSurface` is ODK's `GdkWindow` and `GdkRGBA` keeps ODK's double components.
 - **systemd from OpenMandriva** (`github.com/OpenMandrivaAssociation/systemd`): nixpkgs'
   systemd at OpenMandriva's version with their patches that apply outside RPM, installed
   through NixOS's `systemd.package`, so packages linking libsystemd keep coming from

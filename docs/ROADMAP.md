@@ -87,7 +87,10 @@ Known limits, picked up later:
 - [ ] Panel applet for the Assistant; TulsiOS default panel layout
 - [x] Background daemon on OTK (OTK 1 API: monitor list model, connector, `gtk_disable_portals()`);
       Ocimum is X11-only; `checks.ocimum-desktop` checks the painted wallpaper colour live
-- [ ] OTK: port GTK 4's rendering engine as the OSK module (ADR 0009)
+- [x] OSK core (ADR 0009): GTK 4.24's render nodes, `.node` format, textures and Cairo renderer as
+      `libosk-3` (`osk-3.0`, `Osk-3.0`); GTK 4's GSK tests pass with the Cairo renderer
+- [ ] OSK: `GtkSnapshot` and a widget `snapshot` vfunc in OTK, `OTK_RENDERER=legacy|cairo|gl`
+- [ ] OSK: GSK's GL renderer on X11
 - [ ] Package Velocitty, or choose the default terminal for good
 
 Known limits:
