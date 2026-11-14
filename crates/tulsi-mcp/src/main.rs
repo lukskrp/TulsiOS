@@ -3,7 +3,7 @@
 //! Lets AI agents search packages, inspect the system and propose changes.
 //! Every change is shown to the human for approval before tulsid applies it.
 //!
-//! usage: tulsi-mcp [--approval auto|dialog|elicitation] [--approver PROGRAM [ARGS…]]
+//! usage: tulsi-mcp [--approval auto|dialog|elicitation|starah] [--approver PROGRAM [ARGS…]]
 //!
 //! With `--approver`, that program is always asked (mode `dialog`) unless
 //! `--approval` says otherwise. It must come last: it takes the remaining args.

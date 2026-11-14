@@ -67,3 +67,17 @@ you. It does not sandbox the agent. An agent that can also run shell commands co
 run `tulsi` or `sudo` directly, and then only polkit (password prompts) stands in the
 way. For an agent you do not fully trust, give it tulsi-mcp but no shell. The polkit
 defaults (`auth_admin_keep`) still apply to everything tulsid does.
+
+**With Starah** (ADR 0011, on by default on the Ocimum Desktop), the agent is not you.
+- **How tulsi-mcp runs.** The Assistant starts it as the Starah agent `assistant`:
+  `starah run --agent assistant -- tulsi-mcp --approval starah`. It runs under its own
+  account in a sandbox, where `sudo`, `su` and `pkexec` don't work and the system and home
+  directories can't be touched.
+- **Who decides.** Starah answers every polkit question about that account, including
+  tulsid's `org.tulsi.apply`, from the level you chose.
+  - At level 1 (Propose) each change appears in Starah's **Agent Request** window with the
+    same description, reason and diff.
+  - At level 3 (Administer) packages and configuration edits go ahead on their own, and
+    are audited.
+- **A shell doesn't help.** Even an agent with a shell inside that sandbox gets only what
+  its level allows.

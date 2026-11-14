@@ -1,6 +1,7 @@
 # The Ocimum Assistant end to end in X11, with a scripted model (no network):
-# the conversation drives real tulsi-mcp tool calls against a real tulsid, and
-# the change is approved by a stand-in approver.
+# the conversation drives real tulsi-mcp tool calls against a real tulsid.
+# tulsi-mcp runs as the Starah agent `assistant` (level 1, Propose): the change
+# waits as a Starah request until the human approves it.
 { self }:
 let
   script = [
@@ -59,14 +60,25 @@ in
         rebuildCommand = [ "${pkgs.coreutils}/bin/true" ];
       };
       ocimum.assistant.enable = true;
+      services.starah = {
+        enable = true;
+        session.enable = false;
+      };
+      # `su` shells are not active local sessions: let wheel answer Starah here.
+      security.polkit.extraConfig = ''
+        polkit.addRule(function(action, subject) {
+          if (action.id.indexOf("org.starah.") == 0 && subject.isInGroup("wheel")) {
+            return polkit.Result.YES;
+          }
+        });
+      '';
 
       environment.systemPackages = [
         pkgs.git
         pkgs.glib.bin # gdbus
+        pkgs.jq
       ];
       environment.etc."assistant/script.json".text = builtins.toJSON script;
-      environment.etc."assistant/approve".source =
-        pkgs.writeShellScript "approve" "cat > /tmp/approval.json";
     };
 
   testScript = ''
@@ -90,7 +102,7 @@ in
     env += (
         " OCIMUM_ASSISTANT_PROVIDER=fake:/etc/assistant/script.json"
         " OCIMUM_ASSISTANT_FAKE_LOG=/tmp/fake-model.jsonl"
-        " OCIMUM_ASSISTANT_MCP=\"tulsi-mcp --approver /etc/assistant/approve\""
+        " OCIMUM_ASSISTANT_MCP=\"starah run --agent assistant -- tulsi-mcp --approval starah\""
     )
 
     def alice(cmd):
@@ -104,11 +116,28 @@ in
         machine.sleep(2)
         machine.screenshot("assistant-start")
 
-    with subtest("a plain-language request becomes an approved change"):
+    with subtest("a plain-language request becomes a Starah request, then an approved change"):
         machine.succeed(alice(
             "gdbus call --session --dest org.tulsi.Assistant --object-path /org/tulsi/Assistant "
             "--method org.gtk.Actions.Activate ask \"[<\\\"install cowsay please\\\">]\" \"{}\""
         ))
+        machine.wait_until_succeeds("starah requests | grep -q assistant", timeout=timedelta(minutes=2))
+        pending = json.loads(machine.succeed(
+            "busctl --json=short call org.starah.Broker1 /org/starah/Broker1 org.starah.Broker1 Requests"
+            " | jq -r .data[0]"
+        ))
+        assert len(pending) == 1, pending
+        approval = pending[0]
+        assert approval["agent"] == "assistant" and approval["action"] == "org.tulsi.apply", approval
+        assert approval["description"]["changes"] == ["+ package cowsay"], approval
+        assert approval["description"]["reason"] == "The user asked for cowsay.", approval
+        # tulsi-mcp runs as the Starah agent, sandboxed, not as alice.
+        machine.succeed("pgrep -u starah-assistant -x tulsi-mcp")
+        machine.fail("pgrep -u alice -x tulsi-mcp")
+        # Nothing happens before the human answers.
+        machine.sleep(2)
+        machine.fail("grep -q cowsay /etc/nixos/tulsi/state.json")
+        machine.succeed(alice(f"starah approve {approval['id']}"))
         machine.wait_until_succeeds("grep -q cowsay /etc/nixos/tulsi/state.json", timeout=timedelta(minutes=2))
         machine.wait_until_succeeds("test $(wc -l < /tmp/fake-model.jsonl) -ge 3", timeout=timedelta(minutes=1))
         machine.sleep(2)
@@ -121,10 +150,12 @@ in
         assert search_result["type"] == "tool_result" and "cowsay" in search_result["content"], search_result
         apply_result = requests[2]["messages"][-1]["content"][0]
         assert "Applied and rebuilt" in apply_result["content"], apply_result
-        approval = json.loads(machine.succeed("cat /tmp/approval.json"))
-        assert approval["changes"] == ["+ package cowsay"], approval
-        assert approval["reason"] == "The user asked for cowsay.", approval
         machine.succeed("git -C /etc/nixos log -1 --format=%s | grep -qx 'tulsi: install cowsay'")
+
+    with subtest("Starah audited the request, the decision and tulsid's check"):
+        audit = machine.succeed("starah audit 100")
+        assert '"event":"ask"' in audit and '"event":"decide"' in audit, audit
+        assert '"action":"org.tulsi.apply"' in audit and '"outcome":"allow"' in audit, audit
 
     machine.succeed("cat /tmp/assistant.log >&2")
   '';

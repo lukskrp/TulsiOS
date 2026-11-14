@@ -2,6 +2,9 @@
 #
 # Uses Claude (Anthropic API) by default, with tulsi-mcp as its only tool set:
 # every change is shown in the ocimum-approve dialog before tulsid applies it.
+# With Starah enabled, tulsi-mcp instead runs as the Starah agent `assistant`
+# (its own sandboxed account), and Starah's level for it decides what it may do on
+# its own; the rest waits for the human in Starah's Agent Request window.
 # The API key is stored in the user's keyring from the app's Settings.
 {
   config,
@@ -25,7 +28,16 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable (lib.mkMerge [
+    (lib.mkIf config.services.starah.enable {
+      services.starah.agents.assistant = {
+        level = lib.mkDefault 1;
+        description = "Ocimum Assistant: installs software and edits the configuration through tulsi-mcp";
+      };
+      environment.sessionVariables.OCIMUM_ASSISTANT_MCP =
+        "starah run --agent assistant -- tulsi-mcp --approval starah";
+    })
+    {
     assertions = [
       {
         assertion = config.tulsi.daemon.enable;
@@ -37,5 +49,6 @@ in
     ocimum.softwareCenter.enable = lib.mkDefault true;
     # Where the API key is kept.
     services.gnome.gnome-keyring.enable = lib.mkDefault true;
-  };
+    }
+  ]);
 }

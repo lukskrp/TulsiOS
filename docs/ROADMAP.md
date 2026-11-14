@@ -97,6 +97,9 @@ Known limits, picked up later:
       the user; no LightDM/SDDM/GDM; `checks.greeter-login` logs in through it
 - [x] TulsiOS boots the newest stable kernel (`linuxPackages_latest`, 7.3.4) with redistributable
       firmware (`nix/modules/kernel.nix`); LTS via `boot.kernelPackages = pkgs.linuxPackages`
+- [x] Starah (ADR 0011, `~/Starah`): levels of privilege for agents; the Assistant's tulsi-mcp runs as
+      the sandboxed agent `assistant`; first-login setup window; `checks.starah-setup`
+- [ ] Starah: Landlock/network rules per agent, panel indicator for requests, push `lukskrp/Starah`
 - [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
 - [x] `cinnamon-session-quit` works: tulsipkgs' cinnamon-session wraps its typelibs; `otk`
       propagates `graphene`, so Python OTK apps need only `otk`

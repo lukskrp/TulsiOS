@@ -41,6 +41,9 @@ in
       enable = true;
       wallpaper = lib.mkDefault wallpaper;
     };
+    # Starah (ADR 0011): agents get privileges only through the levels the human
+    # chooses at first login.
+    services.starah.enable = lib.mkDefault true;
     services.displayManager.autoLogin = lib.mkIf (cfg.autoLoginUser != null) {
       enable = true;
       user = cfg.autoLoginUser;

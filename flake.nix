@@ -5,12 +5,18 @@
     # tulsipkgs: TulsiOS's fork of nixpkgs (Ocimum Desktop, GTK3-O, …).
     # Branch tulsi-unstable = upstream nixos-unstable + TulsiOS packages.
     nixpkgs.url = "github:lukskrp/tulsipkgs/tulsi-unstable";
+    # Starah: levels of privilege for AI agents (ADR 0011).
+    starah = {
+      url = "github:lukskrp/Starah";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
     {
       self,
       nixpkgs,
+      starah,
       ...
     }:
     let
@@ -45,7 +51,10 @@
           ...
         }:
         {
-          imports = [ ./nix/modules ];
+          imports = [
+            ./nix/modules
+            starah.nixosModules.default
+          ];
           # A bootstrapped system flake uses this source tree as its input…
           tulsi.daemon.bootstrap.source = lib.mkDefault self.outPath;
           # …and needs the pinned nixpkgs source to evaluate offline.
@@ -128,6 +137,7 @@
           assistant = test ./nix/tests/assistant.nix;
           ocimum-desktop = test ./nix/tests/ocimum-desktop.nix;
           greeter-login = test ./nix/tests/ocimum-greeter.nix;
+          starah-setup = test ./nix/tests/starah-setup.nix;
         };
     };
 }

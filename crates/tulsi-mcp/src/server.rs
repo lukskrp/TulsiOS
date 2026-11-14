@@ -12,6 +12,24 @@ use crate::transport::{Transport, INVALID_PARAMS, METHOD_NOT_FOUND};
 /// supported, otherwise the newest is offered.
 const PROTOCOL_VERSIONS: [&str; 4] = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const REQUESTER: &str = "an AI agent (through tulsi-mcp)";
+const ACTION_APPLY: &str = "org.tulsi.apply";
+const ACTION_EXTENSIONS: &str = "org.tulsi.extensions";
+
+/// The polkit action tulsid checks for these operations (same rule as tulsid's
+/// required_action): changes that only touch browser extensions have their own.
+fn polkit_action(ops_json: &str) -> &'static str {
+    match serde_json::from_str::<Vec<Op>>(ops_json) {
+        Ok(ops)
+            if !ops.is_empty()
+                && ops.iter().all(|op| {
+                    matches!(op, Op::AddExtension { .. } | Op::RemoveExtension { .. })
+                }) =>
+        {
+            ACTION_EXTENSIONS
+        }
+        _ => ACTION_APPLY,
+    }
+}
 
 const INSTRUCTIONS: &str = "\
 TulsiOS is a NixOS-based system managed declaratively. Use these tools instead of \
@@ -283,6 +301,7 @@ impl<B: Backend> Server<B> {
             changes: plan.changes.clone(),
             diff: None,
             requester: REQUESTER.into(),
+            action: polkit_action(&ops),
         };
         self.approved(&request, transport).await?;
         job_output(self.backend.apply(&ops).await?)
@@ -311,6 +330,7 @@ impl<B: Backend> Server<B> {
             )],
             diff: None,
             requester: REQUESTER.into(),
+            action: ACTION_APPLY,
         };
         self.approved(&request, transport).await?;
         job_output(self.backend.undo().await?)
@@ -357,6 +377,7 @@ impl<B: Backend> Server<B> {
             changes: vec![format!("Edit configuration.nix: {summary}")],
             diff: Some(plan.diff),
             requester: REQUESTER.into(),
+            action: ACTION_APPLY,
         };
         self.approved(&request, transport).await?;
         job_output(self.backend.apply_config(contents, summary).await?)

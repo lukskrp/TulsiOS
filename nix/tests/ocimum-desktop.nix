@@ -15,6 +15,9 @@
       ];
       ocimum.desktop.enable = true;
       ocimum.desktop.autoLoginUser = "alice";
+      # Starah's first-login window would cover the sampled desktop pixel; it has
+      # its own test (starah-setup).
+      services.starah.session.enable = false;
       # Diagnostics for the wallpaper subtest.
       environment.systemPackages = [ pkgs.xprop ];
       virtualisation.memorySize = 2048;
