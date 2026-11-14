@@ -72,12 +72,12 @@
           machine.screenshot("desktop_after_login")
 
       with subtest("logging out brings the greeter back, which remembers the user"):
-          # Log out like the session menu does: through the session manager (1 = no
-          # confirmation dialog).
+          # Log out with Cinnamon's own tool (Python + Gtk/XApp typelibs), without the
+          # confirmation dialog.
           machine.succeed(
               "su - alice -c 'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus "
-              "gdbus call --session -d org.gnome.SessionManager -o /org/gnome/SessionManager "
-              "-m org.gnome.SessionManager.Logout 1'"
+              "DISPLAY=:0 XAUTHORITY=/run/user/1000/ocimum-xauthority "
+              "cinnamon-session-quit --logout --no-prompt'"
           )
           machine.wait_until_succeeds("pgrep -u greeter -f 'ocimum-greeter --config'", timeout=120)
           machine.succeed("grep -x alice /var/cache/ocimum-greeter/last-user")

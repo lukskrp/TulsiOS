@@ -96,8 +96,8 @@ Known limits, picked up later:
 - [x] Login screen (ADR 0010): greetd + the Ocimum Greeter (OTK) on XLibre, X servers run as
       the user; no LightDM/SDDM/GDM; `checks.greeter-login` logs in through it
 - [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
-- [ ] `cinnamon-session-quit` (Cinnamon 6.8's Python tool) fails with "Namespace Gtk not available":
-      its typelibs are not wrapped in tulsipkgs' cinnamon-session; the session menu's logout works
+- [x] `cinnamon-session-quit` works: tulsipkgs' cinnamon-session wraps its typelibs; `otk`
+      propagates `graphene`, so Python OTK apps need only `otk`
 - [ ] OSK: GSK's GL renderer on X11
 - [ ] Package Velocitty, or choose the default terminal for good
 

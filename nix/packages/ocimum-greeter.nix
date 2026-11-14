@@ -6,7 +6,6 @@
   wrapGAppsHook3,
   gobject-introspection,
   otk,
-  graphene,
   librsvg,
 }:
 
@@ -30,8 +29,7 @@ python3Packages.buildPythonApplication {
     gobject-introspection
   ];
   buildInputs = [
-    otk # Otk-3.0 / Odk-3.0 typelibs
-    graphene # Otk-3.0 includes Osk-3.0 (OTK 2), which needs Graphene-1.0
+    otk # Otk-3.0 / Odk-3.0 typelibs (otk propagates graphene for Osk-3.0)
     librsvg # the SVG wallpaper, through gdk-pixbuf
   ];
   dependencies = with python3Packages; [ pygobject3 ];
