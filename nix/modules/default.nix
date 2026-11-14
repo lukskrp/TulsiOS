@@ -13,5 +13,6 @@
     ./ocimum-greeter.nix
     ./gtk3-o.nix
     ./cache.nix
+    ./kernel.nix
   ];
 }

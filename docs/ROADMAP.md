@@ -95,6 +95,8 @@ Known limits, picked up later:
       `xf86-*` driver; `checks.ocimum-desktop` checks the session runs on XLibre's server and drivers
 - [x] Login screen (ADR 0010): greetd + the Ocimum Greeter (OTK) on XLibre, X servers run as
       the user; no LightDM/SDDM/GDM; `checks.greeter-login` logs in through it
+- [x] TulsiOS boots the newest stable kernel (`linuxPackages_latest`, 7.3.4) with redistributable
+      firmware (`nix/modules/kernel.nix`); LTS via `boot.kernelPackages = pkgs.linuxPackages`
 - [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
 - [x] `cinnamon-session-quit` works: tulsipkgs' cinnamon-session wraps its typelibs; `otk`
       propagates `graphene`, so Python OTK apps need only `otk`
