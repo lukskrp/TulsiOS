@@ -86,13 +86,31 @@ impl Manager {
             return Ok(());
         };
         let mut problems = Vec::new();
+        let accepted = self
+            .current_state()
+            .map(|s| s.accepted_licenses)
+            .unwrap_or_default();
         for op in ops {
+            if let Op::AcceptLicense { name } = op {
+                if !self.cfg.unfree_agents.contains_key(name.as_str()) {
+                    problems.push(format!(
+                        "the licence of \"{name}\" cannot be accepted here: it is not one of                          the unfree packages TulsiOS allows (tulsi.daemon.unfreeAgents)"
+                    ));
+                }
+                continue;
+            }
             let Op::AddPackage { name } = op else {
                 continue;
             };
             if name.contains('.') {
                 continue;
             }
+            let licence_ok = |name: &str| {
+                accepted.iter().any(|a| a == name)
+                    || ops
+                        .iter()
+                        .any(|o| matches!(o, Op::AcceptLicense { name: n } if n == name))
+            };
             match index.get(name) {
                 None => {
                     let hints = index.suggest(name, 3);
@@ -103,9 +121,19 @@ impl Manager {
                     };
                     problems.push(format!("unknown package \"{name}\"{hint}"));
                 }
-                Some(info) if info.unfree && !self.cfg.allow_unfree => problems.push(format!(
-                    "\"{name}\" is unfree; enable nixpkgs.config.allowUnfree to install it"
-                )),
+                Some(info) if info.unfree && !self.cfg.allow_unfree => {
+                    match self.cfg.unfree_agents.get(name.as_str()) {
+                        Some(_) if licence_ok(name) => {}
+                        Some(l) => problems.push(format!(
+                            "\"{name}\" is unfree: a person must accept its licence first                              ({}{}). In the Software Center, installing it asks for this.",
+                            l.name,
+                            if l.url.is_empty() { String::new() } else { format!(", {}", l.url) }
+                        )),
+                        None => problems.push(format!(
+                            "\"{name}\" is unfree; enable nixpkgs.config.allowUnfree to install it"
+                        )),
+                    }
+                }
                 Some(_) => {}
             }
         }
@@ -117,12 +145,45 @@ impl Manager {
     }
 
     fn mark_installed(&self, mut infos: Vec<PackageInfo>) -> Vec<PackageInfo> {
-        if let Ok(state) = self.current_state() {
-            for info in &mut infos {
+        let state = self.current_state().ok();
+        for info in &mut infos {
+            if let Some(state) = &state {
                 info.installed = state.packages.contains(&info.attr);
+                info.license_accepted = state.accepted_licenses.contains(&info.attr);
+            }
+            if info.unfree && !self.cfg.allow_unfree {
+                info.license = self.cfg.unfree_agents.get(info.attr.as_str()).cloned();
             }
         }
         infos
+    }
+
+    /// Licences are accepted by people. Starah agents (system users `starah-*`, see
+    /// ADR 0011) may install an agent whose licence was accepted, never accept one.
+    async fn refuse_agent_licence(
+        &self,
+        conn: &Connection,
+        hdr: &Header<'_>,
+        ops: &[Op],
+    ) -> Result<()> {
+        if !ops.iter().any(|o| matches!(o, Op::AcceptLicense { .. })) {
+            return Ok(());
+        }
+        let sender = hdr
+            .sender()
+            .ok_or_else(|| TulsiError::NotAuthorized("message has no sender".into()))?;
+        let dbus = zbus::fdo::DBusProxy::new(conn).await?;
+        let uid = dbus
+            .get_connection_unix_user(sender.clone().into())
+            .await
+            .map_err(|e| TulsiError::Failed(e.to_string()))?;
+        if user_name(uid).is_some_and(|u| u.starts_with("starah-")) {
+            return Err(TulsiError::NotAuthorized(
+                "an AI agent cannot accept a software licence; a person has to, in the                  Software Center"
+                    .into(),
+            ));
+        }
+        Ok(())
     }
 
     async fn authorize(&self, conn: &Connection, hdr: &Header<'_>, action: &str) -> Result<()> {
@@ -216,6 +277,7 @@ impl Manager {
     ) -> Result<u64> {
         let ops = parse_ops(ops)?;
         self.check_packages(&ops)?;
+        self.refuse_agent_licence(conn, &hdr, &ops).await?;
         self.authorize(conn, &hdr, required_action(&ops)).await?;
         let guard = self.try_lock()?;
         let old = self.current_state()?;
@@ -375,6 +437,17 @@ fn parse_ops(ops: &str) -> Result<Vec<Op>> {
         return Err(TulsiError::Invalid("no operations given".into()));
     }
     Ok(ops)
+}
+
+/// uid → user name, from /etc/passwd.
+fn user_name(uid: u32) -> Option<String> {
+    let passwd = std::fs::read_to_string("/etc/passwd").ok()?;
+    passwd.lines().find_map(|line| {
+        let mut f = line.split(':');
+        let name = f.next()?;
+        f.next()?;
+        (f.next()?.parse::<u32>().ok()? == uid).then(|| name.to_string())
+    })
 }
 
 /// Collapses a free-text summary into one short line for a commit message.

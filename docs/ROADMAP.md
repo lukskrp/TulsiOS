@@ -100,6 +100,8 @@ Known limits, picked up later:
 - [x] Starah (ADR 0011, `~/Starah`): levels of privilege for agents; the Assistant's tulsi-mcp runs as
       the sandboxed agent `assistant`; first-login setup window; `checks.starah-setup`
 - [ ] Starah: Landlock/network rules per agent, panel indicator for requests
+- [x] AI agent CLIs (ADR 0012): tulsipkgs fast-tracks free ones (`tulsi-agents.yml`, PR per release);
+      proprietary ones install after a person accepts their licence in the Software Center
 - [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
 - [x] `cinnamon-session-quit` works: tulsipkgs' cinnamon-session wraps its typelibs; `otk`
       propagates `graphene`, so Python OTK apps need only `otk`

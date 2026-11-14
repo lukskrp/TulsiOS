@@ -21,6 +21,10 @@ class Package:
     description: str = ""
     unfree: bool = False
     installed: bool = False
+    # Unfree agents on tulsid's allow-list: the licence to accept before installing.
+    license_name: str = ""
+    license_url: str = ""
+    license_accepted: bool = False
 
     @classmethod
     def from_json(cls, data: dict) -> "Package":
@@ -31,7 +35,15 @@ class Package:
             description=data.get("description") or "",
             unfree=bool(data.get("unfree")),
             installed=bool(data.get("installed")),
+            license_name=(data.get("license") or {}).get("name", ""),
+            license_url=(data.get("license") or {}).get("url", ""),
+            license_accepted=bool(data.get("license_accepted")),
         )
+
+    @property
+    def needs_license(self) -> bool:
+        """An allow-listed unfree package whose licence nobody accepted yet."""
+        return bool(self.license_name) and not self.license_accepted
 
     @property
     def title(self) -> str:
@@ -56,8 +68,11 @@ def normalize_query(text: str) -> str | None:
     return query if len(query) >= MIN_QUERY_LENGTH else None
 
 
-def ops_install(attr: str) -> list[dict]:
-    return [{"op": "addPackage", "name": attr}]
+def ops_install(attr: str, accept_license: bool = False) -> list[dict]:
+    ops = [{"op": "addPackage", "name": attr}]
+    if accept_license:
+        ops.insert(0, {"op": "acceptLicense", "name": attr})
+    return ops
 
 
 def ops_remove(attr: str) -> list[dict]:
@@ -78,6 +93,7 @@ def extensions_of(state: dict) -> list[tuple[str, str]]:
 
 
 _CHANGE_WORDS = {
+    ("+", "licence accepted:"): "Accept the licence of",
     ("+", "package"): "Install",
     ("-", "package"): "Remove",
     ("+", "firefox extension"): "Add Firefox extension",

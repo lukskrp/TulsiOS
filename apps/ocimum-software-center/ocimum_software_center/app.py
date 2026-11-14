@@ -17,7 +17,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gio, GLib, Gtk  # noqa: E402
 
 from . import APP_ID, __version__  # noqa: E402
-from .model import ops_install, ops_remove  # noqa: E402
+from .model import ops_remove  # noqa: E402
 
 
 class Application(Gtk.Application):
@@ -28,8 +28,7 @@ class Application(Gtk.Application):
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
         string = GLib.VariantType.new("s")
-        self._action("install", string, lambda attr: self._win().request_change(
-            ops_install(attr), f"Installing {attr}", "Install"))
+        self._action("install", string, lambda attr: self._win().install(attr))
         self._action("remove", string, lambda attr: self._win().request_change(
             ops_remove(attr), f"Removing {attr}", "Remove"))
         self._action("search", string, self._search)

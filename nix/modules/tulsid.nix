@@ -23,6 +23,19 @@ let
     polkit = true;
     packageIndex = cfg.packageIndex;
     allowUnfree = config.nixpkgs.config.allowUnfree or false;
+    # Each allow-listed unfree agent with its licence, from the package's own metadata.
+    unfreeAgents = lib.genAttrs (lib.filter (n: pkgs ? ${n}) cfg.unfreeAgents) (
+      n:
+      let
+        meta = pkgs.${n}.meta;
+        licenses = lib.toList (meta.license or [ ]);
+        l = if licenses == [ ] then { } else builtins.head licenses;
+      in
+      {
+        name = l.fullName or l.shortName or "proprietary licence";
+        url = l.url or meta.homepage or "";
+      }
+    );
   };
 
   flakeTemplate = pkgs.writeText "tulsi-system-flake.nix" ''
@@ -110,6 +123,23 @@ in
         Package search index (JSON, see nix/packages/package-index.nix). Enables
         `Search` and instant rejection of unknown package names. The TulsiOS
         flake sets it to an index of the pinned nixpkgs.
+      '';
+    };
+
+    unfreeAgents = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [
+        "claude-code"
+        "amp-cli"
+        "cursor-cli"
+        "github-copilot-cli"
+        "crush"
+      ];
+      description = ''
+        Unfree AI agent CLIs that can be installed (Software Center, `tulsi`) once a
+        person accepts their licence. Accepting is recorded in state.json
+        (`acceptedLicenses`) and allows exactly that package through
+        `nixpkgs.config.allowUnfreePredicate`. Agents cannot accept licences.
       '';
     };
 

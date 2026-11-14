@@ -45,6 +45,8 @@ pub enum Op {
     AddExtension { browser: Browser, id: String },
     RemoveExtension { browser: Browser, id: String },
     SetService { name: String, enable: bool },
+    /// A person accepts the licence of an allow-listed unfree package.
+    AcceptLicense { name: String },
 }
 
 impl Op {
@@ -62,6 +64,7 @@ impl Op {
                 name,
                 enable: false,
             } => format!("disable service {name}"),
+            Op::AcceptLicense { name } => format!("accept the licence of {name}"),
         }
     }
 }
@@ -100,6 +103,7 @@ impl State {
                     next.services
                         .insert(name.clone(), Service { enable: *enable });
                 }
+                Op::AcceptLicense { name } => add(&mut next.accepted_licenses, name),
             }
         }
 
@@ -114,6 +118,12 @@ impl State {
     /// prefixed with `+` (added/enabled) or `-` (removed/disabled).
     pub fn diff(&self, other: &State) -> Vec<String> {
         let mut out = Vec::new();
+        list_diff(
+            &mut out,
+            "licence accepted:",
+            &self.accepted_licenses,
+            &other.accepted_licenses,
+        );
         list_diff(&mut out, "package", &self.packages, &other.packages);
         list_diff(
             &mut out,
@@ -230,6 +240,26 @@ mod tests {
                 r#"[{"op":"addExtension","browser":"chromium","id":"short"}]"#
             ))
             .is_err());
+    }
+
+    #[test]
+    fn accept_license_is_recorded_and_diffed_first() {
+        let base = State::default();
+        let next = base
+            .with_ops(&ops(
+                r#"[{"op":"acceptLicense","name":"claude-code"},
+                    {"op":"addPackage","name":"claude-code"}]"#,
+            ))
+            .unwrap();
+        assert_eq!(next.accepted_licenses, vec!["claude-code"]);
+        assert_eq!(
+            base.diff(&next),
+            vec!["+ licence accepted: claude-code", "+ package claude-code"]
+        );
+        // Older state files without the field still load, and stay without it.
+        let json = base.to_json_pretty();
+        assert!(!json.contains("acceptedLicenses"), "{json}");
+        assert!(next.to_json_pretty().contains("\"acceptedLicenses\""));
     }
 
     #[test]

@@ -24,6 +24,10 @@ pub struct Config {
     /// Mirrors `nixpkgs.config.allowUnfree`; unfree packages are refused otherwise.
     #[serde(default)]
     pub allow_unfree: bool,
+    /// Unfree packages (AI agent CLIs) that may be installed once a person accepts
+    /// their licence, with that licence: attr → { name, url }.
+    #[serde(default)]
+    pub unfree_agents: std::collections::BTreeMap<String, tulsi_client::License>,
 }
 
 fn yes() -> bool {

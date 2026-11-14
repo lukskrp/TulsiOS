@@ -21,6 +21,10 @@ let
   firefoxExtensions = state.browserExtensions.firefox or [ ];
   chromiumExtensions = state.browserExtensions.chromium or [ ];
   services = state.services or { };
+  # Licences a person accepted, limited to what tulsid allows (tulsi.daemon.unfreeAgents).
+  acceptedUnfree = lib.intersectLists (state.acceptedLicenses or [ ]) (
+    config.tulsi.daemon.unfreeAgents or [ ]
+  );
 
   # "vlc" or "python3Packages.requests" -> derivation, with a readable error.
   resolvePackage =
@@ -62,6 +66,11 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       { environment.systemPackages = map resolvePackage packageNames; }
+
+      # Unfree agent CLIs whose licence was accepted in the Software Center.
+      (lib.mkIf (acceptedUnfree != [ ]) {
+        nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) acceptedUnfree;
+      })
 
       (lib.mkIf (firefoxExtensions != [ ]) {
         programs.firefox.enable = lib.mkDefault true;

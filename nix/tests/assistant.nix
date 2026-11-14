@@ -79,6 +79,10 @@ in
         pkgs.jq
       ];
       environment.etc."assistant/script.json".text = builtins.toJSON script;
+      # An agent trying to accept an unfree licence itself (tulsid must refuse).
+      environment.etc."assistant/accept-licence".source = pkgs.writeShellScript "accept-licence" ''
+        exec ${pkgs.systemd}/bin/busctl call org.tulsi.Manager1 /org/tulsi/Manager1           org.tulsi.Manager1 Apply s           '[{"op":"acceptLicense","name":"claude-code"},{"op":"addPackage","name":"claude-code"}]'
+      '';
     };
 
   testScript = ''
@@ -151,6 +155,11 @@ in
         apply_result = requests[2]["messages"][-1]["content"][0]
         assert "Applied and rebuilt" in apply_result["content"], apply_result
         machine.succeed("git -C /etc/nixos log -1 --format=%s | grep -qx 'tulsi: install cowsay'")
+
+    with subtest("an agent cannot accept a software licence"):
+        out = machine.fail("starah run --agent assistant -- /etc/assistant/accept-licence 2>&1")
+        assert "cannot accept a software licence" in out, out
+        machine.fail("grep -q claude-code /etc/nixos/tulsi/state.json")
 
     with subtest("Starah audited the request, the decision and tulsid's check"):
         audit = machine.succeed("starah audit 100")

@@ -96,6 +96,20 @@ pub struct PackageInfo {
     pub unfree: bool,
     /// Listed in state.json.
     pub installed: bool,
+    /// For unfree packages on tulsid's allow-list: the licence a person must accept
+    /// before installing (`acceptLicense` op). None for everything else.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub license: Option<License>,
+    /// The licence is already accepted (state.json `acceptedLicenses`).
+    #[serde(default)]
+    pub license_accepted: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct License {
+    pub name: String,
+    #[serde(default)]
+    pub url: String,
 }
 
 /// Connects to the system bus, or the session bus if `TULSI_BUS=session`.

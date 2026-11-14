@@ -24,6 +24,11 @@ pub struct State {
     pub browser_extensions: BrowserExtensions,
     #[serde(default)]
     pub services: BTreeMap<String, Service>,
+    /// Unfree packages whose licence a person accepted (in the Software Center).
+    /// Only packages tulsid's allow-list names can be accepted; the tulsi.state module
+    /// allows exactly these through nixpkgs.config.allowUnfreePredicate.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub accepted_licenses: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,6 +67,7 @@ impl Default for State {
             packages: Vec::new(),
             browser_extensions: BrowserExtensions::default(),
             services: BTreeMap::new(),
+            accepted_licenses: Vec::new(),
         }
     }
 }
@@ -99,6 +105,12 @@ impl State {
             ));
         }
         check_list(&mut problems, "package", &self.packages, is_valid_attr_path);
+        check_list(
+            &mut problems,
+            "accepted licence",
+            &self.accepted_licenses,
+            is_valid_attr_path,
+        );
         check_list(
             &mut problems,
             "Firefox extension id",

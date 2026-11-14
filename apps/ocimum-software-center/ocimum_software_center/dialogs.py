@@ -31,6 +31,39 @@ def confirm(parent: Gtk.Window, heading: str, changes: list[str], apply_label: s
     return response == Gtk.ResponseType.OK
 
 
+LICENSE_TITLE = "Software Licence"
+
+
+def accept_license(parent: Gtk.Window, title: str, license_name: str, url: str) -> bool:
+    """Asks a person to accept an unfree package's licence; True if they accept."""
+    dialog = Gtk.MessageDialog(
+        transient_for=parent,
+        modal=True,
+        message_type=Gtk.MessageType.QUESTION,
+        buttons=Gtk.ButtonsType.NONE,
+        text=f"{title} is proprietary software",
+        title=LICENSE_TITLE,
+    )
+    dialog.format_secondary_text(
+        "It is distributed under its vendor's licence, not a free-software licence:\n"
+        f"{license_name}\n\n"
+        "To install it, you must accept this licence. TulsiOS records that you did, "
+        "and allows this one package. AI agents cannot accept licences for you."
+    )
+    if url:
+        link = Gtk.LinkButton(uri=url, label="Read the licence")
+        link.set_halign(Gtk.Align.START)
+        dialog.get_message_area().pack_start(link, False, False, 0)
+        link.show()
+    dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+    accept = dialog.add_button("_Accept Licence", Gtk.ResponseType.OK)
+    accept.get_style_context().add_class("suggested-action")
+    dialog.set_default_response(Gtk.ResponseType.CANCEL)
+    response = dialog.run()
+    dialog.destroy()
+    return response == Gtk.ResponseType.OK
+
+
 def show_error(parent: Gtk.Window, heading: str, message: str, details: str = "") -> None:
     first, _, rest = message.partition("\n")
     dialog = Gtk.MessageDialog(

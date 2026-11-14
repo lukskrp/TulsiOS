@@ -40,6 +40,7 @@
 
       environment.systemPackages = [
         pkgs.git
+        pkgs.jq
         pkgs.yad
         (pkgs.writeShellScriptBin "sc-action" ''
           # sc-action ACTION [ARG]: activate a Software Center Gtk.Application action
@@ -145,6 +146,28 @@
           assert "unfree" in out, out
           out = machine.succeed(alice("tulsi search cow"))
           assert "cowsay" in out, out
+
+      with subtest("an unfree agent CLI is installed only after a person accepts its licence"):
+          out = machine.fail(alice("tulsi install claude-code 2>&1"))
+          assert "accept its licence" in out, out
+          machine.succeed(alice("sc-action install claude-code"))
+          wait_window("Software Licence")
+          machine.sleep(1)
+          machine.screenshot("06-licence")
+          machine.send_key("alt-a")
+          wait_window("Confirm Changes")
+          machine.sleep(1)
+          machine.screenshot("07-licence-confirm")
+          machine.send_key("ret")
+          machine.wait_until_succeeds("grep -q '\"claude-code\"' /etc/nixos/tulsi/state.json",
+                                      timeout=timedelta(seconds=60))
+          machine.wait_until_succeeds("jq -e '.acceptedLicenses == [\"claude-code\"] and "
+                                      "(.packages | index(\"claude-code\"))' /etc/nixos/tulsi/state.json",
+                                      timeout=timedelta(seconds=60))
+          # tulsid commits once the (fake) rebuild has finished.
+          machine.wait_until_succeeds("git -C /etc/nixos log -1 --format=%s "
+                                      "| grep -q 'accept the licence of claude-code, install claude-code'",
+                                      timeout=timedelta(seconds=60))
 
       machine.succeed("cat /tmp/sc.log >&2")
     '';

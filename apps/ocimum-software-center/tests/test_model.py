@@ -104,3 +104,21 @@ def test_job_tracker_cancel():
     t.begin("x")
     t.cancel()
     assert not t.busy
+
+
+def test_allow_listed_unfree_agent_needs_its_licence_accepted():
+    from ocimum_software_center.model import describe_change, ops_install
+
+    p = Package.from_json({"attr": "claude-code", "pname": "claude-code", "version": "2.1",
+                           "unfree": True,
+                           "license": {"name": "Unfree", "url": "https://example.com/terms"}})
+    assert p.needs_license and p.license_url == "https://example.com/terms"
+    assert ops_install("claude-code", accept_license=True) == [
+        {"op": "acceptLicense", "name": "claude-code"},
+        {"op": "addPackage", "name": "claude-code"},
+    ]
+    assert describe_change("+ licence accepted: claude-code") == "Accept the licence of claude-code"
+    accepted = Package.from_json({"attr": "claude-code", "unfree": True, "license_accepted": True,
+                                  "license": {"name": "Unfree"}})
+    assert not accepted.needs_license
+    assert not Package.from_json({"attr": "steam", "unfree": True}).needs_license

@@ -255,7 +255,7 @@ class Window(Gtk.ApplicationWindow):
 
     def _on_row_requested(self, _row: PackageRow, attr: str, install: bool) -> None:
         if install:
-            self.request_change(ops_install(attr), f"Installing {attr}", "Install")
+            self.install(attr)
         else:
             self.request_change(ops_remove(attr), f"Removing {attr}", "Remove")
 
@@ -308,6 +308,24 @@ class Window(Gtk.ApplicationWindow):
         self.client.history(HISTORY_LIMIT, done, lambda e: self.show_message(e.message, error=True))
 
     # ---------------------------------------------------------- change flow
+
+    def install(self, attr: str) -> None:
+        """Installs `attr`; for an allow-listed unfree agent, asks to accept its licence first."""
+
+        def with_info(info: dict | None) -> None:
+            package = Package.from_json(info) if info else Package(attr=attr)
+            accept = False
+            if package.needs_license:
+                if not dialogs.accept_license(
+                    self, package.title, package.license_name, package.license_url
+                ):
+                    return
+                accept = True
+            self.request_change(
+                ops_install(attr, accept_license=accept), f"Installing {attr}", "Install"
+            )
+
+        self.client.package_info(attr, with_info, lambda _e: with_info(None))
 
     def request_change(self, ops: list[dict], label: str, apply_label: str) -> None:
         if self.jobs.busy:

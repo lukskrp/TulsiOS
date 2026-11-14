@@ -211,6 +211,9 @@ impl<B: Backend> Server<B> {
                 if p.unfree {
                     flags.push("unfree")
                 }
+                if p.license.is_some() && !p.license_accepted {
+                    flags.push("a person must accept its licence in the Software Center first")
+                }
                 let flags = if flags.is_empty() {
                     String::new()
                 } else {
@@ -553,6 +556,8 @@ mod tests {
                 description: "a package".into(),
                 unfree: false,
                 installed: false,
+                license: None,
+                license_accepted: false,
             }])
         }
         async fn package_info(&self, attr: &str) -> Result<PackageInfo, String> {

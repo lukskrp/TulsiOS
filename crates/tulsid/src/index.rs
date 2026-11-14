@@ -149,6 +149,8 @@ fn info(row: &Row) -> PackageInfo {
         description: row.3.clone(),
         unfree: row.4,
         installed: false,
+        license: None,
+        license_accepted: false,
     }
 }
 

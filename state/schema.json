@@ -32,6 +32,12 @@
         }
       }
     },
+    "acceptedLicenses": {
+      "description": "Unfree packages whose licence a person accepted. Only tulsid's allow-list (tulsi.daemon.unfreeAgents) can be accepted; the tulsi.state module allows exactly these unfree packages.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_'-]*(\.[A-Za-z_][A-Za-z0-9_'-]*)*$" }
+    },
     "services": {
       "description": "NixOS service toggles: services.<name>.enable.",
       "type": "object",

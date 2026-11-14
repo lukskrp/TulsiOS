@@ -1,4 +1,5 @@
-[["cowsay","cowsay","3.8.4","Program which generates ASCII pictures of a cow with a message",false],
+[["claude-code","claude-code","2.1.0","Agentic coding tool that lives in your terminal",true],
+["cowsay","cowsay","3.8.4","Program which generates ASCII pictures of a cow with a message",false],
 ["hello","hello","2.12.2","Program that produces a familiar, friendly greeting",false],
 ["sl","sl","5.05","Steam Locomotive runs across your terminal when you type sl",false],
 ["steam","steam","1.0.0.85","Digital distribution platform",true]]
