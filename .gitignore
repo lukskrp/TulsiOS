@@ -16,3 +16,5 @@ target/
 
 # vm-e2e screenshots
 e2e-out/
+__pycache__/
+*.pyc
