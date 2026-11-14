@@ -26,8 +26,8 @@ The question was whether this needs a modified kernel. It doesn't:
 
 ## Decision
 
-Build **Starah** (Sanskrit "levels") as its own project, `lukskrp/Starah` (local
-`~/Starah` until it is pushed), and enable it on the Ocimum Desktop.
+Build **Starah** (Sanskrit "levels") as its own project, `lukskrp/starah`
+(github.com/lukskrp/starah), and enable it on the Ocimum Desktop.
 - **Agents:**
   - each agent is a system user `starah-<name>`;
   - it is started sandboxed by the broker `starahd` (`starah run`);
@@ -61,7 +61,7 @@ Build **Starah** (Sanskrit "levels") as its own project, `lukskrp/Starah` (local
     rules per agent);
   - network policy;
   - programs the human runs as themselves.
-- TulsiOS's flake gets the input `starah`. Until the GitHub repo exists, checks run with
-  `--override-input starah path:$HOME/Starah`.
+- TulsiOS's flake gets the input `starah` (`github:lukskrp/starah`). To test local Starah
+  changes: `--override-input starah path:$HOME/Starah`.
 - The Ocimum Assistant needs `org.starah.run` to start its agent. Active local
   administrators have it without a prompt; other users are asked for an admin password.

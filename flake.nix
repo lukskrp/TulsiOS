@@ -7,7 +7,7 @@
     nixpkgs.url = "github:lukskrp/tulsipkgs/tulsi-unstable";
     # Starah: levels of privilege for AI agents (ADR 0011).
     starah = {
-      url = "github:lukskrp/Starah";
+      url = "github:lukskrp/starah";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

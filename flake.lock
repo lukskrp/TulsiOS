@@ -18,7 +18,28 @@
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "starah": "starah"
+      }
+    },
+    "starah": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794676783,
+        "narHash": "sha256-X80QGAQAREvgNwwnFUFLKMdn46zM5nRIoMN5u3JpLSk=",
+        "owner": "lukskrp",
+        "repo": "starah",
+        "rev": "2448fb5c43f9adc8e8f2a39ebe09220552d480a2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lukskrp",
+        "repo": "starah",
+        "type": "github"
       }
     }
   },
