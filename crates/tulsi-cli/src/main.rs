@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process::ExitCode;
 
 use futures_util::StreamExt;
-use tulsi_client::{HistoryEntry, ManagerProxy, PackageInfo, Plan};
+use tulsi_client::{HistoryEntry, ManagerProxy, PackageInfo, Plan, UndoPlan};
 use tulsi_state::{Browser, Op, State};
 
 /// `println!` that exits quietly when stdout is closed early
@@ -32,7 +32,8 @@ change the system (asks for authorization):
   remove PKG...                     remove packages installed with tulsi
   ext add|remove BROWSER ID         browser extension (firefox | chromium) by store id
   service enable|disable NAME       toggle a NixOS service (services.NAME.enable)
-  undo                              revert the most recent change (alias: rollback)
+  undo [CHANGE]                     revert the most recent change, or the change with
+                                    that id from `tulsi history` (alias: rollback)
 
 inspect:
   search WORDS...                   find packages (installed ones are marked *)
@@ -105,7 +106,8 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
                 enable: *action == "enable",
             }]
         }
-        ["undo" | "rollback"] => return undo(opts).await,
+        ["undo" | "rollback"] => return undo(opts, None).await,
+        ["undo" | "rollback", commit] => return undo(opts, Some(commit)).await,
         ["search", words @ ..] if !words.is_empty() => return search(&words.join(" ")).await,
         ["status"] => {
             let state = State::from_json(&proxy().await?.get_state().await.map_err(dbus)?)
@@ -187,13 +189,40 @@ async fn change(opts: &Options, ops: Vec<Op>) -> Result<ExitCode, String> {
     .await
 }
 
-async fn undo(opts: &Options) -> Result<ExitCode, String> {
-    if opts.dry_run {
-        return Err("--dry-run is not supported for undo; see `tulsi history`".into());
-    }
+async fn undo(opts: &Options, commit: Option<&str>) -> Result<ExitCode, String> {
     let proxy = proxy().await?;
+    let commit = match commit {
+        Some(c) => c.to_string(),
+        None => {
+            let latest: Vec<HistoryEntry> =
+                serde_json::from_str(&proxy.history(1).await.map_err(dbus)?)
+                    .map_err(|e| format!("bad reply from tulsid: {e}"))?;
+            latest
+                .into_iter()
+                .next()
+                .ok_or("there is no change to undo")?
+                .commit
+        }
+    };
+    let plan: UndoPlan = serde_json::from_str(&proxy.plan_undo(&commit).await.map_err(dbus)?)
+        .map_err(|e| format!("bad reply from tulsid: {e}"))?;
+    out!(
+        "Undo {} ({}):",
+        plan.summary.trim_start_matches("tulsi: "),
+        plan.commit
+    );
+    for line in &plan.changes {
+        out!("{line}");
+    }
+    if opts.dry_run {
+        return Ok(ExitCode::SUCCESS);
+    }
     let proxy_ref = &proxy;
-    run_job(opts, proxy_ref, || async move { proxy_ref.undo().await }).await
+    let commit = commit.as_str();
+    run_job(opts, proxy_ref, || async move {
+        proxy_ref.undo_change(commit).await
+    })
+    .await
 }
 
 /// Subscribes to job signals, starts the job and follows it to the end.
@@ -303,7 +332,12 @@ async fn history(n: u32) -> Result<ExitCode, String> {
         serde_json::from_str(&proxy().await?.history(n).await.map_err(dbus)?)
             .map_err(|e| format!("bad reply from tulsid: {e}"))?;
     for e in entries {
-        out!("{}  {}  {}", e.commit, format_time(e.time), e.summary);
+        let by = match e.by.strip_prefix("starah-") {
+            Some(agent) => format!("  (agent {agent})"),
+            None if !e.by.is_empty() => format!("  ({})", e.by),
+            None => String::new(),
+        };
+        out!("{}  {}  {}{by}", e.commit, format_time(e.time), e.summary);
     }
     Ok(ExitCode::SUCCESS)
 }

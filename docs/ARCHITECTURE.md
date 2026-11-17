@@ -52,8 +52,10 @@ Root systemd service (`tulsi.daemon.enable`). Owns `<flakeDir>/tulsi/state.json`
 | `Plan(ops s) → s` | `{changes, state}`, applies nothing |
 | `Apply(ops s) → t` | polkit `org.tulsi.apply` (`org.tulsi.extensions` for extensions only, `org.tulsi.configure` when adding a local package); job id (0 = nothing to do) |
 | `ApplyConfig(contents s, summary s) → t` | polkit `org.tulsi.apply` if a rollback fully undoes the edit, else `org.tulsi.configure` (ADR 0014) |
-| `Undo() → t` | polkit: the action the reverted change needed; reverts the latest change |
-| `History(limit u) → s` | `[{commit, time, summary, action}]`; `action` comes from the commit's `Tulsi-Action:` trailer |
+| `Undo() → t` | `UndoChange` of the latest change |
+| `UndoChange(commit s) → t` | takes back one earlier change, keeping later ones (ADR 0015); polkit: the action that change needed; refused if a later change edited the same lines |
+| `PlanUndo(commit s) → s` | `{commit, summary, changes, action}`: what `UndoChange` would do; applies nothing |
+| `History(limit u) → s` | `[{commit, time, summary, action, by}]`, from the commit's `Tulsi-Action:` and `Tulsi-By:` trailers |
 | `Busy` (property), `Progress(t job, s line)`, `Finished(t job, b ok, s msg)` | job tracking |
 
 `ops` is a JSON list of change operations (`crates/tulsi-state/src/ops.rs`), for example

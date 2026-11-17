@@ -9,7 +9,9 @@
 //! | `GetState() -> s` | method | state.json contents |
 //! | `Plan(ops: s) -> s` | method | JSON [`Plan`]: changes + resulting state, nothing applied |
 //! | `Apply(ops: s) -> t` | method | polkit `org.tulsi.apply`; returns job id, 0 = nothing to do |
-//! | `Undo() -> t` | method | polkit: the action of the change it reverts ([`HistoryEntry::action`]) |
+//! | `Undo() -> t` | method | `UndoChange` of the latest change |
+//! | `UndoChange(commit: s) -> t` | method | takes back any earlier change, keeping later ones; polkit: the action that change needed ([`HistoryEntry::action`]); error `Invalid` if a later change edited the same lines |
+//! | `PlanUndo(commit: s) -> s` | method | JSON [`UndoPlan`]: what `UndoChange` would change; nothing applied |
 //! | `History(limit: u) -> s` | method | JSON list of [`HistoryEntry`] |
 //! | `Search(query: s, limit: u) -> s` | method | JSON list of [`PackageInfo`], best first |
 //! | `PackageInfo(attr: s) -> s` | method | JSON [`PackageInfo`]; error `NotFound` |
@@ -70,6 +72,20 @@ pub fn config_action(old: &str, new: &str) -> (&'static str, Vec<String>) {
 /// Commit trailer recording the polkit action a change needed; undoing it needs
 /// the same one.
 pub const ACTION_TRAILER: &str = "Tulsi-Action";
+/// Commit trailer naming the account that asked for a change (`starah-<agent>` for
+/// an AI agent).
+pub const BY_TRAILER: &str = "Tulsi-By";
+
+/// What undoing one change would do.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UndoPlan {
+    pub commit: String,
+    pub summary: String,
+    /// state.json differences ("+ package vlc", …) and other files touched.
+    pub changes: Vec<String>,
+    /// The polkit action undoing it needs.
+    pub action: String,
+}
 
 #[cfg(test)]
 mod tests {
@@ -116,6 +132,7 @@ mod tests {
             time: 0,
             summary: summary.into(),
             recorded_action: String::new(),
+            by: String::new(),
         };
         assert_eq!(entry("tulsi: install vlc").action(), ACTION_APPLY);
         assert_eq!(
@@ -146,6 +163,8 @@ pub trait Manager {
     fn plan(&self, ops: &str) -> zbus::Result<String>;
     fn apply(&self, ops: &str) -> zbus::Result<u64>;
     fn undo(&self) -> zbus::Result<u64>;
+    fn undo_change(&self, commit: &str) -> zbus::Result<u64>;
+    fn plan_undo(&self, commit: &str) -> zbus::Result<String>;
     fn history(&self, limit: u32) -> zbus::Result<String>;
     fn search(&self, query: &str, limit: u32) -> zbus::Result<String>;
     fn package_info(&self, attr: &str) -> zbus::Result<String>;
@@ -179,6 +198,10 @@ pub struct HistoryEntry {
     /// changes recorded before ADR 0014. Use [`HistoryEntry::action`].
     #[serde(default, skip_serializing_if = "String::is_empty", rename = "action")]
     pub recorded_action: String,
+    /// Who asked for the change (its `Tulsi-By` trailer): a user name, or
+    /// `starah-<agent>` for an AI agent; empty if not recorded.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub by: String,
 }
 
 impl HistoryEntry {

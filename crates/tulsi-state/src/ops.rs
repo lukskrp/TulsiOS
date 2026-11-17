@@ -40,13 +40,28 @@ impl std::str::FromStr for Browser {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Op {
-    AddPackage { name: String },
-    RemovePackage { name: String },
-    AddExtension { browser: Browser, id: String },
-    RemoveExtension { browser: Browser, id: String },
-    SetService { name: String, enable: bool },
+    AddPackage {
+        name: String,
+    },
+    RemovePackage {
+        name: String,
+    },
+    AddExtension {
+        browser: Browser,
+        id: String,
+    },
+    RemoveExtension {
+        browser: Browser,
+        id: String,
+    },
+    SetService {
+        name: String,
+        enable: bool,
+    },
     /// A person accepts the licence of an allow-listed unfree package.
-    AcceptLicense { name: String },
+    AcceptLicense {
+        name: String,
+    },
     /// Adds a package made on this machine and installs it. `expression` is a
     /// callPackage-style Nix expression, written to `tulsi/pkgs/<name>/package.nix`
     /// by tulsid (which also checks it); `origin` is where the software came from.
@@ -61,7 +76,9 @@ pub enum Op {
         origin: String,
     },
     /// Uninstalls a local package and deletes its expression.
-    RemoveLocalPackage { name: String },
+    RemoveLocalPackage {
+        name: String,
+    },
 }
 
 impl Op {
@@ -185,6 +202,56 @@ impl State {
         out
     }
 
+    /// `self` with an earlier change (`before` → `after`) taken back, by meaning
+    /// rather than by text: what that change added is removed, what it removed is
+    /// added back, and services it switched are switched back. Whatever a later
+    /// change already altered is left alone, so this never conflicts.
+    pub fn reverted(&self, before: &State, after: &State) -> State {
+        let mut next = self.clone();
+        revert_list(&mut next.packages, &before.packages, &after.packages);
+        revert_list(
+            &mut next.local_packages,
+            &before.local_packages,
+            &after.local_packages,
+        );
+        revert_list(
+            &mut next.accepted_licenses,
+            &before.accepted_licenses,
+            &after.accepted_licenses,
+        );
+        revert_list(
+            &mut next.browser_extensions.firefox,
+            &before.browser_extensions.firefox,
+            &after.browser_extensions.firefox,
+        );
+        revert_list(
+            &mut next.browser_extensions.chromium,
+            &before.browser_extensions.chromium,
+            &after.browser_extensions.chromium,
+        );
+        let names: std::collections::BTreeSet<&String> = before
+            .services
+            .keys()
+            .chain(after.services.keys())
+            .collect();
+        for name in names {
+            let (was, became) = (before.services.get(name), after.services.get(name));
+            // Only if that change switched it, and nothing switched it since.
+            if was == became || next.services.get(name) != became {
+                continue;
+            }
+            match was {
+                Some(svc) => {
+                    next.services.insert(name.clone(), svc.clone());
+                }
+                None => {
+                    next.services.remove(name);
+                }
+            }
+        }
+        next
+    }
+
     fn extensions_mut(&mut self, browser: Browser) -> &mut Vec<String> {
         match browser {
             Browser::Firefox => &mut self.browser_extensions.firefox,
@@ -203,6 +270,16 @@ fn remove(list: &mut Vec<String>, item: &str) -> bool {
     let before = list.len();
     list.retain(|x| x != item);
     list.len() != before
+}
+
+/// Takes back one change to a list: removes what it added, re-adds what it removed.
+fn revert_list(current: &mut Vec<String>, before: &[String], after: &[String]) {
+    for item in after.iter().filter(|x| !before.contains(x)) {
+        remove(current, item);
+    }
+    for item in before.iter().filter(|x| !after.contains(x)) {
+        add(current, item);
+    }
 }
 
 fn list_diff(out: &mut Vec<String>, what: &str, old: &[String], new: &[String]) {
@@ -256,6 +333,46 @@ mod tests {
     }
 
     #[test]
+    fn reverting_an_older_change_keeps_later_ones() {
+        let s0 = State::default();
+        let s1 = s0
+            .with_ops(&ops(r#"[{"op":"addPackage","name":"cowsay"}]"#))
+            .unwrap();
+        let s2 = s1
+            .with_ops(&ops(
+                r#"[{"op":"addPackage","name":"hello"},{"op":"setService","name":"printing","enable":true}]"#,
+            ))
+            .unwrap();
+        // Undo the first change (cowsay) on top of the second.
+        let undone = s2.reverted(&s0, &s1);
+        assert_eq!(undone.packages, vec!["hello"]);
+        assert!(undone.services["printing"].enable);
+        // Undo the second change: hello goes, printing is unmanaged again.
+        let undone = s2.reverted(&s1, &s2);
+        assert_eq!(undone, s1);
+    }
+
+    #[test]
+    fn reverting_what_a_later_change_already_altered_does_nothing() {
+        let s0 = State::default();
+        let s1 = s0
+            .with_ops(&ops(
+                r#"[{"op":"addPackage","name":"vlc"},{"op":"setService","name":"printing","enable":true}]"#,
+            ))
+            .unwrap();
+        let s2 = s1
+            .with_ops(&ops(
+                r#"[{"op":"removePackage","name":"vlc"},{"op":"setService","name":"printing","enable":false}]"#,
+            ))
+            .unwrap();
+        assert_eq!(s2.reverted(&s0, &s1), s2);
+        // Undoing a removal adds it back.
+        let s3 = s2.reverted(&s1, &s2);
+        assert_eq!(s3.packages, vec!["vlc"]);
+        assert!(s3.services["printing"].enable);
+    }
+
+    #[test]
     fn removing_missing_is_an_error() {
         let err = State::default()
             .with_ops(&ops(r#"[{"op":"removePackage","name":"vlc"}]"#))
@@ -279,10 +396,8 @@ mod tests {
     fn accept_license_is_recorded_and_diffed_first() {
         let base = State::default();
         let next = base
-            .with_ops(&ops(
-                r#"[{"op":"acceptLicense","name":"claude-code"},
-                    {"op":"addPackage","name":"claude-code"}]"#,
-            ))
+            .with_ops(&ops(r#"[{"op":"acceptLicense","name":"claude-code"},
+                    {"op":"addPackage","name":"claude-code"}]"#))
             .unwrap();
         assert_eq!(next.accepted_licenses, vec!["claude-code"]);
         assert_eq!(

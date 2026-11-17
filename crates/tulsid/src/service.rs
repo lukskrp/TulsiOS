@@ -14,7 +14,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::{mpsc, Mutex, OwnedMutexGuard};
 use tulsi_client::{
-    config_action, PackageInfo, Plan, ACTION_APPLY, ACTION_CONFIGURE, ACTION_EXTENSIONS,
+    config_action, PackageInfo, Plan, UndoPlan, ACTION_APPLY, ACTION_CONFIGURE, ACTION_EXTENSIONS,
     OBJECT_PATH,
 };
 use tulsi_state::{describe_all, Op, State};
@@ -334,8 +334,55 @@ impl Manager {
         }
     }
 
+    /// The user name of the account that sent this message ("" if unknown).
+    async fn caller_name(&self, conn: &Connection, hdr: &Header<'_>) -> String {
+        let Some(sender) = hdr.sender() else {
+            return String::new();
+        };
+        let Ok(dbus) = zbus::fdo::DBusProxy::new(conn).await else {
+            return String::new();
+        };
+        match dbus.get_connection_unix_user(sender.clone().into()).await {
+            Ok(uid) => user_name(uid).unwrap_or_else(|| uid.to_string()),
+            Err(_) => String::new(),
+        }
+    }
+
+    async fn undo_commit(&self, hdr: &Header<'_>, conn: &Connection, commit: &str) -> Result<u64> {
+        let dir = &self.cfg.flake_dir;
+        let entry = git::entry(dir, commit).await.map_err(TulsiError::Invalid)?;
+        let action = undo_action(entry.action());
+        self.authorize(conn, hdr, action).await?;
+        let guard = self.try_lock()?;
+        // Computed under the lock, against whatever happened since.
+        let (changes, summary) = git::revert_changes(dir, &entry.commit)
+            .await
+            .map_err(TulsiError::Invalid)?;
+        // Never restore a state file tulsid could not read back.
+        for change in &changes {
+            if change.rel == Config::STATE_REL {
+                let text = String::from_utf8_lossy(change.new.as_deref().unwrap_or_default());
+                State::from_json(&text)?;
+            }
+        }
+        let summary = summary
+            .strip_prefix("tulsi: ")
+            .unwrap_or(&summary)
+            .to_string();
+        let by = self.caller_name(conn, hdr).await;
+        self.start_job(
+            guard,
+            conn,
+            changes,
+            format!("tulsi: undo {summary}"),
+            action,
+            by,
+        )
+    }
+
     /// Starts the transaction in the background and returns its job id. `action` is
-    /// the polkit action the change was authorized with; the commit records it.
+    /// the polkit action the change was authorized with and `by` who asked; the
+    /// commit records both.
     fn start_job(
         &self,
         guard: OwnedMutexGuard<()>,
@@ -343,11 +390,12 @@ impl Manager {
         changes: Vec<FileChange>,
         message: String,
         action: &str,
+        by: String,
     ) -> Result<u64> {
         let job = self.next_job.fetch_add(1, Ordering::Relaxed);
         let emitter = SignalEmitter::new(conn, OBJECT_PATH)?.into_owned();
         let cfg = self.cfg.clone();
-        let commit_message = git::commit_message(&message, action);
+        let commit_message = git::commit_message(&message, action, &by);
         tokio::spawn(async move {
             let _guard = guard;
             eprintln!("tulsid: job {job}: {message}");
@@ -406,17 +454,18 @@ impl Manager {
             return Ok(0);
         }
         changes.insert(0, Self::state_change(&old, &new));
+        let by = self.caller_name(conn, &hdr).await;
         self.start_job(
             guard,
             conn,
             changes,
             format!("tulsi: {}", describe_all(&ops)),
             required_action(&ops),
+            by,
         )
     }
 
-    /// Reverts the most recent change (itself recorded as a new change). Needs the
-    /// polkit action that change needed.
+    /// Reverts the most recent change (itself recorded as a new change).
     async fn undo(
         &self,
         #[zbus(header)] hdr: Header<'_>,
@@ -428,38 +477,35 @@ impl Manager {
         let latest = latest
             .first()
             .ok_or_else(|| TulsiError::Invalid("no history to undo".into()))?;
-        let action = undo_action(latest.action());
-        self.authorize(conn, &hdr, action).await?;
-        let guard = self.try_lock()?;
-        let still_latest = git::history(&self.cfg.flake_dir, 1)
-            .await
-            .map_err(TulsiError::Failed)?;
-        if still_latest.first().map(|e| &e.commit) != Some(&latest.commit) {
-            return Err(TulsiError::Busy(
-                "the history changed meanwhile; try again".into(),
-            ));
-        }
-        let (changes, summary) = git::undo_changes(&self.cfg.flake_dir)
+        self.undo_commit(&hdr, conn, &latest.commit).await
+    }
+
+    /// Takes back one earlier change, keeping everything since (itself recorded as
+    /// a new change). Needs the polkit action that change needed. Refused, with
+    /// nothing changed, if a later change edited the same lines of a file.
+    async fn undo_change(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+        commit: &str,
+    ) -> Result<u64> {
+        self.undo_commit(&hdr, conn, commit).await
+    }
+
+    /// What `UndoChange(commit)` would change, as JSON `UndoPlan`; nothing applied.
+    async fn plan_undo(&self, commit: &str) -> Result<String> {
+        let dir = &self.cfg.flake_dir;
+        let entry = git::entry(dir, commit).await.map_err(TulsiError::Invalid)?;
+        let (changes, _) = git::revert_changes(dir, commit)
             .await
             .map_err(TulsiError::Invalid)?;
-        // Never restore a state file tulsid could not read back.
-        for change in &changes {
-            if change.rel == Config::STATE_REL {
-                let text = String::from_utf8_lossy(change.new.as_deref().unwrap_or_default());
-                State::from_json(&text)?;
-            }
-        }
-        let summary = summary
-            .strip_prefix("tulsi: ")
-            .unwrap_or(&summary)
-            .to_string();
-        self.start_job(
-            guard,
-            conn,
-            changes,
-            format!("tulsi: undo {summary}"),
-            action,
-        )
+        let plan = UndoPlan {
+            commit: entry.commit.clone(),
+            summary: entry.summary.clone(),
+            changes: describe_file_changes(&changes),
+            action: undo_action(entry.action()).to_string(),
+        };
+        Ok(serde_json::to_string(&plan).expect("plan serializes"))
     }
 
     /// The current configuration.nix ("" if it does not exist).
@@ -522,20 +568,26 @@ impl Manager {
             old,
             new: Some(contents.as_bytes().to_vec()),
         };
+        let by = self.caller_name(conn, &hdr).await;
         self.start_job(
             guard,
             conn,
             vec![change],
             format!("tulsi: edit configuration.nix: {summary}"),
             action,
+            by,
         )
     }
 
-    /// The latest `limit` changes as JSON, newest first.
+    /// The latest `limit` changes as JSON, newest first. `action` is always filled
+    /// in (inferred for changes recorded before it was).
     async fn history(&self, limit: u32) -> Result<String> {
-        let entries = git::history(&self.cfg.flake_dir, limit)
+        let mut entries = git::history(&self.cfg.flake_dir, limit)
             .await
             .map_err(TulsiError::Failed)?;
+        for e in &mut entries {
+            e.recorded_action = undo_action(e.action()).to_string();
+        }
         Ok(serde_json::to_string(&entries).expect("history serializes"))
     }
 
@@ -587,6 +639,29 @@ fn required_action(ops: &[Op]) -> &'static str {
 
 /// The action undoing a change needs: the one it was made with. Anything not
 /// recognised counts as the strictest.
+/// One line per difference, for a plan: state.json by meaning ("- package vlc"),
+/// other files by name.
+fn describe_file_changes(changes: &[FileChange]) -> Vec<String> {
+    let mut out = Vec::new();
+    for c in changes {
+        if c.rel == Config::STATE_REL {
+            let parse = |b: &Option<Vec<u8>>| {
+                State::from_json(&String::from_utf8_lossy(b.as_deref().unwrap_or_default())).ok()
+            };
+            if let (Some(old), Some(new)) = (parse(&c.old), parse(&c.new)) {
+                out.extend(old.diff(&new));
+                continue;
+            }
+        }
+        out.push(match (&c.old, &c.new) {
+            (None, Some(_)) => format!("+ file {}", c.rel),
+            (Some(_), None) => format!("- file {}", c.rel),
+            _ => format!("~ file {}", c.rel),
+        });
+    }
+    out
+}
+
 fn undo_action(recorded: &str) -> &'static str {
     match recorded {
         ACTION_EXTENSIONS => ACTION_EXTENSIONS,

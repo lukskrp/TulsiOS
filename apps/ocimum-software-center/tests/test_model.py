@@ -58,6 +58,16 @@ def test_history_title():
     assert history_title("tulsi: initial state") == "Initial state"
 
 
+def test_history_by():
+    from ocimum_software_center.model import history_by
+
+    assert history_by("") == ""
+    assert history_by("starah-assistant") == "by the Assistant"
+    assert history_by("starah-helper") == "by agent helper"
+    assert history_by("root") == "by the system"
+    assert history_by("alice") == "by alice"
+
+
 def test_done_text():
     from ocimum_software_center.model import done_text
 

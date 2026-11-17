@@ -29,12 +29,13 @@ Then ask, for example: *"install a lightweight video player and enable printing"
 | `package_info` | no | Details of one package |
 | `get_state` | no | Managed packages, browser extensions, service toggles |
 | `read_configuration` | no | The user's `configuration.nix` |
-| `history` | no | Recent changes |
+| `history` | no | Recent changes: id, summary, and who made them (a person or an agent) |
 | `plan_change` | no | What a list of operations would change |
 | `propose_configuration_edit` | no | Syntax-check new `configuration.nix` contents and show the diff |
 | `apply_change` | **yes, after approval** | Packages, browser extensions, service toggles |
 | `apply_configuration_edit` | **yes, after approval** | Replace `configuration.nix` (complete contents) |
 | `undo_last_change` | **yes, after approval** | Revert the most recent change |
+| `undo_change` | **yes, after approval** | Take back an older change by its id from `history`; later changes stay (ADR 0015) |
 | `fetch_source` | no | Download a URL (or take a file already in the store) and describe it: kind, hash, contents, build hints |
 | `build_package` | no | Save a `callPackage` expression as a draft and build it in Nix's sandbox |
 | `try_package` | no | Run a program of the last build briefly (empty home, no display) |

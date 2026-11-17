@@ -110,7 +110,9 @@ Known limits, picked up later:
       `org.tulsi.configure` (accounts, boot, scripts, local packages; `configuration.nix` edits
       are checked by `tulsi_state::unreversible_settings`); the Assistant's agent defaults to
       level 2; tulsi-mcp receipts; the Assistant's receipt line with Undo and claim check
-- [ ] Undo a specific older change, not only the latest (`git revert` with a conflict check)
+- [x] Undo any change (ADR 0015): `UndoChange`/`PlanUndo` (state.json by meaning,
+      configuration.nix three-way with a conflict refusal), `Tulsi-By` records who; History page
+      rows with Undo and "by the Assistant", `tulsi undo ID`, tulsi-mcp `undo_change`
 - [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
 - [x] `cinnamon-session-quit` works: tulsipkgs' cinnamon-session wraps its typelibs; `otk`
       propagates `graphene`, so Python OTK apps need only `otk`

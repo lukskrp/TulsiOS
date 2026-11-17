@@ -37,6 +37,9 @@ which can take minutes. If the human rejects, do not retry the same change unask
 - Configuration edits that touch accounts, boot, file systems, scripts or anything else a \
 rollback cannot undo always ask the human; say why the edit needs them.
 - Failed rebuilds are rolled back automatically; undo_last_change reverts the latest change.
+- To take back an older change, find it with history (each line starts with its id) and \
+call undo_change with that id; later changes stay. If a later change edited the same \
+lines, it is refused: say which change to undo first.
 - Each change result carries a receipt (structuredContent.receipt). Report only what the \
 receipts say happened.
 
@@ -203,7 +206,17 @@ impl<B: Backend> Server<B> {
             "history" => self.history(args).await,
             "plan_change" => self.plan_change(args).await,
             "apply_change" => self.apply_change(args, transport).await,
-            "undo_last_change" => self.undo(args, transport).await,
+            "undo_last_change" => {
+                self.undo(&json!({ "reason": args["reason"] }), transport)
+                    .await
+            }
+            "undo_change" => {
+                if args["commit"].as_str().is_none_or(|c| c.trim().is_empty()) {
+                    Err("missing required argument \"commit\"".into())
+                } else {
+                    self.undo(args, transport).await
+                }
+            }
             "propose_configuration_edit" => self.propose_config(args).await,
             "apply_configuration_edit" => self.apply_config(args, transport).await,
             "fetch_source" => crate::packaging::fetch_source(args)
@@ -287,7 +300,14 @@ impl<B: Backend> Server<B> {
         let entries = self.backend.history(limit).await?;
         let text = entries
             .iter()
-            .map(|e| format!("{} {}", e.commit, e.summary))
+            .map(|e| {
+                let by = match e.by.strip_prefix("starah-") {
+                    Some(agent) => format!(" (by agent {agent})"),
+                    None if !e.by.is_empty() => format!(" (by {})", e.by),
+                    None => String::new(),
+                };
+                format!("{} {}{by}", e.commit, e.summary)
+            })
             .collect::<Vec<_>>()
             .join("\n");
         Ok(ToolOutput::data(text, json!({ "history": entries })))
@@ -358,21 +378,33 @@ impl<B: Backend> Server<B> {
         W: AsyncWrite + Unpin,
     {
         let reason = required_str(args, "reason")?;
-        let latest = self.backend.history(1).await?;
-        let Some(latest) = latest.first() else {
-            return Ok(ToolOutput::error("There is no change to undo."));
+        let (tool, commit) = match args["commit"].as_str().filter(|c| !c.trim().is_empty()) {
+            Some(c) => ("undo_change", c.trim().to_string()),
+            None => {
+                let latest = self.backend.history(1).await?;
+                let Some(latest) = latest.first() else {
+                    return Ok(ToolOutput::error("There is no change to undo."));
+                };
+                ("undo_last_change", latest.commit.clone())
+            }
         };
+        // tulsid works out what undoing it means against everything since, and
+        // refuses if a later change edited the same lines.
+        let plan = self.backend.plan_undo(&commit).await?;
+        let mut changes = vec![format!(
+            "Undo: {} ({})",
+            plan.summary.trim_start_matches("tulsi: "),
+            plan.commit
+        )];
+        changes.extend(plan.changes.iter().cloned());
         let request = Request {
-            title: "An AI agent wants to undo the latest system change".into(),
+            title: "An AI agent wants to undo a system change".into(),
             reason: reason.into(),
-            changes: vec![format!(
-                "Undo: {}",
-                latest.summary.trim_start_matches("tulsi: ")
-            )],
+            changes,
             diff: None,
             requester: REQUESTER.into(),
             // Undoing needs what the change needed (tulsid checks the same).
-            action: match latest.action() {
+            action: match plan.action.as_str() {
                 ACTION_EXTENSIONS => ACTION_EXTENSIONS,
                 ACTION_APPLY => ACTION_APPLY,
                 _ => ACTION_CONFIGURE,
@@ -380,13 +412,13 @@ impl<B: Backend> Server<B> {
         };
         let via = match self.approved(&request, transport).await {
             Ok(via) => via,
-            Err(why) => return Ok(rejected("undo_last_change", &request, &why)),
+            Err(why) => return Ok(rejected(tool, &request, &why)),
         };
         job_output(
-            "undo_last_change",
+            tool,
             &request,
             via,
-            self.backend.undo().await?,
+            self.backend.undo_change(&commit).await?,
         )
     }
 
@@ -678,7 +710,8 @@ fn tool_list() -> Vec<Value> {
             "Packages, browser extensions and service toggles managed by TulsiOS (state.json).", empty.clone(), true),
         tool("read_configuration", "Read configuration.nix",
             "The user's own NixOS configuration file.", empty.clone(), true),
-        tool("history", "Change history", "Recent system changes, newest first.",
+        tool("history", "Change history",
+            "Recent system changes, newest first: id, summary and who made it (a person or an agent).",
             json!({ "type": "object", "properties": {
                 "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 } } }), true),
         tool("plan_change", "Plan a change", "Show what operations would change. Applies nothing.",
@@ -690,6 +723,12 @@ fn tool_list() -> Vec<Value> {
         tool("undo_last_change", "Undo the latest change",
             "Revert the most recent system change after the human approves.",
             json!({ "type": "object", "required": ["reason"], "properties": { "reason": reason.clone() } }), false),
+        tool("undo_change", "Undo an older change",
+            "Take back one earlier change by its id from history, keeping every change made since. \
+             Refused if a later change edited the same lines.",
+            json!({ "type": "object", "required": ["commit", "reason"], "properties": {
+                "commit": { "type": "string", "description": "The change id from history, e.g. 'abc1234'." },
+                "reason": reason.clone() } }), false),
         tool("propose_configuration_edit", "Propose a configuration.nix edit",
             "Check new COMPLETE contents for configuration.nix (syntax) and show the diff. Applies nothing.",
             json!({ "type": "object", "required": ["contents"], "properties": {
@@ -734,13 +773,14 @@ mod tests {
 
     use super::*;
     use crate::approval::Mode;
-    use tulsi_client::{ConfigPlan, HistoryEntry, PackageInfo, Plan, State};
+    use tulsi_client::{ConfigPlan, HistoryEntry, PackageInfo, Plan, State, UndoPlan};
 
     #[derive(Default)]
     struct Fake {
         applied: Mutex<Vec<String>>,
         configs: Mutex<Vec<String>>,
         undone: Mutex<u32>,
+        undone_commits: Mutex<Vec<String>>,
     }
 
     impl Backend for &Fake {
@@ -770,6 +810,7 @@ mod tests {
                 time: 0,
                 summary: "tulsi: install vlc".into(),
                 recorded_action: String::new(),
+                by: "starah-assistant".into(),
             }])
         }
         async fn plan(&self, ops: &str) -> Result<Plan, String> {
@@ -788,8 +829,17 @@ mod tests {
                 message: "tulsi: install vlc (commit 1)".into(),
             })
         }
-        async fn undo(&self) -> Result<JobResult, String> {
+        async fn plan_undo(&self, commit: &str) -> Result<UndoPlan, String> {
+            Ok(UndoPlan {
+                commit: commit.into(),
+                summary: "tulsi: install vlc".into(),
+                changes: vec!["- package vlc".into()],
+                action: "org.tulsi.apply".into(),
+            })
+        }
+        async fn undo_change(&self, commit: &str) -> Result<JobResult, String> {
             *self.undone.lock().unwrap() += 1;
+            self.undone_commits.lock().unwrap().push(commit.into());
             Ok(JobResult {
                 ran: true,
                 success: true,
@@ -865,7 +915,8 @@ mod tests {
             .iter()
             .map(|t| t["name"].as_str().unwrap())
             .collect();
-        assert_eq!(tools.len(), 14);
+        assert_eq!(tools.len(), 15);
+        assert!(tools.contains(&"undo_change"));
         assert!(tools.contains(&"propose_local_package"));
         assert!(tools.contains(&"apply_configuration_edit"));
         assert_eq!(out[2]["error"]["code"], METHOD_NOT_FOUND);
@@ -1044,6 +1095,33 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("users.users.bob.isNormalUser"));
+    }
+
+    #[tokio::test]
+    async fn an_older_change_is_undone_by_id() {
+        let fake = Fake::default();
+        let undo = r#"{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"undo_change","arguments":{"commit":"0ld1234","reason":"r"}}}"#;
+        let missing = r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"undo_change","arguments":{"reason":"r"}}}"#;
+        let history = r#"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"history","arguments":{}}}"#;
+        let out = session(
+            &fake,
+            Mode::Dialog,
+            &["true"],
+            &[INIT, undo, missing, history],
+        )
+        .await;
+        let r = &out[1]["result"]["structuredContent"]["receipt"];
+        assert_eq!(r["tool"], "undo_change", "{}", out[1]);
+        assert_eq!(r["outcome"], "applied");
+        assert_eq!(r["changes"][0], "Undo: install vlc (0ld1234)");
+        assert_eq!(r["changes"][1], "- package vlc");
+        assert_eq!(fake.undone_commits.lock().unwrap().as_slice(), ["0ld1234"]);
+        assert!(
+            text(&out[2]).contains("missing required argument"),
+            "{}",
+            out[2]
+        );
+        assert!(text(&out[3]).contains("(by agent assistant)"), "{}", out[3]);
     }
 
     #[tokio::test]

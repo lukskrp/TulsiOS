@@ -304,7 +304,7 @@ class Window(Gtk.ApplicationWindow):
     @_idle
     def tool_started(self, name: str, arguments: dict) -> None:
         self._add_tool_line(describe_tool(name, arguments), "system-run-symbolic")
-        if name.startswith(("apply_", "undo_", "propose_local")):
+        if name.startswith(("apply_", "undo_", "propose_local")):  # incl. undo_change
             self._set_status("Changing the system (you may be asked to approve), then rebuilding…")
         else:
             self._set_status("Working…")

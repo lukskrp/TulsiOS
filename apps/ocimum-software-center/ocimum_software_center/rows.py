@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from gi.repository import GLib, GObject, Gtk, Pango
 
-from .model import Package, history_title, relative_time
+from .model import Package, history_by, history_title, relative_time
 
 FALLBACK_ICON = "package-x-generic"
 
@@ -126,16 +126,30 @@ class ExtensionRow(Gtk.ListBoxRow):
 
 
 class HistoryRow(Gtk.ListBoxRow):
-    def __init__(self, entry: dict):
+    """One change: what, when, who, and an Undo button (`on_undo(entry)`)."""
+
+    def __init__(self, entry: dict, on_undo=None):
         super().__init__(activatable=False, selectable=False)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, margin=10)
+        row = Gtk.Box(spacing=8, margin=10)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         title = _label()
         title.set_markup(f"<b>{GLib.markup_escape_text(history_title(entry['summary']))}</b>")
         box.pack_start(title, False, False, 0)
-        when = f"{relative_time(entry['time'])} · {entry['commit']}"
-        box.pack_start(_label(when, css="dim-label"), False, False, 0)
-        self.add(box)
+        parts = [relative_time(entry["time"]), history_by(entry.get("by", "")), entry["commit"]]
+        box.pack_start(_label(" · ".join(p for p in parts if p), css="dim-label"), False, False, 0)
+        row.pack_start(box, True, True, 0)
+        self.button = None
+        if on_undo is not None:
+            self.button = Gtk.Button(label="Undo", valign=Gtk.Align.CENTER)
+            self.button.set_tooltip_text("Take back this change; later changes stay")
+            self.button.connect("clicked", lambda _b: on_undo(entry))
+            row.pack_end(self.button, False, False, 0)
+        self.add(row)
         self.show_all()
+
+    def set_busy(self, busy: bool) -> None:
+        if self.button is not None:
+            self.button.set_sensitive(not busy)
 
 
 def placeholder(icon: str, title: str, text: str = "") -> Gtk.Box:

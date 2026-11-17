@@ -17,7 +17,9 @@ recently?"*. It answers with Claude, and its only tools are those of
 receipts rather than from the model's words, and who approved it. It has an **Undo**
 button.
 - If a reply says something changed but nothing did, a note says so.
-- **Recent changes** (clock icon) opens the Software Center's History page.
+- **Recent changes** (clock icon) opens the Software Center's History page. There, every
+  change shows who made it (you or the Assistant) and has its own Undo (ADR 0015). You can
+  also ask the Assistant: *"undo the printer change from yesterday"*.
 
 ## Setup
 

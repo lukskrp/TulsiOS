@@ -2,7 +2,7 @@
 //! a fake in tests.
 
 use futures_util::StreamExt;
-use tulsi_client::{ConfigPlan, HistoryEntry, ManagerProxy, PackageInfo, Plan};
+use tulsi_client::{ConfigPlan, HistoryEntry, ManagerProxy, PackageInfo, Plan, UndoPlan};
 
 /// Outcome of a change job.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,7 +21,8 @@ pub trait Backend {
     async fn history(&self, limit: u32) -> Result<Vec<HistoryEntry>, String>;
     async fn plan(&self, ops_json: &str) -> Result<Plan, String>;
     async fn apply(&self, ops_json: &str) -> Result<JobResult, String>;
-    async fn undo(&self) -> Result<JobResult, String>;
+    async fn plan_undo(&self, commit: &str) -> Result<UndoPlan, String>;
+    async fn undo_change(&self, commit: &str) -> Result<JobResult, String>;
     async fn get_config(&self) -> Result<String, String>;
     async fn plan_config(&self, contents: &str) -> Result<ConfigPlan, String>;
     async fn apply_config(&self, contents: &str, summary: &str) -> Result<JobResult, String>;
@@ -106,8 +107,11 @@ impl Backend for Dbus {
     async fn apply(&self, ops_json: &str) -> Result<JobResult, String> {
         self.run_job(self.proxy.apply(ops_json)).await
     }
-    async fn undo(&self) -> Result<JobResult, String> {
-        self.run_job(self.proxy.undo()).await
+    async fn plan_undo(&self, commit: &str) -> Result<UndoPlan, String> {
+        decode(self.proxy.plan_undo(commit).await.map_err(err)?)
+    }
+    async fn undo_change(&self, commit: &str) -> Result<JobResult, String> {
+        self.run_job(self.proxy.undo_change(commit)).await
     }
     async fn get_config(&self) -> Result<String, String> {
         self.proxy.get_config().await.map_err(err)

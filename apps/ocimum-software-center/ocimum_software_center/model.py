@@ -131,6 +131,19 @@ def history_title(summary: str) -> str:
     return text[:1].upper() + text[1:]
 
 
+def history_by(by: str) -> str:
+    """Who made a change: 'starah-assistant' -> 'by the Assistant', 'alice' -> 'by alice'."""
+    if not by:
+        return ""
+    if by == "starah-assistant":
+        return "by the Assistant"
+    if by.startswith("starah-"):
+        return f"by agent {by.removeprefix('starah-')}"
+    if by == "root":
+        return "by the system"
+    return f"by {by}"
+
+
 def done_text(label: str) -> str:
     """'Installing vlc' -> 'vlc was installed.'"""
     verb, _, rest = label.partition(" ")

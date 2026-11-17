@@ -207,6 +207,22 @@ in
         assert "cannot accept a software licence" in out, out
         machine.fail("grep -q claude-code /etc/nixos/tulsi/state.json")
 
+    with subtest("an older change is undone on its own; later changes and who made them stay"):
+        cowsay = machine.succeed(
+            "git -C /etc/nixos log --format=%h --grep='^tulsi: install cowsay$'"
+        ).strip()
+        assert cowsay, "no cowsay commit"
+        plan = machine.succeed(f"su - alice -c 'tulsi --dry-run undo {cowsay}'")
+        assert "- package cowsay" in plan, plan
+        machine.succeed("grep -q cowsay /etc/nixos/tulsi/state.json")  # dry run changed nothing
+        machine.succeed(f"su - alice -c 'tulsi -q undo {cowsay}'")
+        machine.fail("grep -q cowsay /etc/nixos/tulsi/state.json")
+        # The later account edit stays.
+        machine.succeed("grep -q bob /etc/nixos/configuration.nix")
+        history = machine.succeed("su - alice -c 'tulsi history 5'")
+        assert "undo install cowsay  (alice)" in history, history
+        assert "install cowsay  (agent assistant)" in history, history
+
     with subtest("Starah audited the requests, the decision and tulsid's checks"):
         audit = machine.succeed("starah audit 100")
         assert '"event":"ask"' in audit and '"event":"decide"' in audit, audit

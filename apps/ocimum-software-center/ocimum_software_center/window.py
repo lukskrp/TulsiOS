@@ -188,7 +188,9 @@ class Window(Gtk.ApplicationWindow):
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=12)
         top = Gtk.Box(spacing=8)
         intro = Gtk.Label(
-            label="Every change is recorded. Undo reverts the most recent one.", xalign=0
+            label="Every change is recorded, by you or by an agent. Undo any of them; "
+            "later changes stay.",
+            xalign=0,
         )
         intro.get_style_context().add_class("dim-label")
         top.pack_start(intro, True, True, 0)
@@ -301,8 +303,13 @@ class Window(Gtk.ApplicationWindow):
     def refresh_history(self) -> None:
         def done(entries: list[dict]) -> None:
             _clear(self.history_list)
-            for entry in entries:
-                self.history_list.add(HistoryRow(entry))
+            # A short history ends where it starts, which cannot be undone.
+            complete = len(entries) < HISTORY_LIMIT
+            for i, entry in enumerate(entries):
+                start = complete and i == len(entries) - 1
+                row = HistoryRow(entry, None if start else self.request_undo_change)
+                row.set_busy(self.jobs.busy)
+                self.history_list.add(row)
             self.history_undo.set_sensitive(len(entries) > 1 and not self.jobs.busy)
 
         self.client.history(HISTORY_LIMIT, done, lambda e: self.show_message(e.message, error=True))
@@ -357,6 +364,26 @@ class Window(Gtk.ApplicationWindow):
                 self._start(self.client.undo, f"Undoing “{latest}”", is_undo=True)
 
         self.client.history(2, got_history, self._on_request_error)
+
+    def request_undo_change(self, entry: dict) -> None:
+        """Undo one earlier change from the History page; later changes stay."""
+        if self.jobs.busy:
+            self.show_message("Another change is still being applied.", error=True)
+            return
+        commit = entry["commit"]
+        title = history_title(entry["summary"])
+
+        def planned(plan: dict) -> None:
+            changes = [describe_change(c) for c in plan.get("changes", [])] or [title]
+            if dialogs.confirm(self, f"Undo “{title}”?", changes, "Undo"):
+                self._start(
+                    lambda ok, err: self.client.undo_change(commit, ok, err),
+                    f"Undoing “{title}”",
+                    is_undo=True,
+                )
+
+        # tulsid works out what it means today, or explains why it cannot.
+        self.client.plan_undo(commit, planned, self._on_request_error)
 
     def _start(self, call, label: str, *, is_undo: bool = False) -> None:
         self._last_change_was_undo = is_undo
@@ -415,6 +442,9 @@ class Window(Gtk.ApplicationWindow):
             for row in listbox.get_children():
                 if isinstance(row, (PackageRow, ExtensionRow)):
                     row.set_busy(busy)
+        for row in self.history_list.get_children():
+            if isinstance(row, HistoryRow):
+                row.set_busy(busy)
         self.history_undo.set_sensitive(not busy)
 
     def _on_request_error(self, error: TulsiError) -> None:

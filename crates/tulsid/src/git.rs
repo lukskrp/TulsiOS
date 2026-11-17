@@ -161,69 +161,184 @@ pub async fn commit(dir: &Path, message: &str, paths: &[&str]) -> Result<String,
         .to_string())
 }
 
-/// The commit message for a change: its summary, plus a trailer naming the polkit
-/// action it needed (undoing it needs the same one).
-pub fn commit_message(summary: &str, action: &str) -> String {
-    format!("{summary}\n\n{}: {action}", tulsi_client::ACTION_TRAILER)
+/// The commit message for a change: its summary, plus trailers naming the polkit
+/// action it needed (undoing it needs the same one) and who asked for it.
+pub fn commit_message(summary: &str, action: &str, by: &str) -> String {
+    let mut message = format!("{summary}\n\n{}: {action}", tulsi_client::ACTION_TRAILER);
+    if !by.is_empty() {
+        message.push_str(&format!("\n{}: {by}", tulsi_client::BY_TRAILER));
+    }
+    message
+}
+
+/// `git log` format for [`HistoryEntry`]: fields end with \x1f, entries with \x1e
+/// (trailer values end a line).
+fn entry_format() -> String {
+    format!(
+        "--format=%h%x1f%ct%x1f%s%x1f%(trailers:key={},valueonly,separator=%x2C)%x1f\
+         %(trailers:key={},valueonly,separator=%x2C)%x1e",
+        tulsi_client::ACTION_TRAILER,
+        tulsi_client::BY_TRAILER
+    )
 }
 
 pub async fn history(dir: &Path, limit: u32) -> Result<Vec<HistoryEntry>, String> {
     let n = format!("-n{}", limit.max(1));
-    // Fields end with \x1f, entries with \x1e (the trailer value ends a line).
-    let format = format!(
-        "--format=%h%x1f%ct%x1f%s%x1f%(trailers:key={},valueonly,separator=%x2C)%x1e",
-        tulsi_client::ACTION_TRAILER
-    );
+    let format = entry_format();
     let mut args = vec!["log", &n, &format, "--"];
     args.extend(MANAGED);
-    let out = git(dir, &args).await?;
-    Ok(out
-        .split('\x1e')
+    Ok(parse_entries(&git(dir, &args).await?))
+}
+
+/// One change of the history, by short or full hash.
+pub async fn entry(dir: &Path, commit: &str) -> Result<HistoryEntry, String> {
+    let (hash, _) = resolve(dir, commit).await?;
+    let format = entry_format();
+    let out = git(dir, &["log", "-1", &format, &hash]).await?;
+    parse_entries(&out)
+        .into_iter()
+        .next()
+        .ok_or_else(|| format!("cannot read change {commit}"))
+}
+
+fn parse_entries(out: &str) -> Vec<HistoryEntry> {
+    out.split('\x1e')
         .filter_map(|entry| {
-            let mut parts = entry.trim_start_matches('\n').splitn(4, '\x1f');
+            let mut parts = entry.trim_start_matches('\n').splitn(5, '\x1f');
             Some(HistoryEntry {
                 commit: parts.next()?.to_string(),
                 time: parts.next()?.parse().ok()?,
                 summary: parts.next()?.to_string(),
                 recorded_action: parts.next().unwrap_or_default().trim().to_string(),
+                by: parts.next().unwrap_or_default().trim().to_string(),
             })
         })
-        .collect())
+        .collect()
 }
 
-/// What undoing the most recent change means: for each managed file it
-/// touched, the version before it. Also returns that change's summary.
-pub async fn undo_changes(dir: &Path) -> Result<(Vec<FileChange>, String), String> {
-    let mut args = vec!["log", "-n1", "--format=%H%x1f%s", "--"];
+/// A change in tulsid's history, by short or full hash: (full hash, summary).
+async fn resolve(dir: &Path, commit: &str) -> Result<(String, String), String> {
+    let commit = commit.trim();
+    if commit.len() < 4 || commit.len() > 64 || !commit.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(format!("{commit:?} is not a change id"));
+    }
+    let hash = git(
+        dir,
+        &[
+            "rev-parse",
+            "--verify",
+            "-q",
+            &format!("{commit}^{{commit}}"),
+        ],
+    )
+    .await
+    .map_err(|_| format!("there is no change {commit}"))?
+    .trim()
+    .to_string();
+    let mut args = vec!["log", "--format=%H", "--"];
     args.extend(MANAGED);
-    let last = git(dir, &args).await?;
-    let (hash, summary) = last.trim().split_once('\x1f').ok_or("no history to undo")?;
+    if !git(dir, &args).await?.lines().any(|l| l.trim() == hash) {
+        return Err(format!("{commit} is not a change TulsiOS made"));
+    }
+    let summary = git(dir, &["log", "-1", "--format=%s", &hash])
+        .await?
+        .trim()
+        .to_string();
     if git(dir, &["rev-parse", "--verify", "-q", &format!("{hash}^")])
         .await
         .is_err()
     {
-        return Err(format!("nothing to undo before \"{summary}\""));
+        return Err(format!(
+            "\"{summary}\" is where the history starts; it cannot be undone"
+        ));
     }
+    Ok((hash, summary))
+}
 
-    let mut args = vec!["show", "--name-only", "--format=", hash, "--"];
+async fn show(dir: &Path, rev: &str, rel: &str) -> Option<Vec<u8>> {
+    git(dir, &["show", &format!("{rev}:{rel}")])
+        .await
+        .ok()
+        .map(String::into_bytes)
+}
+
+/// What undoing change `commit` (any change, not only the latest) means for each
+/// managed file it touched, applied on top of everything since. Returns the file
+/// changes and that change's summary.
+/// - state.json is reverted by meaning (`State::reverted`), so it never conflicts.
+/// - Other files (configuration.nix, local packages) are merged three-way: if a later
+///   change edited the same lines, nothing is changed and the error says so.
+pub async fn revert_changes(dir: &Path, commit: &str) -> Result<(Vec<FileChange>, String), String> {
+    let (hash, summary) = resolve(dir, commit).await?;
+    let parent = format!("{hash}^");
+    let mut args = vec!["show", "--name-only", "--format=", &hash, "--"];
     args.extend(MANAGED);
     let touched = git(dir, &args).await?;
     let mut changes = Vec::new();
     for rel in touched.lines().map(str::trim).filter(|l| is_managed(l)) {
-        let before = git(dir, &["show", &format!("{hash}^:{rel}")])
-            .await
-            .ok()
-            .map(String::into_bytes);
-        changes.push(FileChange {
-            rel: rel.to_string(),
-            old: read(dir, rel),
-            new: before,
-        });
+        let current = read(dir, rel);
+        let at = show(dir, &hash, rel).await;
+        let before = show(dir, &parent, rel).await;
+        let new = if rel == Config::STATE_REL {
+            let parse = |bytes: Option<Vec<u8>>| -> Result<State, String> {
+                let text = String::from_utf8_lossy(bytes.as_deref().unwrap_or(b"{\"version\":1}"))
+                    .into_owned();
+                State::from_json(&text).map_err(|e| format!("cannot read {rel}: {e}"))
+            };
+            let reverted = parse(current.clone())?.reverted(&parse(before)?, &parse(at)?);
+            Some(reverted.to_json_pretty().into_bytes())
+        } else if current == at {
+            before
+        } else {
+            match (&current, &at, &before) {
+                (Some(cur), Some(base), Some(other)) => Some(
+                    merge(dir, cur, base, other)
+                        .await
+                        .map_err(|_| conflict(&summary, rel))?,
+                ),
+                _ => return Err(conflict(&summary, rel)),
+            }
+        };
+        if new != current {
+            changes.push(FileChange {
+                rel: rel.to_string(),
+                old: current,
+                new,
+            });
+        }
     }
     if changes.is_empty() {
-        return Err(format!("nothing to undo in \"{summary}\""));
+        return Err(format!(
+            "nothing left to undo in \"{summary}\": later changes already took it back"
+        ));
     }
-    Ok((changes, summary.to_string()))
+    Ok((changes, summary))
+}
+
+fn conflict(summary: &str, rel: &str) -> String {
+    format!(
+        "cannot undo \"{summary}\" on its own: a later change edited the same part of {rel}; \
+         undo that later change first"
+    )
+}
+
+/// Three-way merge: the change from `base` to `other`, applied to `current`.
+async fn merge(dir: &Path, current: &[u8], base: &[u8], other: &[u8]) -> Result<Vec<u8>, String> {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let tmp = std::env::temp_dir().join(format!("tulsid-merge-{}-{n}", std::process::id()));
+    std::fs::create_dir_all(&tmp).map_err(|e| e.to_string())?;
+    let paths = [tmp.join("current"), tmp.join("base"), tmp.join("other")];
+    let result = async {
+        for (path, bytes) in paths.iter().zip([current, base, other]) {
+            std::fs::write(path, bytes).map_err(|e| e.to_string())?;
+        }
+        let p: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
+        git(dir, &["merge-file", "-p", &p[0], &p[1], &p[2]]).await
+    }
+    .await;
+    let _ = std::fs::remove_dir_all(&tmp);
+    result.map(String::into_bytes)
 }
 
 #[cfg(test)]
@@ -248,7 +363,7 @@ mod tests {
                 .unwrap();
             commit(
                 &dir,
-                &commit_message(summary, action),
+                &commit_message(summary, action, "starah-assistant"),
                 &[Config::CONFIG_REL],
             )
             .await
@@ -277,6 +392,119 @@ mod tests {
             ]
         );
         assert!(entries[0].recorded_action.is_empty());
+        assert!(entries[0].by.is_empty());
+        assert_eq!(entries[1].by, "starah-assistant");
+        assert_eq!(
+            entry(&dir, &entries[1].commit).await.unwrap().by,
+            "starah-assistant"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    async fn repo(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("tulsid-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        git(&dir, &["init", "-q"]).await.unwrap();
+        dir
+    }
+
+    /// Writes `files` and commits them; returns the short hash.
+    async fn change(dir: &Path, files: &[(&str, String)], summary: &str) -> String {
+        for (rel, text) in files {
+            put(dir, rel, Some(text.as_bytes())).await.unwrap();
+        }
+        let rels: Vec<&str> = files.iter().map(|(r, _)| *r).collect();
+        commit(
+            dir,
+            &commit_message(summary, tulsi_client::ACTION_APPLY, "alice"),
+            &rels,
+        )
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn an_older_change_is_undone_and_later_ones_stay() {
+        let dir = repo("revert-state").await;
+        let state = |pkgs: &[&str]| {
+            State {
+                packages: pkgs.iter().map(|p| p.to_string()).collect(),
+                ..State::default()
+            }
+            .to_json_pretty()
+        };
+        change(
+            &dir,
+            &[(Config::STATE_REL, state(&[]))],
+            "tulsi: track state",
+        )
+        .await;
+        let cowsay = change(
+            &dir,
+            &[(Config::STATE_REL, state(&["cowsay"]))],
+            "tulsi: install cowsay",
+        )
+        .await;
+        change(
+            &dir,
+            &[(Config::STATE_REL, state(&["cowsay", "hello"]))],
+            "tulsi: install hello",
+        )
+        .await;
+
+        let (changes, summary) = revert_changes(&dir, &cowsay).await.unwrap();
+        assert_eq!(summary, "tulsi: install cowsay");
+        assert_eq!(changes.len(), 1);
+        let new =
+            State::from_json(&String::from_utf8(changes[0].new.clone().unwrap()).unwrap()).unwrap();
+        assert_eq!(new.packages, vec!["hello"]);
+
+        assert!(revert_changes(&dir, "--help").await.is_err());
+        assert!(revert_changes(&dir, "deadbeef").await.is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn configuration_edits_merge_or_refuse() {
+        let dir = repo("revert-config").await;
+        let lines = |l: &[&str]| l.iter().map(|x| format!("{x}\n")).collect::<String>();
+        let cfg = Config::CONFIG_REL;
+        change(
+            &dir,
+            &[(cfg, lines(&["a", "1", "2", "3", "4", "c"]))],
+            "tulsi: start",
+        )
+        .await;
+        let first = change(
+            &dir,
+            &[(cfg, lines(&["A", "1", "2", "3", "4", "c"]))],
+            "tulsi: edit a",
+        )
+        .await;
+        change(
+            &dir,
+            &[(cfg, lines(&["A", "1", "2", "3", "4", "C"]))],
+            "tulsi: edit c",
+        )
+        .await;
+
+        // A later edit elsewhere in the file: the older edit is taken back on its own.
+        let (changes, _) = revert_changes(&dir, &first).await.unwrap();
+        assert_eq!(
+            changes[0].new.as_deref(),
+            Some(lines(&["a", "1", "2", "3", "4", "C"]).as_bytes())
+        );
+
+        // A later edit of the same line: refused.
+        change(
+            &dir,
+            &[(cfg, lines(&["AA", "1", "2", "3", "4", "C"]))],
+            "tulsi: edit a again",
+        )
+        .await;
+        let err = revert_changes(&dir, &first).await.unwrap_err();
+        assert!(err.contains("a later change edited the same part"), "{err}");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

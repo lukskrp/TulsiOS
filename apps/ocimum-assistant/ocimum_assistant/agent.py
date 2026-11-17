@@ -265,4 +265,5 @@ def describe_tool(name: str, arguments: dict) -> str:
         "history": "Checking recent changes",
         "propose_configuration_edit": "Checking a configuration edit",
         "undo_last_change": "Undoing the latest change",
+        "undo_change": f"Undoing an earlier change ({arguments.get('commit', '?')})",
     }.get(name, f"Using {name}")
