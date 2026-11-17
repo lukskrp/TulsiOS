@@ -102,6 +102,10 @@ Known limits, picked up later:
 - [ ] Starah: Landlock/network rules per agent, panel indicator for requests
 - [x] AI agent CLIs (ADR 0012): tulsipkgs fast-tracks free ones (`tulsi-agents.yml`, PR per release);
       proprietary ones install after a person accepts their licence in the Software Center
+- [x] Install the TulsiOS way (ADR 0013): `apt`/`dnf`/… shims, downloaded packages and foreign
+      binaries open `tulsi-adopt`; the Assistant packages unpackaged software as a local package
+      (`tulsi/pkgs/<name>`), a person approves, Undo removes it; `checks.adopt`, `checks.local-package-eval`
+- [ ] Share local packages back to tulsipkgs (opt-in)
 - [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
 - [x] `cinnamon-session-quit` works: tulsipkgs' cinnamon-session wraps its typelibs; `otk`
       propagates `graphene`, so Python OTK apps need only `otk`

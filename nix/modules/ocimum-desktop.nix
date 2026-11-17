@@ -44,6 +44,9 @@ in
     # Starah (ADR 0011): agents get privileges only through the levels the human
     # chooses at first login.
     services.starah.enable = lib.mkDefault true;
+    # apt/dnf/pacman, downloaded packages and foreign binaries lead to the
+    # Software Center or the Assistant (ADR 0013).
+    tulsi.adopt.enable = lib.mkDefault config.ocimum.softwareCenter.enable;
     services.displayManager.autoLogin = lib.mkIf (cfg.autoLoginUser != null) {
       enable = true;
       user = cfg.autoLoginUser;

@@ -169,7 +169,10 @@ in
         assert "cowsay" in text(r[2]), r[2]
         assert "+ package sl" in text(r[3]), r[3]
         assert "hello" in text(r[4]), r[4]
-        assert len(r[5]["result"]["tools"]) == 10, r[5]
+        tools = {t["name"] for t in r[5]["result"]["tools"]}
+        # 10 system tools + 4 packaging tools (ADR 0013).
+        assert len(tools) == 14 and {"fetch_source", "build_package", "try_package",
+                                     "propose_local_package"} <= tools, sorted(tools)
         machine.fail(f"grep -q '\"sl\"' {state}")
 
     with subtest("an approved change is applied, with the plan shown to the approver"):

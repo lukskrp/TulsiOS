@@ -25,6 +25,9 @@ class Package:
     license_name: str = ""
     license_url: str = ""
     license_accepted: bool = False
+    # Made on this computer (a local package), and where it came from.
+    local: bool = False
+    origin: str = ""
 
     @classmethod
     def from_json(cls, data: dict) -> "Package":
@@ -38,6 +41,8 @@ class Package:
             license_name=(data.get("license") or {}).get("name", ""),
             license_url=(data.get("license") or {}).get("url", ""),
             license_accepted=bool(data.get("license_accepted")),
+            local=bool(data.get("local")),
+            origin=data.get("origin") or "",
         )
 
     @property
@@ -59,6 +64,8 @@ class Package:
             parts.append(self.attr)
         if self.unfree:
             parts.append("unfree")
+        if self.local:
+            parts.append("made on this computer")
         return " · ".join(parts)
 
 

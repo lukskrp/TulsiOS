@@ -1,4 +1,8 @@
-{ lib, rustPlatform }:
+{
+  lib,
+  rustPlatform,
+  libarchive,
+}:
 
 let
   root = ../..;
@@ -19,6 +23,10 @@ rustPlatform.buildRustPackage {
   };
 
   cargoLock.lockFile = root + "/Cargo.lock";
+
+  # tulsi-mcp's packaging tools list archives with bsdtar (ADR 0013). Compiled in rather
+  # than wrapped, so the process keeps its name (`pgrep -x tulsi-mcp`, Starah's audit).
+  env.TULSI_BSDTAR = lib.getExe' libarchive "bsdtar";
 
   postInstall = ''
     install -Dm444 data/dbus/org.tulsi.Manager1.conf -t $out/share/dbus-1/system.d

@@ -50,6 +50,8 @@ impl Config {
     pub const STATE_REL: &'static str = "tulsi/state.json";
     /// The user's own NixOS settings, editable through ApplyConfig.
     pub const CONFIG_REL: &'static str = "configuration.nix";
+    /// Packages made on this machine: `<PKGS_REL>/<name>/package.nix` (+ meta.json).
+    pub const PKGS_REL: &'static str = "tulsi/pkgs";
 
     pub fn state_path(&self) -> PathBuf {
         self.flake_dir.join(Self::STATE_REL)

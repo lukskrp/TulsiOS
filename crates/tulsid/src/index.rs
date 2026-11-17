@@ -151,6 +151,8 @@ fn info(row: &Row) -> PackageInfo {
         installed: false,
         license: None,
         license_accepted: false,
+        local: false,
+        origin: String::new(),
     }
 }
 

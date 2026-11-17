@@ -112,10 +112,21 @@ ADR 0007. `tulsi-extwatch` is a systemd user service in the graphical session
 The Software Center's **Extensions** tab lists declarative extensions and removes
 them. `tulsi ext add|remove` does the same from a terminal.
 
+### Install the TulsiOS way, `nix/modules/adopt.nix`, `tulsi-adopt`
+ADR 0013. Package-command shims (`apt`, `dnf`, …), the default handler for downloaded
+packages and archives, and a replaced ELF-loader stub all open `tulsi-adopt`. It
+offers matching Software Center packages or asks the Assistant to package the software.
+Approved results are local packages: `/etc/nixos/tulsi/pkgs/<name>/package.nix` plus
+`meta.json`, listed in state.json `localPackages` and installed by `tulsi.state` with
+`callPackage`. tulsid (`localpkg.rs`) writes them with history and Undo.
+`tulsi_state::check_expression` refuses unsafe expressions.
+
 ### tulsi-mcp, `crates/tulsi-mcp` (docs/MCP.md, ADR 0004)
 MCP server (stdio, JSON-RPC; protocol versions 2024-11-05 … 2025-11-25) over tulsid.
 - Read-only tools: `search_packages`, `package_info`, `get_state`, `read_configuration`,
   `history`, `plan_change`, `propose_configuration_edit`.
+- Packaging tools (ADR 0013): `fetch_source`, `build_package`, `try_package` work in the
+  agent's own workspace and Nix's sandbox. `propose_local_package` is a change tool.
 - Change tools: `apply_change`, `apply_configuration_edit`, `undo_last_change`. Each
   plans first, then asks the human through `ocimum-approve` (desktop dialog, Reject by
   default) or MCP elicitation, then applies and waits for the rebuild. If no approval

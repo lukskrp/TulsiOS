@@ -21,9 +21,13 @@ let
   firefoxExtensions = state.browserExtensions.firefox or [ ];
   chromiumExtensions = state.browserExtensions.chromium or [ ];
   services = state.services or { };
-  # Licences a person accepted, limited to what tulsid allows (tulsi.daemon.unfreeAgents).
+  # Packages made on this machine: tulsi/pkgs/<name>/package.nix next to state.json.
+  localPackages = state.localPackages or [ ];
+  localPackageFile = name: dirOf cfg.file + "/pkgs/${name}/package.nix";
+  # Licences a person accepted, limited to what tulsid allows (tulsi.daemon.unfreeAgents)
+  # and to local packages.
   acceptedUnfree = lib.intersectLists (state.acceptedLicenses or [ ]) (
-    config.tulsi.daemon.unfreeAgents or [ ]
+    (config.tulsi.daemon.unfreeAgents or [ ]) ++ localPackages
   );
 
   # "vlc" or "python3Packages.requests" -> derivation, with a readable error.
@@ -32,7 +36,9 @@ let
     let
       path = lib.splitString "." name;
     in
-    if lib.hasAttrByPath path pkgs then
+    if builtins.elem name localPackages then
+      pkgs.callPackage (localPackageFile name) { }
+    else if lib.hasAttrByPath path pkgs then
       lib.getAttrFromPath path pkgs
     else
       throw "tulsi.state: unknown package '${name}' in ${toString cfg.file}";

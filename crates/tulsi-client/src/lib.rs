@@ -103,6 +103,11 @@ pub struct PackageInfo {
     /// The licence is already accepted (state.json `acceptedLicenses`).
     #[serde(default)]
     pub license_accepted: bool,
+    /// Made on this machine (state.json `localPackages`), with where it came from.
+    #[serde(default)]
+    pub local: bool,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub origin: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

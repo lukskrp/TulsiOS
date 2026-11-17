@@ -59,6 +59,8 @@
           tulsi.daemon.bootstrap.source = lib.mkDefault self.outPath;
           # …and needs the pinned nixpkgs source to evaluate offline.
           system.extraDependencies = lib.mkIf config.tulsi.daemon.bootstrap.enable [ nixpkgs.outPath ];
+          # The pinned nixpkgs, for tulsi-mcp's packaging tools (agent-built local packages).
+          environment.etc."tulsi/nixpkgs".source = nixpkgs.outPath;
           tulsi.daemon.packageIndex = lib.mkDefault (
             pkgs.callPackage ./nix/packages/package-index.nix { nixpkgsSrc = nixpkgs.outPath; }
           );
@@ -138,6 +140,21 @@
           ocimum-desktop = test ./nix/tests/ocimum-desktop.nix;
           greeter-login = test ./nix/tests/ocimum-greeter.nix;
           starah-setup = test ./nix/tests/starah-setup.nix;
+          adopt = test ./nix/tests/adopt.nix;
+          # A state with a local package (tulsi/pkgs/<name>/package.nix) installs it.
+          local-package-eval =
+            let
+              system = lib.nixosSystem {
+                modules = [
+                  self.nixosModules.default
+                  ./nix/hosts/vm
+                  { tulsi.state.file = lib.mkForce ./nix/tests/local/state.json; }
+                ];
+              };
+              names = map (p: p.pname or "") system.config.environment.systemPackages;
+            in
+            assert builtins.elem "frob" names;
+            pkgs.writeText "local-package-eval" "frob is installed from tulsi/pkgs/frob";
         };
     };
 }

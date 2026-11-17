@@ -1,6 +1,6 @@
 //! Git history of the system flake directory. tulsid only ever commits the
-//! files it manages (`tulsi/state.json`, `configuration.nix`, `flake.lock`);
-//! anything else the user changes is left alone.
+//! files it manages (`tulsi/state.json`, `configuration.nix`, local packages under
+//! `tulsi/pkgs/`, `flake.lock`); anything else the user changes is left alone.
 
 use std::path::Path;
 
@@ -10,13 +10,19 @@ use tulsi_state::State;
 
 use crate::config::Config;
 
-/// Files whose changes make up tulsid's history.
-pub const MANAGED: [&str; 2] = [Config::STATE_REL, Config::CONFIG_REL];
+/// Files (and the local-package directory) whose changes make up tulsid's history.
+pub const MANAGED: [&str; 3] = [Config::STATE_REL, Config::CONFIG_REL, Config::PKGS_REL];
+
+fn is_managed(rel: &str) -> bool {
+    rel == Config::STATE_REL
+        || rel == Config::CONFIG_REL
+        || rel.starts_with(&format!("{}/", Config::PKGS_REL))
+}
 
 /// A managed file's contents before and after a change (`None` = absent).
 #[derive(Debug, Clone)]
 pub struct FileChange {
-    pub rel: &'static str,
+    pub rel: String,
     pub old: Option<Vec<u8>>,
     pub new: Option<Vec<u8>>,
 }
@@ -191,16 +197,13 @@ pub async fn undo_changes(dir: &Path) -> Result<(Vec<FileChange>, String), Strin
     args.extend(MANAGED);
     let touched = git(dir, &args).await?;
     let mut changes = Vec::new();
-    for rel in MANAGED {
-        if !touched.lines().any(|l| l.trim() == rel) {
-            continue;
-        }
+    for rel in touched.lines().map(str::trim).filter(|l| is_managed(l)) {
         let before = git(dir, &["show", &format!("{hash}^:{rel}")])
             .await
             .ok()
             .map(String::into_bytes);
         changes.push(FileChange {
-            rel,
+            rel: rel.to_string(),
             old: read(dir, rel),
             new: before,
         });

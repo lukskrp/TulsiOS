@@ -41,7 +41,30 @@ configuration.nix. Call plan_change first and tell the user what will change.
 COMPLETE new file contents, then apply_configuration_edit.
 - Every apply/undo asks the human for approval and rebuilds the system, which can take \
 minutes. If the human rejects, do not retry the same change unasked.
-- Failed rebuilds are rolled back automatically; undo_last_change reverts the latest change.";
+- Failed rebuilds are rolled back automatically; undo_last_change reverts the latest change.
+
+Packaging software that is not in the Software Center (local packages):
+- Only when search_packages finds nothing suitable. Ask for a download URL if you have none.
+- fetch_source (url, or store_path for a file the user gave) → read Kind, Build hints, Contents.
+- Write a callPackage expression: a function of its dependencies, e.g.
+  { lib, stdenv, fetchurl, autoPatchelfHook, makeWrapper }: stdenv.mkDerivation (finalAttrs: { … }).
+  Sources only through hashed fetchers (fetchurl, fetchzip, fetchFromGitHub) or requireFile
+  for store_path sources (with meta.license set, or it counts as unfree); no path literals,
+  no builtins.readFile/fetch*, no <nixpkgs>.
+- Recipes: prebuilt tarball → unpack, install to $out/bin, autoPatchelfHook + buildInputs for
+  missing libraries (the build log names them). .deb → nativeBuildInputs = [ dpkg
+  autoPatchelfHook ]; unpackPhase = \"dpkg -x $src .\"; copy usr/ to $out. AppImage →
+  appimageTools.wrapType2 { pname; version; src; }. autotools/CMake/Meson → stdenv.mkDerivation
+  with cmake or meson+ninja+pkg-config. Rust → rustPlatform.buildRustPackage, Go →
+  buildGoModule, Python → python3Packages.buildPythonApplication, npm → buildNpmPackage:
+  start dependency hashes as lib.fakeHash, build_package reports the right one.
+  Add meta = { description; homepage; license; mainProgram; } and, for GUI apps, a
+  makeDesktopItem.
+- build_package, fix errors (missing libraries, hashes), try_package, then
+  propose_local_package with a one-line reason; the human reviews the expression.
+- Unfree software: say so; the person must accept its licence. Kernel modules, drivers and
+  system services are out of scope: explain instead. Stop after a few failed builds and
+  report what blocks it.";
 
 pub struct Server<B> {
     backend: B,
@@ -186,6 +209,16 @@ impl<B: Backend> Server<B> {
             "undo_last_change" => self.undo(args, transport).await,
             "propose_configuration_edit" => self.propose_config(args).await,
             "apply_configuration_edit" => self.apply_config(args, transport).await,
+            "fetch_source" => crate::packaging::fetch_source(args)
+                .await
+                .map(|(t, v)| ToolOutput::data(t, v)),
+            "build_package" => crate::packaging::build_package(args)
+                .await
+                .map(|(t, v)| ToolOutput::data(t, v)),
+            "try_package" => crate::packaging::try_package(args)
+                .await
+                .map(|(t, v)| ToolOutput::data(t, v)),
+            "propose_local_package" => self.propose_local(args, transport).await,
             _ => return None,
         };
         Some(out.unwrap_or_else(ToolOutput::error))
@@ -386,6 +419,47 @@ impl<B: Backend> Server<B> {
         job_output(self.backend.apply_config(contents, summary).await?)
     }
 
+    /// Adds a local package the agent built: tulsid checks it, the human approves
+    /// (seeing the whole expression), then tulsid writes it and rebuilds.
+    async fn propose_local<R, W>(
+        &mut self,
+        args: &Value,
+        transport: &mut Transport<R, W>,
+    ) -> Result<ToolOutput, String>
+    where
+        R: AsyncRead + Unpin,
+        W: AsyncWrite + Unpin,
+    {
+        let name = required_str(args, "name")?;
+        let expression = required_str(args, "expression")?;
+        let reason = required_str(args, "reason")?;
+        let origin = args["origin"].as_str().unwrap_or_default();
+        let op = json!([{
+            "op": "addLocalPackage",
+            "name": name,
+            "expression": expression,
+            "version": args["version"].as_str().unwrap_or_default(),
+            "description": args["description"].as_str().unwrap_or_default(),
+            "origin": origin,
+        }]);
+        let ops = op.to_string();
+        let plan = self.backend.plan(&ops).await?;
+        let mut changes = plan.changes.clone();
+        if !origin.is_empty() {
+            changes.push(format!("Source: {origin}"));
+        }
+        let request = Request {
+            title: format!("An AI agent packaged \"{name}\" and wants to install it"),
+            reason: reason.into(),
+            changes,
+            diff: Some(expression.to_string()),
+            requester: REQUESTER.into(),
+            action: ACTION_APPLY,
+        };
+        self.approved(&request, transport).await?;
+        job_output(self.backend.apply(&ops).await?)
+    }
+
     /// Ok if the human approved; Err with the reason otherwise.
     async fn approved<R, W>(
         &self,
@@ -525,6 +599,31 @@ fn tool_list() -> Vec<Value> {
             json!({ "type": "object", "required": ["contents", "summary", "reason"], "properties": {
                 "contents": { "type": "string", "description": "The complete new file." },
                 "summary": { "type": "string", "description": "Short description for the history, e.g. 'enable Bluetooth'." },
+                "reason": reason.clone() } }), false),
+        tool("fetch_source", "Fetch software to package",
+            "Download a URL (or take a file already in the Nix store) and describe it: kind, hash, contents, build hints, and how to reference it as src.",
+            json!({ "type": "object", "properties": {
+                "url": { "type": "string", "description": "http(s) URL of the download" },
+                "store_path": { "type": "string", "description": "/nix/store/… path of a file the user provided" } } }), true),
+        tool("build_package", "Build a local package",
+            "Save a callPackage Nix expression as the draft of local package `name` and build it in Nix's sandbox. Returns the programs built, or the build log tail.",
+            json!({ "type": "object", "required": ["name", "expression"], "properties": {
+                "name": { "type": "string", "description": "lowercase name, e.g. 'frob'" },
+                "expression": { "type": "string", "description": "the complete package.nix" } } }), false),
+        tool("try_package", "Try a built package",
+            "Run a program of the last build of `name` briefly (default --version) with an empty HOME and no display.",
+            json!({ "type": "object", "required": ["name"], "properties": {
+                "name": { "type": "string" },
+                "program": { "type": "string", "description": "file name in bin/ (default: the first)" },
+                "args": { "type": "array", "items": { "type": "string" } } } }), false),
+        tool("propose_local_package", "Install a local package",
+            "Ask the human to add the built package to this computer (they see the whole expression), then rebuild. It appears in the Software Center under 'Made on this computer'.",
+            json!({ "type": "object", "required": ["name", "expression", "reason"], "properties": {
+                "name": { "type": "string" },
+                "expression": { "type": "string", "description": "the exact package.nix that was built" },
+                "version": { "type": "string" },
+                "description": { "type": "string" },
+                "origin": { "type": "string", "description": "where the software came from (URL or file name)" },
                 "reason": reason } }), false),
     ]
 }
@@ -558,6 +657,8 @@ mod tests {
                 installed: false,
                 license: None,
                 license_accepted: false,
+                local: false,
+                origin: String::new(),
             }])
         }
         async fn package_info(&self, attr: &str) -> Result<PackageInfo, String> {
@@ -663,7 +764,8 @@ mod tests {
             .iter()
             .map(|t| t["name"].as_str().unwrap())
             .collect();
-        assert_eq!(tools.len(), 10);
+        assert_eq!(tools.len(), 14);
+        assert!(tools.contains(&"propose_local_package"));
         assert!(tools.contains(&"apply_configuration_edit"));
         assert_eq!(out[2]["error"]["code"], METHOD_NOT_FOUND);
         assert_eq!(out[3]["error"]["code"], crate::transport::PARSE_ERROR);

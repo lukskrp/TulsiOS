@@ -35,9 +35,28 @@ Then ask, for example: *"install a lightweight video player and enable printing"
 | `apply_change` | **yes, after approval** | Packages, browser extensions, service toggles |
 | `apply_configuration_edit` | **yes, after approval** | Replace `configuration.nix` (complete contents) |
 | `undo_last_change` | **yes, after approval** | Revert the most recent change |
+| `fetch_source` | no | Download a URL (or take a file already in the store) and describe it: kind, hash, contents, build hints |
+| `build_package` | no | Save a `callPackage` expression as a draft and build it in Nix's sandbox |
+| `try_package` | no | Run a program of the last build briefly (empty home, no display) |
+| `propose_local_package` | **yes, after approval** | Add the built package to this computer as a local package (ADR 0013) |
 
 Operations use the `state.json` format, e.g. `{"op":"addPackage","name":"vlc"}`
 (see `crates/tulsi-state/src/ops.rs`).
+
+## Packaging software nobody packaged
+
+When nothing in nixpkgs fits, an agent can package the software itself. This is what
+the Assistant does from the "Install the TulsiOS Way" window (ADR 0013).
+1. `fetch_source` fetches and inspects it.
+2. `build_package` builds a `callPackage` expression against the system's pinned
+   nixpkgs (`/etc/tulsi/nixpkgs`).
+3. `try_package` runs the result.
+4. `propose_local_package` asks you, showing the whole expression.
+
+Approved packages live in `/etc/nixos/tulsi/pkgs/<name>/` and in `localPackages` in
+state.json. They appear in the Software Center under "Made on this computer", and
+`tulsi undo` removes them. Expressions that read host files, fetch without a hash or
+weaken the build sandbox are refused before they are built or applied.
 
 ## Approval
 

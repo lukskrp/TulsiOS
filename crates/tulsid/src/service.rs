@@ -22,7 +22,7 @@ use zbus::{interface, Connection};
 use crate::config::Config;
 use crate::git::FileChange;
 use crate::index::Index;
-use crate::{git, nixfile, polkit};
+use crate::{git, localpkg, nixfile, polkit};
 
 /// Upper bound for `Search` results.
 const MAX_SEARCH_RESULTS: u32 = 500;
@@ -82,17 +82,58 @@ impl Manager {
     /// any rebuild. Nested attributes (e.g. python3Packages.x) are not all in
     /// the index, so those are left to the rebuild to check.
     fn check_packages(&self, ops: &[Op]) -> Result<()> {
+        // Local expressions are checked even without a package index.
+        let lint: Vec<String> = ops
+            .iter()
+            .filter_map(|o| match o {
+                Op::AddLocalPackage {
+                    name, expression, ..
+                } => Some(
+                    localpkg::check_expression(expression)
+                        .into_iter()
+                        .map(move |p| format!("local package \"{name}\": {p}")),
+                ),
+                _ => None,
+            })
+            .flatten()
+            .collect();
+        if !lint.is_empty() {
+            return Err(TulsiError::Invalid(lint.join("\n")));
+        }
         let Some(index) = self.index.as_deref() else {
             return Ok(());
         };
         let mut problems = Vec::new();
-        let accepted = self
-            .current_state()
-            .map(|s| s.accepted_licenses)
+        let current = self.current_state().ok();
+        let accepted = current
+            .as_ref()
+            .map(|s| s.accepted_licenses.clone())
             .unwrap_or_default();
+        let local_now = current.map(|s| s.local_packages).unwrap_or_default();
+        let local_names: Vec<&str> = ops
+            .iter()
+            .filter_map(|o| match o {
+                Op::AddLocalPackage { name, .. } => Some(name.as_str()),
+                _ => None,
+            })
+            .collect();
         for op in ops {
+            if let Op::AddLocalPackage {
+                name, expression, ..
+            } = op
+            {
+                if index.get(name).is_some() {
+                    problems.push(format!(
+                        "\"{name}\" is already in the Software Center; install it from there, \
+                         or give the local package another name"
+                    ));
+                }
+                let _ = expression; // checked at the top
+                continue;
+            }
             if let Op::AcceptLicense { name } = op {
-                if !self.cfg.unfree_agents.contains_key(name.as_str()) {
+                let local = local_names.contains(&name.as_str()) || local_now.contains(name);
+                if !local && !self.cfg.unfree_agents.contains_key(name.as_str()) {
                     problems.push(format!(
                         "the licence of \"{name}\" cannot be accepted here: it is not one of                          the unfree packages TulsiOS allows (tulsi.daemon.unfreeAgents)"
                     ));
@@ -102,7 +143,7 @@ impl Manager {
             let Op::AddPackage { name } = op else {
                 continue;
             };
-            if name.contains('.') {
+            if name.contains('.') || local_now.contains(name) || local_names.contains(&name.as_str()) {
                 continue;
             }
             let licence_ok = |name: &str| {
@@ -156,6 +197,70 @@ impl Manager {
             }
         }
         infos
+    }
+
+    /// The file changes for local-package ops (expression and meta.json).
+    fn local_package_changes(&self, ops: &[Op]) -> Vec<FileChange> {
+        let dir = &self.cfg.flake_dir;
+        let mut changes = Vec::new();
+        for op in ops {
+            match op {
+                Op::AddLocalPackage {
+                    name,
+                    expression,
+                    version,
+                    description,
+                    origin,
+                } => changes.extend(localpkg::add_changes(
+                    dir,
+                    name,
+                    expression,
+                    &localpkg::Meta {
+                        version: version.clone(),
+                        description: description.clone(),
+                        origin: origin.clone(),
+                    },
+                )),
+                Op::RemoveLocalPackage { name } => {
+                    changes.extend(localpkg::remove_changes(dir, name))
+                }
+                _ => {}
+            }
+        }
+        changes
+    }
+
+    /// Local packages as PackageInfo, optionally only those matching `query`.
+    fn local_infos(&self, query: Option<&str>) -> Vec<PackageInfo> {
+        let Ok(state) = self.current_state() else {
+            return Vec::new();
+        };
+        let words: Vec<String> = query
+            .map(|q| q.to_lowercase().split_whitespace().map(str::to_string).collect())
+            .unwrap_or_default();
+        state
+            .local_packages
+            .iter()
+            .filter_map(|name| {
+                let meta = localpkg::read_meta(&self.cfg.flake_dir, name);
+                let hay = format!("{name} {}", meta.description).to_lowercase();
+                if !words.iter().all(|w| hay.contains(w.as_str())) {
+                    return None;
+                }
+                Some(PackageInfo {
+                    attr: name.clone(),
+                    pname: name.clone(),
+                    version: meta.version,
+                    description: meta.description,
+                    unfree: false,
+                    installed: state.packages.contains(name),
+                    license: None,
+                    license_accepted: state.accepted_licenses.contains(name),
+                    local: true,
+                    origin: meta.origin,
+                })
+            })
+            .collect()
     }
 
     /// Licences are accepted by people. Starah agents (system users `starah-*`, see
@@ -212,7 +317,7 @@ impl Manager {
     /// A state.json change as a file change.
     fn state_change(old: &State, new: &State) -> FileChange {
         FileChange {
-            rel: Config::STATE_REL,
+            rel: Config::STATE_REL.to_string(),
             old: Some(old.to_json_pretty().into_bytes()),
             new: Some(new.to_json_pretty().into_bytes()),
         }
@@ -282,15 +387,12 @@ impl Manager {
         let guard = self.try_lock()?;
         let old = self.current_state()?;
         let new = old.with_ops(&ops)?;
-        if old.diff(&new).is_empty() {
+        let mut changes = self.local_package_changes(&ops);
+        if old.diff(&new).is_empty() && changes.is_empty() {
             return Ok(0);
         }
-        self.start_job(
-            guard,
-            conn,
-            vec![Self::state_change(&old, &new)],
-            format!("tulsi: {}", describe_all(&ops)),
-        )
+        changes.insert(0, Self::state_change(&old, &new));
+        self.start_job(guard, conn, changes, format!("tulsi: {}", describe_all(&ops)))
     }
 
     /// Reverts the most recent change (itself recorded as a new change).
@@ -363,7 +465,7 @@ impl Manager {
             return Ok(0);
         }
         let change = FileChange {
-            rel: Config::CONFIG_REL,
+            rel: Config::CONFIG_REL.to_string(),
             old,
             new: Some(contents.as_bytes().to_vec()),
         };
@@ -386,12 +488,17 @@ impl Manager {
     /// Packages matching `query`, best first, as JSON.
     async fn search(&self, query: &str, limit: u32) -> Result<String> {
         let limit = limit.clamp(1, MAX_SEARCH_RESULTS) as usize;
-        let results = self.mark_installed(self.index()?.search(query, limit));
+        let mut results = self.local_infos(Some(query));
+        results.extend(self.mark_installed(self.index()?.search(query, limit)));
+        results.truncate(limit);
         Ok(serde_json::to_string(&results).expect("results serialize"))
     }
 
     /// Details of one package attribute, as JSON.
     async fn package_info(&self, attr: &str) -> Result<String> {
+        if let Some(info) = self.local_infos(None).into_iter().find(|i| i.attr == attr) {
+            return Ok(serde_json::to_string(&info).expect("info serializes"));
+        }
         let info = self
             .index()?
             .get(attr)
@@ -456,6 +563,20 @@ fn one_line(text: &str) -> String {
     line.chars().take(120).collect()
 }
 
+/// The order to write `targets` (path, contents to write; `None` deletes) in, so
+/// that state.json never names a local package whose files are missing: files
+/// that are written come first, then state.json, then deletions.
+fn write_order<'a>(targets: &[(&'a str, Option<&'a [u8]>)]) -> Vec<(&'a str, Option<&'a [u8]>)> {
+    let rank = |&(rel, contents): &(&str, Option<&[u8]>)| match (rel == Config::STATE_REL, contents) {
+        (false, Some(_)) => 0,
+        (true, _) => 1,
+        (false, None) => 2,
+    };
+    let mut ordered = targets.to_vec();
+    ordered.sort_by_key(rank); // stable: keeps the order within each group
+    ordered
+}
+
 /// Writes the new file versions, rebuilds, commits. On failure restores the
 /// old versions. Returns the commit hash, or an error including the log tail.
 async fn run_transaction(
@@ -467,8 +588,9 @@ async fn run_transaction(
 ) -> std::result::Result<String, String> {
     let dir = &cfg.flake_dir;
     let applied = async {
-        for change in changes {
-            git::put(dir, change.rel, change.new.as_deref()).await?;
+        let targets: Vec<_> = changes.iter().map(|c| (c.rel.as_str(), c.new.as_deref())).collect();
+        for (rel, contents) in write_order(&targets) {
+            git::put(dir, rel, contents).await?;
         }
         rebuild(cfg, emitter, job).await
     }
@@ -476,13 +598,14 @@ async fn run_transaction(
 
     match applied {
         Ok(()) => {
-            let paths: Vec<&str> = changes.iter().map(|c| c.rel).collect();
+            let paths: Vec<&str> = changes.iter().map(|c| c.rel.as_str()).collect();
             git::commit(dir, message, &paths).await
         }
         Err(e) => {
             let mut problems = Vec::new();
-            for change in changes {
-                if let Err(re) = git::put(dir, change.rel, change.old.as_deref()).await {
+            let targets: Vec<_> = changes.iter().map(|c| (c.rel.as_str(), c.old.as_deref())).collect();
+            for (rel, contents) in write_order(&targets) {
+                if let Err(re) = git::put(dir, rel, contents).await {
                     problems.push(re);
                 }
             }
@@ -561,5 +684,26 @@ async fn rebuild(
             "rebuild failed ({status}); the previous configuration was restored.\n{}",
             tail.join("\n")
         ))
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn state_json_is_written_after_new_files_and_before_deletions() {
+        let pkg = b"{ stdenvNoCC }: stdenvNoCC.mkDerivation { }".as_slice();
+        let state = b"{}".as_slice();
+        let order = |t: &[(&'static str, Option<&'static [u8]>)]| -> Vec<&'static str> {
+            write_order(t).into_iter().map(|(rel, _)| rel).collect()
+        };
+        // Adding: the package files exist before state.json names them.
+        let add = [(Config::STATE_REL, Some(state)), ("tulsi/pkgs/frob/package.nix", Some(pkg)), ("tulsi/pkgs/frob/meta.json", Some(pkg))];
+        assert_eq!(order(&add), ["tulsi/pkgs/frob/package.nix", "tulsi/pkgs/frob/meta.json", Config::STATE_REL]);
+        // Removing (also undo and rollback of an add): state.json stops naming them first.
+        let remove = [("tulsi/pkgs/frob/package.nix", None), (Config::STATE_REL, Some(state)), ("tulsi/pkgs/frob/meta.json", None)];
+        assert_eq!(order(&remove), [Config::STATE_REL, "tulsi/pkgs/frob/package.nix", "tulsi/pkgs/frob/meta.json"]);
     }
 }

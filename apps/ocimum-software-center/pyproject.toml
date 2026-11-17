@@ -13,6 +13,7 @@ dependencies = ["PyGObject"]
 [project.scripts]
 ocimum-software-center = "ocimum_software_center.app:main"
 ocimum-approve = "ocimum_software_center.approve:main"
+tulsi-adopt = "ocimum_software_center.adopt:main"
 
 [tool.setuptools.packages.find]
 include = ["ocimum_software_center*"]

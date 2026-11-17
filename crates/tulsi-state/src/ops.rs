@@ -47,6 +47,21 @@ pub enum Op {
     SetService { name: String, enable: bool },
     /// A person accepts the licence of an allow-listed unfree package.
     AcceptLicense { name: String },
+    /// Adds a package made on this machine and installs it. `expression` is a
+    /// callPackage-style Nix expression, written to `tulsi/pkgs/<name>/package.nix`
+    /// by tulsid (which also checks it); `origin` is where the software came from.
+    AddLocalPackage {
+        name: String,
+        expression: String,
+        #[serde(default)]
+        version: String,
+        #[serde(default)]
+        description: String,
+        #[serde(default)]
+        origin: String,
+    },
+    /// Uninstalls a local package and deletes its expression.
+    RemoveLocalPackage { name: String },
 }
 
 impl Op {
@@ -65,6 +80,8 @@ impl Op {
                 enable: false,
             } => format!("disable service {name}"),
             Op::AcceptLicense { name } => format!("accept the licence of {name}"),
+            Op::AddLocalPackage { name, .. } => format!("add local package {name}"),
+            Op::RemoveLocalPackage { name } => format!("remove local package {name}"),
         }
     }
 }
@@ -104,6 +121,16 @@ impl State {
                         .insert(name.clone(), Service { enable: *enable });
                 }
                 Op::AcceptLicense { name } => add(&mut next.accepted_licenses, name),
+                Op::AddLocalPackage { name, .. } => {
+                    add(&mut next.local_packages, name);
+                    add(&mut next.packages, name);
+                }
+                Op::RemoveLocalPackage { name } => {
+                    if !remove(&mut next.local_packages, name) {
+                        problems.push(format!("{name:?} is not a local package"));
+                    }
+                    remove(&mut next.packages, name);
+                }
             }
         }
 
@@ -123,6 +150,12 @@ impl State {
             "licence accepted:",
             &self.accepted_licenses,
             &other.accepted_licenses,
+        );
+        list_diff(
+            &mut out,
+            "local package",
+            &self.local_packages,
+            &other.local_packages,
         );
         list_diff(&mut out, "package", &self.packages, &other.packages);
         list_diff(
@@ -260,6 +293,32 @@ mod tests {
         let json = base.to_json_pretty();
         assert!(!json.contains("acceptedLicenses"), "{json}");
         assert!(next.to_json_pretty().contains("\"acceptedLicenses\""));
+    }
+
+    #[test]
+    fn local_packages_are_recorded_installed_and_removed() {
+        let base = State::default();
+        let next = base
+            .with_ops(&ops(
+                r#"[{"op":"addLocalPackage","name":"frob","expression":"{ stdenv }: stdenv.mkDerivation {}",
+                     "origin":"https://example.com/frob.tar.gz"}]"#,
+            ))
+            .unwrap();
+        assert_eq!(next.local_packages, vec!["frob"]);
+        assert_eq!(next.packages, vec!["frob"]);
+        assert_eq!(
+            base.diff(&next),
+            vec!["+ local package frob", "+ package frob"]
+        );
+        let gone = next
+            .with_ops(&ops(r#"[{"op":"removeLocalPackage","name":"frob"}]"#))
+            .unwrap();
+        assert_eq!(gone, base);
+        assert!(base
+            .with_ops(&ops(
+                r#"[{"op":"addLocalPackage","name":"Bad/Name","expression":"x"}]"#
+            ))
+            .is_err());
     }
 
     #[test]

@@ -9,7 +9,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+mod local;
 mod ops;
+pub use local::check_expression;
 pub use ops::{describe_all, Browser, Op};
 
 pub const CURRENT_VERSION: u32 = 1;
@@ -29,6 +31,11 @@ pub struct State {
     /// allows exactly these through nixpkgs.config.allowUnfreePredicate.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub accepted_licenses: Vec<String>,
+    /// Packages made on this machine (by a person or the packaging agent): their
+    /// expressions live in `tulsi/pkgs/<name>/package.nix` next to state.json. Each is
+    /// also in `packages` while installed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub local_packages: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -68,6 +75,7 @@ impl Default for State {
             browser_extensions: BrowserExtensions::default(),
             services: BTreeMap::new(),
             accepted_licenses: Vec::new(),
+            local_packages: Vec::new(),
         }
     }
 }
@@ -105,6 +113,12 @@ impl State {
             ));
         }
         check_list(&mut problems, "package", &self.packages, is_valid_attr_path);
+        check_list(
+            &mut problems,
+            "local package",
+            &self.local_packages,
+            is_valid_local_name,
+        );
         check_list(
             &mut problems,
             "accepted licence",
@@ -153,6 +167,14 @@ fn is_valid_identifier(s: &str) -> bool {
     let mut chars = s.chars();
     matches!(chars.next(), Some(c) if c.is_ascii_alphabetic() || c == '_')
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '\''))
+}
+
+/// A local package name: one lowercase identifier (it is also a directory name).
+pub fn is_valid_local_name(s: &str) -> bool {
+    let mut chars = s.chars();
+    matches!(chars.next(), Some(c) if c.is_ascii_lowercase())
+        && s.len() <= 64
+        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
 }
 
 /// `vlc`, `python3Packages.requests`, `gnome-text-editor`.
