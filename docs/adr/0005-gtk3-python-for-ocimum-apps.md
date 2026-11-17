@@ -27,3 +27,25 @@ archived in 2024, and relm4 is GTK 4 only.
   at a few hundred rows), GPU rendering and native fractional scaling. Fractional
   scaling is a good candidate for GTK3-O improvements.
 - Python is slower than Rust, but fast enough for these apps.
+
+## Revisited (2026-11-17): GPUI?
+
+Would GPUI (Zed's Rust UI library) make the Software Center faster or safer?
+
+**Measured** (warm cache, Xvfb in WSL):
+- the Software Center window appears about **210 ms** after launch (870 ms with a cold
+  disk cache);
+- it uses about **65 MB RSS**.
+
+What people actually wait for is tulsid: search, and Nix rebuilds that take minutes.
+
+**Decision: stay with Python and GTK3-O.**
+- **Python is already memory-safe**, so a Rust UI gains nothing there.
+- **GPUI draws everything itself on the GPU,** so it would bypass GTK3-O/OTK theming
+  and the toolkit work (ADR 0006, 0009).
+- **GPUI is pre-1.0 and built for Zed.** Its accessibility support (AT-SPI) has been
+  limited.
+- **It needs a working Vulkan GPU,** which is a problem in VMs and on old machines.
+
+If a Rust UI is wanted later, the route that keeps the Ocimum look is Rust bindings to
+OTK generated with `gir` (the gtk-rs way). That decision belongs to the OTK roadmap.
