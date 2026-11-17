@@ -130,5 +130,15 @@ class Client(GObject.Object):
     def undo(self, on_ok: OnOk, on_error: OnError) -> None:
         self._call("Undo", None, on_ok, on_error, timeout=NO_TIMEOUT)
 
+    def undo_change(self, commit: str, on_ok: OnOk, on_error: OnError) -> None:
+        """Takes back one earlier change; on_ok receives the job id."""
+        self._call(
+            "UndoChange", GLib.Variant("(s)", (commit,)), on_ok, on_error, timeout=NO_TIMEOUT
+        )
+
+    def plan_undo(self, commit: str, on_ok: OnOk, on_error: OnError) -> None:
+        """on_ok receives {commit, summary, changes, action}."""
+        self._call("PlanUndo", GLib.Variant("(s)", (commit,)), on_ok, on_error, decode_json=True)
+
     def history(self, limit: int, on_ok: OnOk, on_error: OnError) -> None:
         self._call("History", GLib.Variant("(u)", (limit,)), on_ok, on_error, decode_json=True)
