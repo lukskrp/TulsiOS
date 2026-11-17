@@ -13,6 +13,20 @@
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
   </action>
+  <!-- configuration.nix edits a NixOS rollback does not fully undo: accounts,
+       boot, file systems, scripts and anything tulsid cannot place (ADR 0014).
+       For people it is the same as org.tulsi.apply; Starah asks the human about
+       it for agents below level 3. -->
+  <action id="org.tulsi.configure">
+    <description>Change the system configuration beyond what a rollback undoes</description>
+    <message>Authentication is required to change accounts, boot or other lasting settings</message>
+    <icon_name>system-software-install</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
   <!-- Changes that only add or remove browser extensions. The
        tulsi.browserExtensions module can allow this for active local users
        without a password (tulsi.browserExtensions.adopt.withoutPassword). -->

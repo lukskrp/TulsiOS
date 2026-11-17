@@ -106,6 +106,11 @@ Known limits, picked up later:
       binaries open `tulsi-adopt`; the Assistant packages unpackaged software as a local package
       (`tulsi/pkgs/<name>`), a person approves, Undo removes it; `checks.adopt`, `checks.local-package-eval`
 - [ ] Share local packages back to tulsipkgs (opt-in)
+- [x] Reversible changes don't ask (ADR 0014): `org.tulsi.apply` (rollback undoes it) vs
+      `org.tulsi.configure` (accounts, boot, scripts, local packages; `configuration.nix` edits
+      are checked by `tulsi_state::unreversible_settings`); the Assistant's agent defaults to
+      level 2; tulsi-mcp receipts; the Assistant's receipt line with Undo and claim check
+- [ ] Undo a specific older change, not only the latest (`git revert` with a conflict check)
 - [ ] Greeter: several monitors, user list with avatars, accessibility (screen reader, on-screen keyboard)
 - [x] `cinnamon-session-quit` works: tulsipkgs' cinnamon-session wraps its typelibs; `otk`
       propagates `graphene`, so Python OTK apps need only `otk`

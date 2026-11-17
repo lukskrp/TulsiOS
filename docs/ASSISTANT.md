@@ -3,8 +3,21 @@
 A chat window (menu: **Assistant**) where you ask for changes in plain language:
 *"install a lightweight video player"*, *"turn on printing"*, *"what did I change
 recently?"*. It answers with Claude, and its only tools are those of
-[tulsi-mcp](MCP.md). Every change is shown to you in the approval dialog before
-anything happens, and every change can be undone.
+[tulsi-mcp](MCP.md). Every change can be undone.
+
+**What asks first** (ADR 0014; with Starah, at the default level 2):
+- **Goes ahead on its own:** changes that a restart into the previous system fully
+  undoes, such as installing software, turning features on or off, and browser
+  extensions.
+- **Asks you first,** in Starah's Agent Request window: changes a rollback cannot undo,
+  such as accounts, boot, disks, scripts, and software the Assistant packaged itself.
+- You can change this in Starah's Agent Privileges: level 1 asks about everything.
+
+**Receipts.** Under each reply, a line shows what actually changed, taken from tulsi-mcp's
+receipts rather than from the model's words, and who approved it. It has an **Undo**
+button.
+- If a reply says something changed but nothing did, a note says so.
+- **Recent changes** (clock icon) opens the Software Center's History page.
 
 ## Setup
 

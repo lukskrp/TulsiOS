@@ -1,6 +1,14 @@
 from dataclasses import dataclass
 
-from ocimum_assistant.agent import Agent, ToolCall, Turn, describe_tool, to_provider_tools
+from ocimum_assistant.agent import (
+    Agent,
+    ToolCall,
+    Turn,
+    claim_note,
+    describe_outcome,
+    describe_tool,
+    to_provider_tools,
+)
 from ocimum_assistant.providers import FakeProvider
 
 
@@ -8,18 +16,21 @@ from ocimum_assistant.providers import FakeProvider
 class Result:
     text: str
     is_error: bool
+    structured: dict | None = None
 
 
 class FakeTools:
-    def __init__(self, fail: bool = False):
+    def __init__(self, fail: bool = False, receipts: dict | None = None):
         self.calls = []
         self.fail = fail
+        self.receipts = receipts or {}
 
     def call_tool(self, name, arguments):
         self.calls.append((name, arguments))
         if self.fail:
             raise RuntimeError("tulsi-mcp went away")
-        return Result(f"{name} ok", False)
+        receipt = self.receipts.get(name)
+        return Result(f"{name} ok", False, {"receipt": receipt} if receipt else None)
 
 
 class Events:
@@ -32,6 +43,7 @@ class Events:
     def tool_started(self, n, a): self.log.append(("start", n))
     def tool_finished(self, n, ok, t): self.log.append(("finish", n, ok))
     def notice(self, t): self.log.append(("notice", t))
+    def outcome(self, receipts, note): self.log.append(("outcome", receipts, note))
 
 
 class ScriptedTurns:
@@ -135,5 +147,74 @@ def test_tool_definitions_and_descriptions():
                      "eager_input_streaming": True}]
     assert describe_tool("apply_change", {"operations": [
         {"op": "addPackage", "name": "vlc"}, {"op": "setService", "name": "printing", "enable": True}]}) == (
-        "Asking you to approve: install vlc, enable service printing")
+        "Changing: install vlc, enable service printing")
     assert describe_tool("search_packages", {"query": "gimp"}) == "Searching packages for “gimp”"
+
+
+APPLIED = {"tool": "apply_change", "outcome": "applied", "approved_via": "Starah (the agent's level)",
+           "changes": ["+ package vlc"], "commit": "abc1234"}
+
+
+def test_receipts_decide_the_outcome_not_the_reply():
+    provider = FakeProvider([
+        {"text": "Installing.", "tool_calls": [
+            {"name": "apply_change", "input": {"operations": [{"op": "addPackage", "name": "vlc"}],
+                                               "reason": "asked"}},
+        ]},
+        {"text": "Done: VLC is installed."},
+    ])
+    events = Events()
+    Agent(provider, FakeTools(receipts={"apply_change": APPLIED}), []).ask("vlc", events)
+    assert events.log[-1] == ("outcome", [APPLIED], "")
+    kind, text = describe_outcome([APPLIED])
+    assert kind == "changed"
+    assert text == "Changed: + package vlc · done on its own"
+
+
+def test_a_claimed_change_without_a_receipt_gets_a_note():
+    provider = FakeProvider([{"text": "I have installed VLC for you."}])
+    events = Events()
+    Agent(provider, FakeTools(), []).ask("vlc", events)
+    assert events.log[-1] == ("outcome", [], "Nothing on your system was changed in this reply.")
+
+
+def test_claim_note_is_conservative():
+    assert claim_note("VLC is already installed.", []) == ""
+    assert claim_note("I can install VLC if you like.", []) == ""
+    assert claim_note("Should I enable printing?", []) == ""
+    assert claim_note("It wasn't installed.", []) == ""
+    assert claim_note("Printing is enabled now.", []) != ""
+    assert claim_note("Printing is enabled now.", [APPLIED]) == ""
+
+
+def test_outcome_kinds():
+    assert describe_outcome([]) == ("", "")
+    assert describe_outcome([{"outcome": "rejected"}])[0] == "rejected"
+    assert describe_outcome([{"outcome": "rolled_back"}])[0] == "rolled_back"
+    assert describe_outcome([{"outcome": "nothing"}])[0] == "nothing"
+    by_you = dict(APPLIED, approved_via="desktop dialog")
+    assert describe_outcome([by_you])[1].endswith("approved by you")
+
+
+def test_outcome_is_reported_even_when_the_provider_fails():
+    class Broken:
+        def run_turn(self, *args):
+            raise RuntimeError("network down")
+
+    events = Events()
+    try:
+        Agent(Broken(), FakeTools(), []).ask("vlc", events)
+    except RuntimeError:
+        pass
+    assert events.log[-1] == ("outcome", [], "")
+
+
+def test_undo_outside_the_conversation_is_told_to_the_model():
+    provider = ScriptedTurns(Turn([], "ok"))
+    agent = Agent(provider, FakeTools(), [])
+    agent.pending_notes.append("the user pressed Undo.")
+    agent.ask("what now?", Events())
+    first = provider.seen[0][0]["content"]
+    assert first.startswith("(Since your last reply: the user pressed Undo.)")
+    assert first.endswith("what now?")
+    assert agent.pending_notes == []

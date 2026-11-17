@@ -161,19 +161,31 @@ pub async fn commit(dir: &Path, message: &str, paths: &[&str]) -> Result<String,
         .to_string())
 }
 
+/// The commit message for a change: its summary, plus a trailer naming the polkit
+/// action it needed (undoing it needs the same one).
+pub fn commit_message(summary: &str, action: &str) -> String {
+    format!("{summary}\n\n{}: {action}", tulsi_client::ACTION_TRAILER)
+}
+
 pub async fn history(dir: &Path, limit: u32) -> Result<Vec<HistoryEntry>, String> {
     let n = format!("-n{}", limit.max(1));
-    let mut args = vec!["log", &n, "--format=%h%x1f%ct%x1f%s", "--"];
+    // Fields end with \x1f, entries with \x1e (the trailer value ends a line).
+    let format = format!(
+        "--format=%h%x1f%ct%x1f%s%x1f%(trailers:key={},valueonly,separator=%x2C)%x1e",
+        tulsi_client::ACTION_TRAILER
+    );
+    let mut args = vec!["log", &n, &format, "--"];
     args.extend(MANAGED);
     let out = git(dir, &args).await?;
     Ok(out
-        .lines()
-        .filter_map(|line| {
-            let mut parts = line.splitn(3, '\x1f');
+        .split('\x1e')
+        .filter_map(|entry| {
+            let mut parts = entry.trim_start_matches('\n').splitn(4, '\x1f');
             Some(HistoryEntry {
                 commit: parts.next()?.to_string(),
                 time: parts.next()?.parse().ok()?,
                 summary: parts.next()?.to_string(),
+                recorded_action: parts.next().unwrap_or_default().trim().to_string(),
             })
         })
         .collect())
@@ -212,4 +224,59 @@ pub async fn undo_changes(dir: &Path) -> Result<(Vec<FileChange>, String), Strin
         return Err(format!("nothing to undo in \"{summary}\""));
     }
     Ok((changes, summary.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn history_reads_back_the_recorded_action() {
+        let dir = std::env::temp_dir().join(format!("tulsid-git-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        git(&dir, &["init", "-q"]).await.unwrap();
+        for (summary, action) in [
+            ("tulsi: install vlc", tulsi_client::ACTION_APPLY),
+            (
+                "tulsi: edit configuration.nix: add bob",
+                tulsi_client::ACTION_CONFIGURE,
+            ),
+        ] {
+            put(&dir, Config::CONFIG_REL, Some(summary.as_bytes()))
+                .await
+                .unwrap();
+            commit(
+                &dir,
+                &commit_message(summary, action),
+                &[Config::CONFIG_REL],
+            )
+            .await
+            .unwrap();
+        }
+        // A change recorded before ADR 0014 has no trailer.
+        put(&dir, Config::CONFIG_REL, Some(b"old")).await.unwrap();
+        commit(&dir, "tulsi: install hello", &[Config::CONFIG_REL])
+            .await
+            .unwrap();
+
+        let entries = history(&dir, 10).await.unwrap();
+        let got: Vec<(&str, &str)> = entries
+            .iter()
+            .map(|e| (e.summary.as_str(), e.action()))
+            .collect();
+        assert_eq!(
+            got,
+            [
+                ("tulsi: install hello", tulsi_client::ACTION_APPLY),
+                (
+                    "tulsi: edit configuration.nix: add bob",
+                    tulsi_client::ACTION_CONFIGURE
+                ),
+                ("tulsi: install vlc", tulsi_client::ACTION_APPLY),
+            ]
+        );
+        assert!(entries[0].recorded_action.is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

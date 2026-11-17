@@ -24,6 +24,7 @@ class McpError(Exception):
 class ToolResult:
     text: str
     is_error: bool
+    structured: dict | None = None
 
 
 class McpClient:
@@ -62,7 +63,9 @@ class McpClient:
     def call_tool(self, name: str, arguments: dict) -> ToolResult:
         result = self._request("tools/call", {"name": name, "arguments": arguments})
         texts = [c.get("text", "") for c in result.get("content", []) if c.get("type") == "text"]
-        return ToolResult("\n".join(texts), bool(result.get("isError")))
+        structured = result.get("structuredContent")
+        return ToolResult("\n".join(texts), bool(result.get("isError")),
+                          structured if isinstance(structured, dict) else None)
 
     def close(self) -> None:
         if self.proc and self.proc.poll() is None:

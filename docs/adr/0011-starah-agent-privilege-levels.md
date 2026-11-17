@@ -50,7 +50,9 @@ Build **Starah** (Sanskrit "levels") as its own project, `lukskrp/starah`
   - an **Agent Privileges** summary at later logins and in the menu;
   - the request windows.
 - **The Assistant:** its tulsi-mcp runs as agent `assistant`, level 1 by default, with
-  `--approval starah`.
+  `--approval starah`. *Amended by ADR 0014:* level 2 by default. `org.tulsi.apply`
+  (changes a rollback fully undoes) is *routine*, and the new `org.tulsi.configure` is
+  *admin*.
 
 ## Consequences
 

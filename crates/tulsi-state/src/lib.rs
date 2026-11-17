@@ -11,8 +11,10 @@ use serde::{Deserialize, Serialize};
 
 mod local;
 mod ops;
+mod reach;
 pub use local::check_expression;
 pub use ops::{describe_all, Browser, Op};
+pub use reach::unreversible_settings;
 
 pub const CURRENT_VERSION: u32 = 1;
 

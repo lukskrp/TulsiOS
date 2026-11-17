@@ -26,6 +26,12 @@ def test_call_tool_survives_server_requests_and_noise(client):
     result = client.call_tool("echo", {"x": 1})
     assert result.text == '{"x": 1}' and result.is_error is False
     assert client.call_tool("echo", {"tool_error": True}).is_error is True
+    assert result.structured is None
+
+
+def test_structured_content_is_kept(client):
+    result = client.call_tool("echo", {"receipt": {"outcome": "applied"}})
+    assert result.structured == {"receipt": {"outcome": "applied"}}
 
 
 def test_protocol_errors_raise(client):

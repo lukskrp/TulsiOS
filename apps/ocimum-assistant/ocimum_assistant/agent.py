@@ -9,6 +9,7 @@ unchanged).
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Protocol
 
@@ -22,8 +23,12 @@ extensions, turn services on or off, and edit their NixOS configuration.
 How to work:
 - Use the TulsiOS tools for everything; you have no shell. Find package names with \
 search_packages before installing; never guess attribute names.
-- Before a change, say briefly what you are about to do. Changes are shown to the user in \
-an approval dialog; if they reject one, accept that and ask what they would prefer.
+- Before a change, say briefly what you are about to do. Changes that a restart into the \
+previous system fully undoes may go ahead without a question, depending on the level the \
+user gave you; anything touching accounts, boot, disks or files is shown to the user for \
+approval. If they reject one, accept that and ask what they would prefer.
+- Every change result has a receipt. Say only what the receipts show happened; the user \
+sees the receipt and an Undo button under your reply.
 - Prefer apply_change (packages, browser extensions, service toggles). Edit \
 configuration.nix only for settings those cannot express: read_configuration first, keep \
 everything the user wrote, and pass the complete file.
@@ -78,6 +83,7 @@ class Events(Protocol):
     def tool_started(self, name: str, arguments: dict) -> None: ...
     def tool_finished(self, name: str, ok: bool, text: str) -> None: ...
     def notice(self, text: str) -> None: ...
+    def outcome(self, receipts: list[dict], note: str) -> None: ...
 
 
 def to_provider_tools(mcp_tools: list[dict]) -> list[dict]:
@@ -102,13 +108,32 @@ class Agent:
         self.system = SYSTEM_PROMPT + (instructions.strip() or "(none)")
         self.messages: list[dict] = []
         self.cancelled = False
+        # What happened outside the conversation (the Undo button), told to the
+        # model with the next message.
+        self.pending_notes: list[str] = []
+        self._receipts: list[dict] = []
+        self._last_text = ""
 
     def reset(self) -> None:
         self.messages = []
+        self.pending_notes = []
 
     def ask(self, text: str, events: Events) -> None:
-        """Runs until the model stops calling tools. Blocking."""
+        """Runs until the model stops calling tools, then reports what changed
+        (from the receipts, not from the model's words). Blocking."""
+        self._receipts = []
+        self._last_text = ""
+        try:
+            self._ask(text, events)
+        finally:
+            events.outcome(list(self._receipts), claim_note(self._last_text, self._receipts))
+
+    def _ask(self, text: str, events: Events) -> None:
         self.cancelled = False
+        if self.pending_notes:
+            notes = " ".join(self.pending_notes)
+            self.pending_notes = []
+            text = f"(Since your last reply: {notes})\n\n{text}"
         self.messages.append({"role": "user", "content": text})
         for _ in range(MAX_STEPS):
             if self.cancelled:
@@ -119,6 +144,8 @@ class Agent:
             )
             self.messages.append({"role": "assistant", "content": turn.content})
             events.turn_done(turn.text)
+            if turn.text.strip():
+                self._last_text = turn.text
 
             if turn.stop_reason == "refusal":
                 events.notice(turn.refusal or "The model declined this request.")
@@ -152,10 +179,61 @@ class Agent:
         try:
             outcome = self.tools.call_tool(call.name, call.input)
             text, ok = outcome.text, not outcome.is_error
+            receipt = (getattr(outcome, "structured", None) or {}).get("receipt")
+            if isinstance(receipt, dict):
+                self._receipts.append(receipt)
         except Exception as e:  # noqa: BLE001 - report any tool failure to the model
             text, ok = f"The tool could not run: {e}", False
         events.tool_finished(call.name, ok, text)
         return result(text, not ok)
+
+
+# Past-tense claims that something on the system changed.
+_CLAIM = re.compile(
+    r"\b(installed|uninstalled|removed|enabled|disabled|turned (on|off)|switched (on|off)|"
+    r"added|updated|undone|reverted|set up|configured|changed)\b",
+    re.IGNORECASE,
+)
+_NOT_A_CLAIM = re.compile(
+    r"\b(already|not|no longer|could|would|will|can|if|once)\b|n't\b",
+    re.IGNORECASE,
+)
+
+
+def claim_note(text: str, receipts: list[dict]) -> str:
+    """A note when the reply says it changed the system but no receipt shows an
+    applied change. Conservative: only plain statements, sentence by sentence."""
+    if any(r.get("outcome") == "applied" for r in receipts):
+        return ""
+    for sentence in re.split(r"(?<=[.!?])\s+|\n+", text):
+        if _CLAIM.search(sentence) and not _NOT_A_CLAIM.search(sentence) and "?" not in sentence:
+            return "Nothing on your system was changed in this reply."
+    return ""
+
+
+def describe_outcome(receipts: list[dict]) -> tuple[str, str]:
+    """(kind, text) for the line under a reply: kind is "changed", "rolled_back",
+    "rejected", "nothing" or "" (no change was attempted)."""
+    if not receipts:
+        return "", ""
+    applied = [r for r in receipts if r.get("outcome") == "applied"]
+    if applied:
+        changes = [
+            c for r in applied for c in r.get("changes") or [] if not c.startswith("A rollback")
+        ]
+        ways = sorted({_who(r.get("approved_via") or "") for r in applied})
+        return "changed", f"Changed: {'; '.join(changes) or 'the system'} · {', '.join(ways)}"
+    if any(r.get("outcome") == "rolled_back" for r in receipts):
+        return "rolled_back", "The change failed and was rolled back; nothing changed."
+    if any(r.get("outcome") == "rejected" for r in receipts):
+        return "rejected", "Not changed: the change was not approved."
+    return "nothing", "Nothing needed changing."
+
+
+def _who(via: str) -> str:
+    if "level" in via:
+        return "done on its own"
+    return "approved by you"
 
 
 def describe_tool(name: str, arguments: dict) -> str:
@@ -176,15 +254,15 @@ def describe_tool(name: str, arguments: dict) -> str:
     if name == "search_packages":
         return f"Searching packages for “{arguments.get('query', '')}”"
     if name in ("plan_change", "apply_change"):
-        verb = "Planning" if name == "plan_change" else "Asking you to approve"
+        verb = "Planning" if name == "plan_change" else "Changing"
         return f"{verb}: " + ", ".join(op_text(o) for o in ops if isinstance(o, dict))
     if name == "apply_configuration_edit":
-        return f"Asking you to approve a configuration edit: {arguments.get('summary', '')}"
+        return f"Editing the configuration: {arguments.get('summary', '')}"
     return {
         "package_info": f"Looking up {arguments.get('attr', 'a package')}",
         "get_state": "Checking what is installed",
         "read_configuration": "Reading your configuration",
         "history": "Checking recent changes",
         "propose_configuration_edit": "Checking a configuration edit",
-        "undo_last_change": "Asking you to approve undoing the latest change",
+        "undo_last_change": "Undoing the latest change",
     }.get(name, f"Using {name}")

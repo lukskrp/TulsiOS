@@ -23,6 +23,8 @@ for line in sys.stdin:
             print(json.dumps({"jsonrpc": "2.0", "id": mid, "error": {"code": -32602, "message": "bad args"}}), flush=True)
             continue
         result = {"content": [{"type": "text", "text": json.dumps(args)}], "isError": bool(args.get("tool_error"))}
+        if args.get("receipt"):
+            result["structuredContent"] = {"receipt": args["receipt"]}
     else:
         print(json.dumps({"jsonrpc": "2.0", "id": mid, "error": {"code": -32601, "message": "nope"}}), flush=True)
         continue

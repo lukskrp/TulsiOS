@@ -13,7 +13,10 @@ use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::{mpsc, Mutex, OwnedMutexGuard};
-use tulsi_client::{PackageInfo, Plan, ACTION_APPLY, ACTION_EXTENSIONS, OBJECT_PATH};
+use tulsi_client::{
+    config_action, PackageInfo, Plan, ACTION_APPLY, ACTION_CONFIGURE, ACTION_EXTENSIONS,
+    OBJECT_PATH,
+};
 use tulsi_state::{describe_all, Op, State};
 use zbus::message::Header;
 use zbus::object_server::SignalEmitter;
@@ -143,7 +146,10 @@ impl Manager {
             let Op::AddPackage { name } = op else {
                 continue;
             };
-            if name.contains('.') || local_now.contains(name) || local_names.contains(&name.as_str()) {
+            if name.contains('.')
+                || local_now.contains(name)
+                || local_names.contains(&name.as_str())
+            {
                 continue;
             }
             let licence_ok = |name: &str| {
@@ -236,7 +242,12 @@ impl Manager {
             return Vec::new();
         };
         let words: Vec<String> = query
-            .map(|q| q.to_lowercase().split_whitespace().map(str::to_string).collect())
+            .map(|q| {
+                q.to_lowercase()
+                    .split_whitespace()
+                    .map(str::to_string)
+                    .collect()
+            })
             .unwrap_or_default();
         state
             .local_packages
@@ -323,21 +334,24 @@ impl Manager {
         }
     }
 
-    /// Starts the transaction in the background and returns its job id.
+    /// Starts the transaction in the background and returns its job id. `action` is
+    /// the polkit action the change was authorized with; the commit records it.
     fn start_job(
         &self,
         guard: OwnedMutexGuard<()>,
         conn: &Connection,
         changes: Vec<FileChange>,
         message: String,
+        action: &str,
     ) -> Result<u64> {
         let job = self.next_job.fetch_add(1, Ordering::Relaxed);
         let emitter = SignalEmitter::new(conn, OBJECT_PATH)?.into_owned();
         let cfg = self.cfg.clone();
+        let commit_message = git::commit_message(&message, action);
         tokio::spawn(async move {
             let _guard = guard;
             eprintln!("tulsid: job {job}: {message}");
-            let result = run_transaction(&cfg, &emitter, job, &changes, &message).await;
+            let result = run_transaction(&cfg, &emitter, job, &changes, &commit_message).await;
             let (success, text) = match result {
                 Ok(commit) => (true, format!("{message} (commit {commit})")),
                 Err(e) => (false, e),
@@ -392,17 +406,39 @@ impl Manager {
             return Ok(0);
         }
         changes.insert(0, Self::state_change(&old, &new));
-        self.start_job(guard, conn, changes, format!("tulsi: {}", describe_all(&ops)))
+        self.start_job(
+            guard,
+            conn,
+            changes,
+            format!("tulsi: {}", describe_all(&ops)),
+            required_action(&ops),
+        )
     }
 
-    /// Reverts the most recent change (itself recorded as a new change).
+    /// Reverts the most recent change (itself recorded as a new change). Needs the
+    /// polkit action that change needed.
     async fn undo(
         &self,
         #[zbus(header)] hdr: Header<'_>,
         #[zbus(connection)] conn: &Connection,
     ) -> Result<u64> {
-        self.authorize(conn, &hdr, ACTION_APPLY).await?;
+        let latest = git::history(&self.cfg.flake_dir, 1)
+            .await
+            .map_err(TulsiError::Failed)?;
+        let latest = latest
+            .first()
+            .ok_or_else(|| TulsiError::Invalid("no history to undo".into()))?;
+        let action = undo_action(latest.action());
+        self.authorize(conn, &hdr, action).await?;
         let guard = self.try_lock()?;
+        let still_latest = git::history(&self.cfg.flake_dir, 1)
+            .await
+            .map_err(TulsiError::Failed)?;
+        if still_latest.first().map(|e| &e.commit) != Some(&latest.commit) {
+            return Err(TulsiError::Busy(
+                "the history changed meanwhile; try again".into(),
+            ));
+        }
         let (changes, summary) = git::undo_changes(&self.cfg.flake_dir)
             .await
             .map_err(TulsiError::Invalid)?;
@@ -417,7 +453,13 @@ impl Manager {
             .strip_prefix("tulsi: ")
             .unwrap_or(&summary)
             .to_string();
-        self.start_job(guard, conn, changes, format!("tulsi: undo {summary}"))
+        self.start_job(
+            guard,
+            conn,
+            changes,
+            format!("tulsi: undo {summary}"),
+            action,
+        )
     }
 
     /// The current configuration.nix ("" if it does not exist).
@@ -458,9 +500,20 @@ impl Manager {
                 "a short summary of the edit is required".into(),
             ));
         }
-        self.authorize(conn, &hdr, ACTION_APPLY).await?;
+        let before = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
+        let (action, _) = config_action(
+            &String::from_utf8_lossy(before.as_deref().unwrap_or_default()),
+            contents,
+        );
+        self.authorize(conn, &hdr, action).await?;
         let guard = self.try_lock()?;
         let old = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
+        if old != before {
+            // Authorized for the edit against `before`, not against this file.
+            return Err(TulsiError::Busy(
+                "configuration.nix changed meanwhile; try again".into(),
+            ));
+        }
         if old.as_deref() == Some(contents.as_bytes()) {
             return Ok(0);
         }
@@ -474,6 +527,7 @@ impl Manager {
             conn,
             vec![change],
             format!("tulsi: edit configuration.nix: {summary}"),
+            action,
         )
     }
 
@@ -524,16 +578,20 @@ impl Manager {
     ) -> zbus::Result<()>;
 }
 
-/// Changes that only touch browser extensions use their own polkit action,
-/// which the tulsi.browserExtensions module may allow without a password.
+/// Changes that only touch browser extensions use their own polkit action, which
+/// the tulsi.browserExtensions module may allow without a password; adding a local
+/// package uses org.tulsi.configure (see `tulsi_client::ops_action`).
 fn required_action(ops: &[Op]) -> &'static str {
-    let extensions_only = ops
-        .iter()
-        .all(|op| matches!(op, Op::AddExtension { .. } | Op::RemoveExtension { .. }));
-    if extensions_only {
-        ACTION_EXTENSIONS
-    } else {
-        ACTION_APPLY
+    tulsi_client::ops_action(ops)
+}
+
+/// The action undoing a change needs: the one it was made with. Anything not
+/// recognised counts as the strictest.
+fn undo_action(recorded: &str) -> &'static str {
+    match recorded {
+        ACTION_EXTENSIONS => ACTION_EXTENSIONS,
+        ACTION_APPLY => ACTION_APPLY,
+        _ => ACTION_CONFIGURE,
     }
 }
 
@@ -567,7 +625,8 @@ fn one_line(text: &str) -> String {
 /// that state.json never names a local package whose files are missing: files
 /// that are written come first, then state.json, then deletions.
 fn write_order<'a>(targets: &[(&'a str, Option<&'a [u8]>)]) -> Vec<(&'a str, Option<&'a [u8]>)> {
-    let rank = |&(rel, contents): &(&str, Option<&[u8]>)| match (rel == Config::STATE_REL, contents) {
+    let rank = |&(rel, contents): &(&str, Option<&[u8]>)| match (rel == Config::STATE_REL, contents)
+    {
         (false, Some(_)) => 0,
         (true, _) => 1,
         (false, None) => 2,
@@ -588,7 +647,10 @@ async fn run_transaction(
 ) -> std::result::Result<String, String> {
     let dir = &cfg.flake_dir;
     let applied = async {
-        let targets: Vec<_> = changes.iter().map(|c| (c.rel.as_str(), c.new.as_deref())).collect();
+        let targets: Vec<_> = changes
+            .iter()
+            .map(|c| (c.rel.as_str(), c.new.as_deref()))
+            .collect();
         for (rel, contents) in write_order(&targets) {
             git::put(dir, rel, contents).await?;
         }
@@ -603,7 +665,10 @@ async fn run_transaction(
         }
         Err(e) => {
             let mut problems = Vec::new();
-            let targets: Vec<_> = changes.iter().map(|c| (c.rel.as_str(), c.old.as_deref())).collect();
+            let targets: Vec<_> = changes
+                .iter()
+                .map(|c| (c.rel.as_str(), c.old.as_deref()))
+                .collect();
             for (rel, contents) in write_order(&targets) {
                 if let Err(re) = git::put(dir, rel, contents).await {
                     problems.push(re);
@@ -687,7 +752,6 @@ async fn rebuild(
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -700,10 +764,32 @@ mod tests {
             write_order(t).into_iter().map(|(rel, _)| rel).collect()
         };
         // Adding: the package files exist before state.json names them.
-        let add = [(Config::STATE_REL, Some(state)), ("tulsi/pkgs/frob/package.nix", Some(pkg)), ("tulsi/pkgs/frob/meta.json", Some(pkg))];
-        assert_eq!(order(&add), ["tulsi/pkgs/frob/package.nix", "tulsi/pkgs/frob/meta.json", Config::STATE_REL]);
+        let add = [
+            (Config::STATE_REL, Some(state)),
+            ("tulsi/pkgs/frob/package.nix", Some(pkg)),
+            ("tulsi/pkgs/frob/meta.json", Some(pkg)),
+        ];
+        assert_eq!(
+            order(&add),
+            [
+                "tulsi/pkgs/frob/package.nix",
+                "tulsi/pkgs/frob/meta.json",
+                Config::STATE_REL
+            ]
+        );
         // Removing (also undo and rollback of an add): state.json stops naming them first.
-        let remove = [("tulsi/pkgs/frob/package.nix", None), (Config::STATE_REL, Some(state)), ("tulsi/pkgs/frob/meta.json", None)];
-        assert_eq!(order(&remove), [Config::STATE_REL, "tulsi/pkgs/frob/package.nix", "tulsi/pkgs/frob/meta.json"]);
+        let remove = [
+            ("tulsi/pkgs/frob/package.nix", None),
+            (Config::STATE_REL, Some(state)),
+            ("tulsi/pkgs/frob/meta.json", None),
+        ];
+        assert_eq!(
+            order(&remove),
+            [
+                Config::STATE_REL,
+                "tulsi/pkgs/frob/package.nix",
+                "tulsi/pkgs/frob/meta.json"
+            ]
+        );
     }
 }

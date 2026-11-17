@@ -4,6 +4,7 @@ marshalled back to the GTK main loop with GLib.idle_add."""
 from __future__ import annotations
 
 import os
+import subprocess
 import threading
 
 import gi
@@ -14,7 +15,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gdk, GLib, Gtk, Pango  # noqa: E402
 
 from . import markdown  # noqa: E402
-from .agent import Agent, describe_tool, to_provider_tools  # noqa: E402
+from .agent import Agent, describe_outcome, describe_tool, to_provider_tools  # noqa: E402
 from .mcp import DEFAULT_COMMAND, McpClient, McpError  # noqa: E402
 from .providers import EFFORTS, MODELS, ProviderError, make_provider  # noqa: E402
 from .settings import Keyring, Settings  # noqa: E402
@@ -50,6 +51,7 @@ class Window(Gtk.ApplicationWindow):
         self.busy = False
         self._bubble: Gtk.Label | None = None
         self._bubble_text = ""
+        self._undo_button: Gtk.Button | None = None
 
         provider_css = Gtk.CssProvider()
         provider_css.load_from_data(CSS)
@@ -63,6 +65,10 @@ class Window(Gtk.ApplicationWindow):
         new_button.set_tooltip_text("New conversation")
         new_button.connect("clicked", lambda _b: self.new_conversation())
         header.pack_start(new_button)
+        history_button = Gtk.Button.new_from_icon_name("document-open-recent-symbolic", Gtk.IconSize.BUTTON)
+        history_button.set_tooltip_text("Recent changes (with Undo)")
+        history_button.connect("clicked", lambda _b: self.open_history())
+        header.pack_start(history_button)
         settings_button = Gtk.Button.new_from_icon_name("emblem-system-symbolic", Gtk.IconSize.BUTTON)
         settings_button.set_tooltip_text("Settings")
         settings_button.connect("clicked", lambda _b: self.open_settings())
@@ -126,7 +132,8 @@ class Window(Gtk.ApplicationWindow):
         intro.pack_start(title, False, False, 0)
         body = Gtk.Label(
             label="Ask in plain words to install software, turn features on or off, or adjust "
-            "settings. Every change is shown to you for approval first, and can be undone.",
+            "settings. Every change can be undone; anything a restart cannot undo, such as "
+            "accounts or disks, asks you first.",
             wrap=True, justify=Gtk.Justification.CENTER, max_width_chars=60,
         )
         body.get_style_context().add_class("dim-label")
@@ -146,6 +153,7 @@ class Window(Gtk.ApplicationWindow):
             return
         for child in self.chat.get_children():
             self.chat.remove(child)
+        self._undo_button = None
         if self.agent:
             self.agent.reset()
         self._show_intro()
@@ -168,13 +176,22 @@ class Window(Gtk.ApplicationWindow):
         self._scroll_down()
         return label
 
-    def _add_tool_line(self, text: str, icon: str) -> None:
+    def _add_tool_line(self, text: str, icon: str, undo: bool = False) -> None:
         row = Gtk.Box(spacing=6, margin_start=6)
         row.pack_start(Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.MENU), False, False, 0)
         label = Gtk.Label(label=text, xalign=0, wrap=True, max_width_chars=70)
         label.get_style_context().add_class("dim-label")
         label.get_style_context().add_class("tool-line")
         row.pack_start(label, True, True, 0)
+        if undo:
+            button = Gtk.Button(label="Undo", valign=Gtk.Align.CENTER)
+            button.set_tooltip_text("Undo the latest system change")
+            button.connect("clicked", lambda b: self.undo_latest(b))
+            row.pack_end(button, False, False, 0)
+            # Only the newest change can be undone: older Undo buttons go away.
+            if self._undo_button is not None:
+                self._undo_button.destroy()
+            self._undo_button = button
         row.show_all()
         self.chat.pack_start(row, False, False, 0)
         self._scroll_down()
@@ -287,8 +304,8 @@ class Window(Gtk.ApplicationWindow):
     @_idle
     def tool_started(self, name: str, arguments: dict) -> None:
         self._add_tool_line(describe_tool(name, arguments), "system-run-symbolic")
-        if name.startswith(("apply_", "undo_")):
-            self._set_status("Waiting for your approval, then rebuilding the system…")
+        if name.startswith(("apply_", "undo_", "propose_local")):
+            self._set_status("Changing the system (you may be asked to approve), then rebuilding…")
         else:
             self._set_status("Working…")
 
@@ -303,6 +320,67 @@ class Window(Gtk.ApplicationWindow):
     @_idle
     def notice(self, text: str) -> None:
         self._add_tool_line(text, "dialog-information-symbolic")
+
+    @_idle
+    def outcome(self, receipts: list[dict], note: str) -> None:
+        """The receipt line under a reply: what actually changed, with Undo."""
+        kind, text = describe_outcome(receipts)
+        if kind == "changed":
+            self._add_tool_line(text, "emblem-ok-symbolic", undo=True)
+        elif kind in ("rolled_back", "rejected"):
+            self._add_tool_line(text, "dialog-warning-symbolic")
+        if note:
+            self._add_tool_line(note, "dialog-information-symbolic")
+
+    # ----------------------------------------------------- undo and history
+
+    def undo_latest(self, button: Gtk.Button) -> None:
+        """Undo straight through tulsi-mcp (no model turn); the model hears about
+        it with the next message."""
+        if self.busy or self.mcp is None:
+            return
+        button.set_sensitive(False)
+        self._set_busy(True, "Undoing the latest change…")
+
+        def work() -> None:
+            try:
+                result = self.mcp.call_tool(
+                    "undo_last_change", {"reason": "The user pressed Undo in the Assistant."}
+                )
+                receipt = (result.structured or {}).get("receipt") or {}
+                if receipt.get("outcome") == "applied" and self.agent:
+                    self.agent.pending_notes.append(
+                        "the user pressed Undo, which reverted the latest system change."
+                    )
+                first = result.text.strip().splitlines()[0] if result.text.strip() else ""
+                self._undo_done(not result.is_error, first, button)
+            except McpError as e:
+                self._undo_done(False, f"Could not undo: {e}", button)
+            finally:
+                self._finish()
+
+        threading.Thread(target=work, daemon=True).start()
+
+    @_idle
+    def _undo_done(self, ok: bool, text: str, button: Gtk.Button) -> None:
+        if ok:
+            button.destroy()
+            if self._undo_button is button:
+                self._undo_button = None
+        else:
+            button.set_sensitive(True)
+        self._add_tool_line(
+            ("Undone. " if ok else "") + text,
+            "edit-undo-symbolic" if ok else "dialog-warning-symbolic",
+        )
+
+    def open_history(self) -> None:
+        """Recent changes live in the Software Center's History page."""
+        try:
+            subprocess.Popen(["ocimum-software-center", "--history"], start_new_session=True,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except OSError as e:
+            self._error(f"Cannot open the Software Center: {e}")
 
     @_idle
     def _error(self, text: str, needs_key: bool = False) -> None:

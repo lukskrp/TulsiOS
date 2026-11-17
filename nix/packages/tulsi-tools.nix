@@ -2,6 +2,7 @@
   lib,
   rustPlatform,
   libarchive,
+  gitMinimal,
 }:
 
 let
@@ -23,6 +24,9 @@ rustPlatform.buildRustPackage {
   };
 
   cargoLock.lockFile = root + "/Cargo.lock";
+
+  # tulsid's tests read history back from a real git repository.
+  nativeCheckInputs = [ gitMinimal ];
 
   # tulsi-mcp's packaging tools list archives with bsdtar (ADR 0013). Compiled in rather
   # than wrapped, so the process keeps its name (`pgrep -x tulsi-mcp`, Starah's audit).

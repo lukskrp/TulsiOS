@@ -9,13 +9,13 @@
 //! | `GetState() -> s` | method | state.json contents |
 //! | `Plan(ops: s) -> s` | method | JSON [`Plan`]: changes + resulting state, nothing applied |
 //! | `Apply(ops: s) -> t` | method | polkit `org.tulsi.apply`; returns job id, 0 = nothing to do |
-//! | `Undo() -> t` | method | polkit `org.tulsi.apply`; reverts the latest change |
+//! | `Undo() -> t` | method | polkit: the action of the change it reverts ([`HistoryEntry::action`]) |
 //! | `History(limit: u) -> s` | method | JSON list of [`HistoryEntry`] |
 //! | `Search(query: s, limit: u) -> s` | method | JSON list of [`PackageInfo`], best first |
 //! | `PackageInfo(attr: s) -> s` | method | JSON [`PackageInfo`]; error `NotFound` |
 //! | `GetConfig() -> s` | method | configuration.nix ("" if absent) |
 //! | `PlanConfig(contents: s) -> s` | method | syntax check + JSON [`ConfigPlan`]; nothing written |
-//! | `ApplyConfig(contents: s, summary: s) -> t` | method | polkit `org.tulsi.apply`; job id, 0 = unchanged |
+//! | `ApplyConfig(contents: s, summary: s) -> t` | method | polkit `org.tulsi.apply` if a rollback fully undoes the edit, else `org.tulsi.configure` ([`config_action`]); job id, 0 = unchanged |
 //! | `Busy` | property | a job is running |
 //! | `Progress(job: t, line: s)` | signal | rebuild output |
 //! | `Finished(job: t, success: b, message: s)` | signal | job result |
@@ -32,6 +32,105 @@ pub const ACTION_APPLY: &str = "org.tulsi.apply";
 /// Used instead of ACTION_APPLY when a change only adds/removes browser
 /// extensions, so it can be allowed more freely (see tulsi.browserExtensions).
 pub const ACTION_EXTENSIONS: &str = "org.tulsi.extensions";
+/// configuration.nix edits a NixOS rollback does not fully undo (accounts, boot, file
+/// systems, scripts, …; ADR 0014). Starah asks the human about these at level 2.
+pub const ACTION_CONFIGURE: &str = "org.tulsi.configure";
+
+/// The polkit action for applying `ops`. Browser extensions alone have their own
+/// action. Adding a local package (code an agent may have written, which ends up on
+/// the user's `PATH`) is [`ACTION_CONFIGURE`]. Everything else a rollback fully
+/// undoes, so it is [`ACTION_APPLY`].
+pub fn ops_action(ops: &[Op]) -> &'static str {
+    if ops
+        .iter()
+        .any(|op| matches!(op, Op::AddLocalPackage { .. }))
+    {
+        ACTION_CONFIGURE
+    } else if ops
+        .iter()
+        .all(|op| matches!(op, Op::AddExtension { .. } | Op::RemoveExtension { .. }))
+    {
+        ACTION_EXTENSIONS
+    } else {
+        ACTION_APPLY
+    }
+}
+
+/// The polkit action for replacing configuration.nix `old` with `new`, and the
+/// settings that make it [`ACTION_CONFIGURE`] (empty for [`ACTION_APPLY`]).
+pub fn config_action(old: &str, new: &str) -> (&'static str, Vec<String>) {
+    let outside = tulsi_state::unreversible_settings(old, new);
+    if outside.is_empty() {
+        (ACTION_APPLY, outside)
+    } else {
+        (ACTION_CONFIGURE, outside)
+    }
+}
+
+/// Commit trailer recording the polkit action a change needed; undoing it needs
+/// the same one.
+pub const ACTION_TRAILER: &str = "Tulsi-Action";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn ops(json: &str) -> Vec<Op> {
+        serde_json::from_str(json).unwrap()
+    }
+
+    #[test]
+    fn ops_action_follows_reversibility() {
+        assert_eq!(
+            ops_action(&ops(r#"[{"op":"addPackage","name":"vlc"}]"#)),
+            ACTION_APPLY
+        );
+        assert_eq!(
+            ops_action(&ops(
+                r#"[{"op":"setService","name":"printing","enable":true}]"#
+            )),
+            ACTION_APPLY
+        );
+        assert_eq!(
+            ops_action(&ops(
+                r#"[{"op":"addExtension","browser":"firefox","id":"uBlock0@raymondhill.net"}]"#
+            )),
+            ACTION_EXTENSIONS
+        );
+        assert_eq!(
+            ops_action(&ops(
+                r#"[{"op":"addLocalPackage","name":"frob","expression":"{ stdenv }: stdenv.mkDerivation { }"}]"#
+            )),
+            ACTION_CONFIGURE
+        );
+        assert_eq!(
+            ops_action(&ops(r#"[{"op":"removeLocalPackage","name":"frob"}]"#)),
+            ACTION_APPLY
+        );
+    }
+
+    #[test]
+    fn old_history_entries_get_an_action() {
+        let entry = |summary: &str| HistoryEntry {
+            commit: "x".into(),
+            time: 0,
+            summary: summary.into(),
+            recorded_action: String::new(),
+        };
+        assert_eq!(entry("tulsi: install vlc").action(), ACTION_APPLY);
+        assert_eq!(
+            entry("tulsi: edit configuration.nix: x").action(),
+            ACTION_CONFIGURE
+        );
+        assert_eq!(
+            entry("tulsi: undo edit configuration.nix: x").action(),
+            ACTION_CONFIGURE
+        );
+        let mut recorded = entry("tulsi: install vlc");
+        recorded.recorded_action = ACTION_EXTENSIONS.into();
+        assert_eq!(recorded.action(), ACTION_EXTENSIONS);
+    }
+}
 
 /// Set `TULSI_BUS=session` to talk to a tulsid running on the session bus
 /// (development without a NixOS machine).
@@ -76,6 +175,27 @@ pub struct HistoryEntry {
     /// Unix timestamp (seconds).
     pub time: i64,
     pub summary: String,
+    /// The polkit action the change needed (its `Tulsi-Action` trailer); empty for
+    /// changes recorded before ADR 0014. Use [`HistoryEntry::action`].
+    #[serde(default, skip_serializing_if = "String::is_empty", rename = "action")]
+    pub recorded_action: String,
+}
+
+impl HistoryEntry {
+    /// The polkit action this change needed, which undoing it needs too. Older
+    /// changes without a record: configuration edits count as `org.tulsi.configure`.
+    pub fn action(&self) -> &str {
+        if !self.recorded_action.is_empty() {
+            return &self.recorded_action;
+        }
+        let summary = self.summary.trim_start_matches("tulsi: ");
+        let summary = summary.strip_prefix("undo ").unwrap_or(summary);
+        if summary.starts_with("edit configuration.nix") {
+            ACTION_CONFIGURE
+        } else {
+            ACTION_APPLY
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,9 +1,16 @@
 # The Ocimum Assistant end to end in X11, with a scripted model (no network):
 # the conversation drives real tulsi-mcp tool calls against a real tulsid.
-# tulsi-mcp runs as the Starah agent `assistant` (level 1, Propose): the change
-# waits as a Starah request until the human approves it.
+# tulsi-mcp runs as the Starah agent `assistant` at its default level 2 (Routine,
+# ADR 0014): installing software, which a rollback fully undoes, goes ahead on its
+# own; adding a user account waits as a Starah request until the human approves it.
 { self }:
 let
+  newConfiguration = ''
+    { ... }:
+    {
+      users.users.bob.isNormalUser = true;
+    }
+  '';
   script = [
     {
       text = "Let me find the right package.";
@@ -15,7 +22,7 @@ let
       ];
     }
     {
-      text = "I'll install **cowsay** for you; please approve the change.";
+      text = "I'll install **cowsay** for you.";
       tool_calls = [
         {
           name = "apply_change";
@@ -32,6 +39,21 @@ let
       ];
     }
     { text = "Done: `cowsay` is installed. You can undo it in the Software Center."; }
+    # Second request: an account, which a rollback does not undo.
+    {
+      text = "Adding the account needs your approval.";
+      tool_calls = [
+        {
+          name = "apply_configuration_edit";
+          input = {
+            contents = newConfiguration;
+            summary = "add user bob";
+            reason = "The user asked for an account for Bob.";
+          };
+        }
+      ];
+    }
+    { text = "Bob's account is added."; }
   ];
 in
 {
@@ -120,34 +142,30 @@ in
         machine.sleep(2)
         machine.screenshot("assistant-start")
 
-    with subtest("a plain-language request becomes a Starah request, then an approved change"):
+    def ask(text):
         machine.succeed(alice(
             "gdbus call --session --dest org.tulsi.Assistant --object-path /org/tulsi/Assistant "
-            "--method org.gtk.Actions.Activate ask \"[<\\\"install cowsay please\\\">]\" \"{}\""
+            f"--method org.gtk.Actions.Activate ask \"[<\\\"{text}\\\">]\" \"{{}}\""
         ))
-        machine.wait_until_succeeds("starah requests | grep -q assistant", timeout=timedelta(minutes=2))
-        pending = json.loads(machine.succeed(
+
+    def pending_requests():
+        return json.loads(machine.succeed(
             "busctl --json=short call org.starah.Broker1 /org/starah/Broker1 org.starah.Broker1 Requests"
             " | jq -r .data[0]"
         ))
-        assert len(pending) == 1, pending
-        approval = pending[0]
-        assert approval["agent"] == "assistant" and approval["action"] == "org.tulsi.apply", approval
-        assert approval["description"]["changes"] == ["+ package cowsay"], approval
-        assert approval["description"]["reason"] == "The user asked for cowsay.", approval
+
+    with subtest("installing software, which a rollback undoes, goes ahead without a request"):
+        ask("install cowsay please")
+        machine.wait_until_succeeds("grep -q cowsay /etc/nixos/tulsi/state.json", timeout=timedelta(minutes=2))
+        assert pending_requests() == [], pending_requests()
         # tulsi-mcp runs as the Starah agent, sandboxed, not as alice.
         machine.succeed("pgrep -u starah-assistant -x tulsi-mcp")
         machine.fail("pgrep -u alice -x tulsi-mcp")
-        # Nothing happens before the human answers.
-        machine.sleep(2)
-        machine.fail("grep -q cowsay /etc/nixos/tulsi/state.json")
-        machine.succeed(alice(f"starah approve {approval['id']}"))
-        machine.wait_until_succeeds("grep -q cowsay /etc/nixos/tulsi/state.json", timeout=timedelta(minutes=2))
         machine.wait_until_succeeds("test $(wc -l < /tmp/fake-model.jsonl) -ge 3", timeout=timedelta(minutes=1))
         machine.sleep(2)
-        machine.screenshot("assistant-done")
+        machine.screenshot("assistant-installed")
 
-    with subtest("the model saw the real tool results"):
+    with subtest("the model saw the real tool results, and the history records the action"):
         requests = [json.loads(l) for l in machine.succeed("cat /tmp/fake-model.jsonl").splitlines()]
         assert requests[0]["messages"][0]["content"] == "install cowsay please", requests[0]
         search_result = requests[1]["messages"][-1]["content"][0]
@@ -155,16 +173,45 @@ in
         apply_result = requests[2]["messages"][-1]["content"][0]
         assert "Applied and rebuilt" in apply_result["content"], apply_result
         machine.succeed("git -C /etc/nixos log -1 --format=%s | grep -qx 'tulsi: install cowsay'")
+        machine.succeed(
+            "git -C /etc/nixos log -1 --format='%(trailers:key=Tulsi-Action,valueonly)'"
+            " | grep -qx org.tulsi.apply"
+        )
+
+    with subtest("adding an account, which a rollback does not undo, waits for the human"):
+        ask("add a user called bob")
+        machine.wait_until_succeeds("starah requests | grep -q assistant", timeout=timedelta(minutes=2))
+        pending = pending_requests()
+        assert len(pending) == 1, pending
+        approval = pending[0]
+        assert approval["agent"] == "assistant" and approval["action"] == "org.tulsi.configure", approval
+        changes = approval["description"]["changes"]
+        assert changes[0] == "Edit configuration.nix: add user bob", approval
+        assert "users.users.bob.isNormalUser" in changes[1], approval
+        assert approval["description"]["reason"] == "The user asked for an account for Bob.", approval
+        # Nothing happens before the human answers.
+        machine.sleep(2)
+        machine.fail("grep -q bob /etc/nixos/configuration.nix")
+        machine.succeed(alice(f"starah approve {approval['id']}"))
+        machine.wait_until_succeeds("grep -q bob /etc/nixos/configuration.nix", timeout=timedelta(minutes=2))
+        machine.succeed(
+            "git -C /etc/nixos log -1 --format='%(trailers:key=Tulsi-Action,valueonly)'"
+            " | grep -qx org.tulsi.configure"
+        )
+        machine.wait_until_succeeds("test $(wc -l < /tmp/fake-model.jsonl) -ge 5", timeout=timedelta(minutes=1))
+        machine.sleep(2)
+        machine.screenshot("assistant-approved")
 
     with subtest("an agent cannot accept a software licence"):
         out = machine.fail("starah run --agent assistant -- /etc/assistant/accept-licence 2>&1")
         assert "cannot accept a software licence" in out, out
         machine.fail("grep -q claude-code /etc/nixos/tulsi/state.json")
 
-    with subtest("Starah audited the request, the decision and tulsid's check"):
+    with subtest("Starah audited the requests, the decision and tulsid's checks"):
         audit = machine.succeed("starah audit 100")
         assert '"event":"ask"' in audit and '"event":"decide"' in audit, audit
         assert '"action":"org.tulsi.apply"' in audit and '"outcome":"allow"' in audit, audit
+        assert '"action":"org.tulsi.configure"' in audit, audit
 
     machine.succeed("cat /tmp/assistant.log >&2")
   '';

@@ -84,7 +84,7 @@
           machine.succeed("journalctl -b -u starahd | grep '\"event\":\"set-policy\"' | grep -q '\"by\":\"alice\"'")
       with subtest("an agent's request appears and the human approves it"):
           machine.succeed(
-              "(starah run --agent assistant -- starah ask org.tulsi.apply 'install cowsay' '+ package cowsay';"
+              "(starah run --agent assistant -- starah ask org.tulsi.configure 'add user bob' '+ users.users.bob';"
               " echo $? > /tmp/ask.rc) > /tmp/ask.log 2>&1 &"
           )
           window("Agent Request", timeout=60)

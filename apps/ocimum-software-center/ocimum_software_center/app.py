@@ -33,6 +33,7 @@ class Application(Gtk.Application):
             ops_remove(attr), f"Removing {attr}", "Remove"))
         self._action("search", string, self._search)
         self._action("undo", None, lambda _: self._win().request_undo())
+        self._action("history", None, lambda _: self._history())
         self._action("quit", None, lambda _: self.quit())
         self.set_accels_for_action("app.quit", ["<Primary>q"])
 
@@ -59,6 +60,14 @@ class Application(Gtk.Application):
         window = self._win()
         window.stack.set_visible_child_name("search")
         window.search_entry.set_text(text)
+
+    def _history(self) -> None:
+        window = self._win()
+        if window.stack.get_visible_child_name() == "history":
+            window.refresh_history()
+        else:
+            window.stack.set_visible_child_name("history")
+        window.present()
 
     def do_activate(self) -> None:
         if self.window is None:
@@ -88,4 +97,16 @@ def main() -> int:
         return 0
     GLib.set_application_name("Software Center")
     GLib.set_prgname(APP_ID)
-    return Application().run(sys.argv)
+    app = Application()
+    if "--history" in sys.argv:
+        # Opens the History page (the Assistant's "Recent changes"), in the
+        # running instance if there is one.
+        sys.argv.remove("--history")
+        app.register(None)
+        app.activate_action("history", None)
+        if app.get_is_remote():
+            connection = app.get_dbus_connection()
+            if connection is not None:
+                connection.flush_sync(None)
+            return 0
+    return app.run(sys.argv)

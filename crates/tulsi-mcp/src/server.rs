@@ -2,6 +2,7 @@
 
 use serde_json::{json, Value};
 use tokio::io::{AsyncRead, AsyncWrite};
+use tulsi_client::{config_action, ACTION_APPLY, ACTION_CONFIGURE, ACTION_EXTENSIONS};
 use tulsi_state::Op;
 
 use crate::approval::{Approver, Decision, Request};
@@ -12,21 +13,12 @@ use crate::transport::{Transport, INVALID_PARAMS, METHOD_NOT_FOUND};
 /// supported, otherwise the newest is offered.
 const PROTOCOL_VERSIONS: [&str; 4] = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const REQUESTER: &str = "an AI agent (through tulsi-mcp)";
-const ACTION_APPLY: &str = "org.tulsi.apply";
-const ACTION_EXTENSIONS: &str = "org.tulsi.extensions";
 
-/// The polkit action tulsid checks for these operations (same rule as tulsid's
-/// required_action): changes that only touch browser extensions have their own.
+/// The polkit action tulsid checks for these operations (the same rule:
+/// `tulsi_client::ops_action`).
 fn polkit_action(ops_json: &str) -> &'static str {
     match serde_json::from_str::<Vec<Op>>(ops_json) {
-        Ok(ops)
-            if !ops.is_empty()
-                && ops.iter().all(|op| {
-                    matches!(op, Op::AddExtension { .. } | Op::RemoveExtension { .. })
-                }) =>
-        {
-            ACTION_EXTENSIONS
-        }
+        Ok(ops) if !ops.is_empty() => tulsi_client::ops_action(&ops),
         _ => ACTION_APPLY,
     }
 }
@@ -39,9 +31,14 @@ editing files or running nixos-rebuild yourself.
 configuration.nix. Call plan_change first and tell the user what will change.
 - For other settings, read_configuration, then propose_configuration_edit with the \
 COMPLETE new file contents, then apply_configuration_edit.
-- Every apply/undo asks the human for approval and rebuilds the system, which can take \
-minutes. If the human rejects, do not retry the same change unasked.
+- Every apply/undo is approved before it happens: by the human, or, for changes a NixOS \
+rollback fully undoes, by the agent level the human chose. Then the system is rebuilt, \
+which can take minutes. If the human rejects, do not retry the same change unasked.
+- Configuration edits that touch accounts, boot, file systems, scripts or anything else a \
+rollback cannot undo always ask the human; say why the edit needs them.
 - Failed rebuilds are rolled back automatically; undo_last_change reverts the latest change.
+- Each change result carries a receipt (structuredContent.receipt). Report only what the \
+receipts say happened.
 
 Packaging software that is not in the Software Center (local packages):
 - Only when search_packages finds nothing suitable. Ask for a download URL if you have none.
@@ -339,8 +336,16 @@ impl<B: Backend> Server<B> {
             requester: REQUESTER.into(),
             action: polkit_action(&ops),
         };
-        self.approved(&request, transport).await?;
-        job_output(self.backend.apply(&ops).await?)
+        let via = match self.approved(&request, transport).await {
+            Ok(via) => via,
+            Err(why) => return Ok(rejected("apply_change", &request, &why)),
+        };
+        job_output(
+            "apply_change",
+            &request,
+            via,
+            self.backend.apply(&ops).await?,
+        )
     }
 
     async fn undo<R, W>(
@@ -366,10 +371,23 @@ impl<B: Backend> Server<B> {
             )],
             diff: None,
             requester: REQUESTER.into(),
-            action: ACTION_APPLY,
+            // Undoing needs what the change needed (tulsid checks the same).
+            action: match latest.action() {
+                ACTION_EXTENSIONS => ACTION_EXTENSIONS,
+                ACTION_APPLY => ACTION_APPLY,
+                _ => ACTION_CONFIGURE,
+            },
         };
-        self.approved(&request, transport).await?;
-        job_output(self.backend.undo().await?)
+        let via = match self.approved(&request, transport).await {
+            Ok(via) => via,
+            Err(why) => return Ok(rejected("undo_last_change", &request, &why)),
+        };
+        job_output(
+            "undo_last_change",
+            &request,
+            via,
+            self.backend.undo().await?,
+        )
     }
 
     async fn propose_config(&self, args: &Value) -> Result<ToolOutput, String> {
@@ -407,16 +425,33 @@ impl<B: Backend> Server<B> {
                 "Nothing to change; configuration.nix already has these contents.",
             ));
         }
+        let old = self.backend.get_config().await?;
+        let (action, outside) = config_action(&old, contents);
+        let mut changes = vec![format!("Edit configuration.nix: {summary}")];
+        if !outside.is_empty() {
+            changes.push(format!(
+                "A rollback would not fully undo this; it changes: {}",
+                outside.join(", ")
+            ));
+        }
         let request = Request {
             title: "An AI agent wants to edit configuration.nix".into(),
             reason: reason.into(),
-            changes: vec![format!("Edit configuration.nix: {summary}")],
+            changes,
             diff: Some(plan.diff),
             requester: REQUESTER.into(),
-            action: ACTION_APPLY,
+            action,
         };
-        self.approved(&request, transport).await?;
-        job_output(self.backend.apply_config(contents, summary).await?)
+        let via = match self.approved(&request, transport).await {
+            Ok(via) => via,
+            Err(why) => return Ok(rejected("apply_configuration_edit", &request, &why)),
+        };
+        job_output(
+            "apply_configuration_edit",
+            &request,
+            via,
+            self.backend.apply_config(contents, summary).await?,
+        )
     }
 
     /// Adds a local package the agent built: tulsid checks it, the human approves
@@ -454,18 +489,27 @@ impl<B: Backend> Server<B> {
             changes,
             diff: Some(expression.to_string()),
             requester: REQUESTER.into(),
-            action: ACTION_APPLY,
+            // Agent-written code: a person reviews it (org.tulsi.configure).
+            action: polkit_action(&ops),
         };
-        self.approved(&request, transport).await?;
-        job_output(self.backend.apply(&ops).await?)
+        let via = match self.approved(&request, transport).await {
+            Ok(via) => via,
+            Err(why) => return Ok(rejected("propose_local_package", &request, &why)),
+        };
+        job_output(
+            "propose_local_package",
+            &request,
+            via,
+            self.backend.apply(&ops).await?,
+        )
     }
 
-    /// Ok if the human approved; Err with the reason otherwise.
+    /// Who approved (the channel), or why not.
     async fn approved<R, W>(
         &self,
         request: &Request,
         transport: &mut Transport<R, W>,
-    ) -> Result<(), String>
+    ) -> Result<&'static str, String>
     where
         R: AsyncRead + Unpin,
         W: AsyncWrite + Unpin,
@@ -480,10 +524,42 @@ impl<B: Backend> Server<B> {
                     "tulsi-mcp: approved via {via}: {}",
                     request.changes.join("; ")
                 );
-                Ok(())
+                Ok(via)
             }
-            Decision::Rejected(why) => Err(format!("Not applied: {why}.")),
+            Decision::Rejected(why) => Err(why),
         }
+    }
+}
+
+/// What a change tool did, from what actually happened rather than from what
+/// the model says: `applied`, `nothing`, `rolled_back` or `rejected`.
+fn receipt(
+    tool: &str,
+    request: &Request,
+    outcome: &str,
+    approved_via: Option<&str>,
+    commit: Option<&str>,
+    detail: &str,
+) -> Value {
+    json!({
+        "tool": tool,
+        "outcome": outcome,
+        "approved_via": approved_via,
+        "action": request.action,
+        "changes": request.changes,
+        "commit": commit,
+        "detail": detail,
+    })
+}
+
+fn rejected(tool: &str, request: &Request, why: &str) -> ToolOutput {
+    ToolOutput {
+        text: format!("Not applied: {why}."),
+        structured: Some(json!({
+            "success": false,
+            "receipt": receipt(tool, request, "rejected", None, None, why),
+        })),
+        is_error: true,
     }
 }
 
@@ -504,13 +580,33 @@ fn operations(args: &Value) -> Result<String, String> {
     Ok(serde_json::to_string(&ops).expect("ops serialize"))
 }
 
-fn job_output(result: JobResult) -> Result<ToolOutput, String> {
+fn job_output(
+    tool: &str,
+    request: &Request,
+    via: &str,
+    result: JobResult,
+) -> Result<ToolOutput, String> {
     if !result.ran {
-        Ok(ToolOutput::ok("Nothing to change."))
+        Ok(ToolOutput::data(
+            "Nothing to change.",
+            json!({
+                "success": true,
+                "receipt": receipt(tool, request, "nothing", Some(via), None, &result.message),
+            }),
+        ))
     } else if result.success {
+        // tulsid ends a successful job's message with "(commit <hash>)".
+        let commit = result
+            .message
+            .rsplit_once("(commit ")
+            .map(|(_, rest)| rest.trim_end_matches(')').trim());
         Ok(ToolOutput::data(
             format!("Applied and rebuilt: {}", result.message),
-            json!({ "success": true, "message": result.message }),
+            json!({
+                "success": true,
+                "message": result.message,
+                "receipt": receipt(tool, request, "applied", Some(via), commit, &result.message),
+            }),
         ))
     } else {
         Ok(ToolOutput {
@@ -518,7 +614,11 @@ fn job_output(result: JobResult) -> Result<ToolOutput, String> {
                 "The change failed and was rolled back; nothing changed.\n{}",
                 result.message
             ),
-            structured: Some(json!({ "success": false, "message": result.message })),
+            structured: Some(json!({
+                "success": false,
+                "message": result.message,
+                "receipt": receipt(tool, request, "rolled_back", Some(via), None, &result.message),
+            })),
             is_error: true,
         })
     }
@@ -669,6 +769,7 @@ mod tests {
                 commit: "abc1234".into(),
                 time: 0,
                 summary: "tulsi: install vlc".into(),
+                recorded_action: String::new(),
             }])
         }
         async fn plan(&self, ops: &str) -> Result<Plan, String> {
@@ -898,5 +999,60 @@ mod tests {
             out[3]
         );
         assert!(fake.applied.lock().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn every_change_result_carries_a_receipt() {
+        let fake = Fake::default();
+        let out = session(&fake, Mode::Dialog, &["true"], &[INIT, INSTALL]).await;
+        let r = &out[1]["result"]["structuredContent"]["receipt"];
+        assert_eq!(r["outcome"], "applied", "{}", out[1]);
+        assert_eq!(r["tool"], "apply_change");
+        assert_eq!(r["approved_via"], "desktop dialog");
+        assert_eq!(r["action"], "org.tulsi.apply");
+        assert_eq!(r["commit"], "1");
+        assert_eq!(r["changes"][0], "+ package vlc");
+
+        let fake = Fake::default();
+        let out = session(&fake, Mode::Dialog, &["false"], &[INIT, INSTALL]).await;
+        let r = &out[1]["result"]["structuredContent"]["receipt"];
+        assert_eq!(r["outcome"], "rejected", "{}", out[1]);
+        assert!(r["approved_via"].is_null());
+    }
+
+    #[tokio::test]
+    async fn configuration_edits_ask_only_when_a_rollback_cannot_undo_them() {
+        let call = |contents: &str| {
+            json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{
+                "name":"apply_configuration_edit",
+                "arguments":{"contents":contents,"summary":"s","reason":"r"}}})
+            .to_string()
+        };
+        let fake = Fake::default();
+        let timezone = call("{\n  time.timeZone = \"UTC\";\n}\n");
+        let out = session(&fake, Mode::Dialog, &["true"], &[INIT, &timezone]).await;
+        let r = &out[1]["result"]["structuredContent"]["receipt"];
+        assert_eq!(r["action"], "org.tulsi.apply", "{}", out[1]);
+        assert_eq!(r["changes"].as_array().unwrap().len(), 1);
+
+        let fake = Fake::default();
+        let account = call("{\n  users.users.bob.isNormalUser = true;\n}\n");
+        let out = session(&fake, Mode::Dialog, &["true"], &[INIT, &account]).await;
+        let r = &out[1]["result"]["structuredContent"]["receipt"];
+        assert_eq!(r["action"], "org.tulsi.configure", "{}", out[1]);
+        assert!(r["changes"][1]
+            .as_str()
+            .unwrap()
+            .contains("users.users.bob.isNormalUser"));
+    }
+
+    #[tokio::test]
+    async fn undo_needs_what_the_change_needed() {
+        let fake = Fake::default();
+        let undo = r#"{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"undo_last_change","arguments":{"reason":"r"}}}"#;
+        let out = session(&fake, Mode::Dialog, &["true"], &[INIT, undo]).await;
+        let r = &out[1]["result"]["structuredContent"]["receipt"];
+        assert_eq!(r["action"], "org.tulsi.apply", "{}", out[1]);
+        assert_eq!(r["outcome"], "applied");
     }
 }

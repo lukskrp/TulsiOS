@@ -69,9 +69,10 @@ pub fn check_expression(expr: &str) -> Vec<String> {
 }
 
 /// Replaces the contents of strings and comments with spaces, keeping `${…}`
-/// interpolations (which are code) intact.
-fn strip_strings_and_comments(src: &str) -> String {
+/// interpolations (which are code) and line breaks intact.
+pub(crate) fn strip_strings_and_comments(src: &str) -> String {
     let b: Vec<char> = src.chars().collect();
+    let blank = |c: char| if c == '\n' { '\n' } else { ' ' };
     let mut out = String::with_capacity(src.len());
     let mut i = 0;
     while i < b.len() {
@@ -83,7 +84,7 @@ fn strip_strings_and_comments(src: &str) -> String {
             }
         } else if c == '/' && b.get(i + 1) == Some(&'*') {
             while i < b.len() && !(b[i] == '*' && b.get(i + 1) == Some(&'/')) {
-                out.push(' ');
+                out.push(blank(b[i]));
                 i += 1;
             }
             out.push_str("  ");
@@ -98,7 +99,7 @@ fn strip_strings_and_comments(src: &str) -> String {
                 } else if b[i] == '$' && b.get(i + 1) == Some(&'{') {
                     i = copy_interpolation(&b, i, &mut out);
                 } else {
-                    out.push(' ');
+                    out.push(blank(b[i]));
                     i += 1;
                 }
             }
@@ -166,7 +167,7 @@ fn copy_interpolation(b: &[char], start: usize, out: &mut String) -> usize {
 }
 
 /// A Nix path literal in code (`/etc/x`, `./x`, `../x`, `~/x`).
-fn find_path_literal(code: &str) -> Option<String> {
+pub(crate) fn find_path_literal(code: &str) -> Option<String> {
     let chars: Vec<char> = code.chars().collect();
     for i in 0..chars.len() {
         let prev_ok = i == 0

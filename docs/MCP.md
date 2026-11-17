@@ -79,6 +79,23 @@ mean"), unfree packages, invalid extension ids, and Nix syntax errors. After app
 the change is rebuilt. If the rebuild fails, it is rolled back automatically and the
 agent gets the error log.
 
+## Receipts
+
+Every change tool (`apply_change`, `apply_configuration_edit`, `undo_last_change`,
+`propose_local_package`) returns a receipt in `structuredContent.receipt`. It records
+what actually happened, so clients don't have to trust the model's summary:
+
+```json
+{ "tool": "apply_change", "outcome": "applied", "approved_via": "Starah (the agent's level)",
+  "action": "org.tulsi.apply", "changes": ["+ package vlc"], "commit": "abc1234", "detail": "…" }
+```
+
+`outcome` is one of:
+- `applied`;
+- `nothing` (the system already matched);
+- `rolled_back` (the rebuild failed);
+- `rejected` (not approved, with the reason in `detail`).
+
 ## What approval does and does not protect
 
 Approval guarantees that changes made **through tulsi-mcp** were seen and accepted by
@@ -93,10 +110,18 @@ defaults (`auth_admin_keep`) still apply to everything tulsid does.
   account in a sandbox, where `sudo`, `su` and `pkexec` don't work and the system and home
   directories can't be touched.
 - **Who decides.** Starah answers every polkit question about that account, including
-  tulsid's `org.tulsi.apply`, from the level you chose.
+  tulsid's, from the level you chose. tulsid uses two actions (ADR 0014):
+  - `org.tulsi.apply` for changes a NixOS rollback fully undoes: packages, services,
+    browser extensions, and configuration edits that only touch allow-listed settings;
+  - `org.tulsi.configure` for everything else: accounts, boot, file systems, scripts,
+    unknown settings, and local packages the agent wrote.
   - At level 1 (Propose) each change appears in Starah's **Agent Request** window with the
     same description, reason and diff.
-  - At level 3 (Administer) packages and configuration edits go ahead on their own, and
-    are audited.
+  - At level 2 (Routine, the Assistant's default) `apply` changes go ahead on their own;
+    `configure` changes are asked, and the request says which settings make them so.
+  - At level 3 (Administer) both go ahead on their own.
+  - Everything is audited.
+- **Undo needs what the change needed.** Every commit records its action
+  (`Tulsi-Action:` trailer), so undoing an account change asks again.
 - **A shell doesn't help.** Even an agent with a shell inside that sandbox gets only what
   its level allows.

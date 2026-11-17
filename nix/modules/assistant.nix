@@ -4,7 +4,9 @@
 # every change is shown in the ocimum-approve dialog before tulsid applies it.
 # With Starah enabled, tulsi-mcp instead runs as the Starah agent `assistant`
 # (its own sandboxed account), and Starah's level for it decides what it may do on
-# its own; the rest waits for the human in Starah's Agent Request window.
+# its own; the rest waits for the human in Starah's Agent Request window. Its default
+# level is 2 (Routine): changes a NixOS rollback fully undoes go ahead, with a receipt
+# and Undo; accounts, boot, file systems and scripts ask (ADR 0014).
 # The API key is stored in the user's keyring from the app's Settings.
 {
   config,
@@ -31,7 +33,7 @@ in
   config = lib.mkIf cfg.enable (lib.mkMerge [
     (lib.mkIf config.services.starah.enable {
       services.starah.agents.assistant = {
-        level = lib.mkDefault 1;
+        level = lib.mkDefault 2;
         description = "Ocimum Assistant: installs software and edits the configuration through tulsi-mcp";
       };
       environment.sessionVariables.OCIMUM_ASSISTANT_MCP =
