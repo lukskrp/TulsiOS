@@ -83,7 +83,8 @@ Known limits, picked up later:
 - [x] `lukskrp/ocimum-desktop` branch `ocimum`: hard fork of Cinnamon 6.8.0 with session name, logo,
       System Info and pinned Software Center / Assistant
 - [x] The whole Cinnamon 6.8 suite built by tulsipkgs; `cinnamon` PAM service for the 6.8 screen locker
-- [x] `ocimum.desktop`: Mint-Y-Dark, basil wallpaper, Super+A opens the Assistant; `checks.ocimum-desktop`
+- [x] `ocimum.desktop`: Mint-Y-Dark, Tulsi Leaf wallpaper, TulsiOS start button (colour, or white
+      for dark panels), Super+A opens the Assistant; `checks.ocimum-desktop`
 - [ ] Panel applet for the Assistant; TulsiOS default panel layout
 - [x] Background daemon on OTK (OTK 1 API: monitor list model, connector, `gtk_disable_portals()`);
       Ocimum is X11-only; `checks.ocimum-desktop` checks the painted wallpaper colour live

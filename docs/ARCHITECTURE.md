@@ -158,8 +158,9 @@ come from `https://cache.skarptech.org/tulsi` (`tulsi.cache`).
 Ocimum Desktop is a hard fork of Cinnamon (`github.com/lukskrp/ocimum-desktop`, branch
 `ocimum`, forked from 6.8.0). tulsipkgs builds `cinnamon` from it, with the rest of the
 Cinnamon 6.8 suite. The fork carries the session name, logo, System Info and pinned
-apps; `ocimum.desktop` adds the TulsiOS defaults (Mint-Y-Dark theme, basil wallpaper,
-Super+A for the Assistant) as gsettings/dconf defaults, which users can change.
+apps, the TulsiOS start button (`tulsi-start`, `tulsi-start-white`) and the Tulsi Leaf
+wallpaper; `ocimum.desktop` adds the TulsiOS defaults (Mint-Y-Dark theme, that wallpaper,
+the start icon chosen by `ocimum.desktop.startIcon`, Super+A for the Assistant) as gsettings/dconf defaults, which users can change.
 `checks.ocimum-desktop` verifies the installed session and these defaults.
 
 ## Security model (summary)

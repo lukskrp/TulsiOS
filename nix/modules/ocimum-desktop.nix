@@ -13,7 +13,12 @@
 
 let
   cfg = config.ocimum.desktop;
-  wallpaper = ../../data/ocimum-wallpaper.svg;
+  # Both ship with the Ocimum fork (the `cinnamon` package).
+  wallpaper = "${pkgs.cinnamon}/share/backgrounds/ocimum/tulsios-leaf.png";
+  startIcons = {
+    coloured = "tulsi-start";
+    white = "tulsi-start-white";
+  };
 in
 {
   options.ocimum.desktop = {
@@ -30,6 +35,17 @@ in
       # Super+Space is Cinnamon's keyboard-layout switcher, so A for Assistant.
       default = "<Super>a";
       description = "Keyboard shortcut that opens the Assistant (null: none).";
+    };
+
+    startIcon = lib.mkOption {
+      type = lib.types.enum (lib.attrNames startIcons);
+      default = "coloured";
+      description = ''
+        Default icon of the panel's menu (start) button: the full-colour TulsiOS
+        logo, which suits light and dark panels, or a white one for dark panels.
+        Users can pick either in the menu applet's settings (`tulsi-start`,
+        `tulsi-start-white`).
+      '';
     };
   };
 
@@ -52,8 +68,17 @@ in
       user = cfg.autoLoginUser;
     };
 
-    # Green (basil) Mint-Y theme and the Ocimum wallpaper as defaults.
+    # System Settings → Backgrounds lists the Ocimum wallpapers from here.
+    environment.pathsToLink = [
+      "/share/backgrounds"
+      "/share/cinnamon-background-properties"
+    ];
+
+    # Mint-Y-Dark, the Tulsi Leaf wallpaper and the TulsiOS start button as defaults.
     services.xserver.desktopManager.cinnamon.extraGSettingsOverrides = ''
+      [org.cinnamon]
+      app-menu-icon-name='${startIcons.${cfg.startIcon}}'
+
       [org.cinnamon.desktop.interface]
       gtk-theme='Mint-Y-Dark'
       icon-theme='Mint-Y'

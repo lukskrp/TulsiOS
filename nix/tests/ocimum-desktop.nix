@@ -55,7 +55,13 @@
           names = machine.succeed("grep -h '^Name=' /run/current-system/sw/share/xsessions/*.desktop || "
                                   "grep -rh '^Name=' /nix/store/*-cinnamon-*-ocimum*/share/xsessions/")
           assert "Ocimum Desktop" in names, names
-          machine.succeed("ls /run/current-system/sw/share/icons/hicolor/scalable/apps/ocimum-symbolic.svg")
+          share = "/run/current-system/sw/share"
+          for icon in ["ocimum-symbolic", "tulsi-start", "tulsi-start-white"]:
+              machine.succeed(f"ls {share}/icons/hicolor/scalable/apps/{icon}.svg")
+          machine.succeed(f"ls {share}/backgrounds/ocimum/tulsios-leaf.png")
+          # System Settings → Backgrounds lists it, by a path that exists.
+          listed = machine.succeed(f"grep -o '<filename>[^<]*' {share}/cinnamon-background-properties/ocimum.xml")
+          machine.succeed(f"test -f {listed.strip().removeprefix('<filename>')}")
 
       with subtest("TulsiOS defaults are the compiled gsettings defaults"):
           # The Cinnamon module exports the compiled overrides for the session.
@@ -66,11 +72,12 @@
                   f"GSETTINGS_SCHEMA_DIR={schemas} GSETTINGS_BACKEND=memory gsettings get {schema} {key}"
               ).strip()
           icon = default("org.cinnamon", "app-menu-icon-name")
-          assert icon == "'ocimum-symbolic'", icon
+          assert icon == "'tulsi-start'", icon
           theme = default("org.cinnamon.desktop.interface", "gtk-theme")
           assert theme == "'Mint-Y-Dark'", theme
           uri = default("org.cinnamon.desktop.background", "picture-uri")
-          assert "ocimum-wallpaper.svg" in uri, uri
+          assert uri.endswith("/share/backgrounds/ocimum/tulsios-leaf.png'"), uri
+          machine.succeed(f"test -f {uri.strip(chr(39)).removeprefix('file://')}")
 
       with subtest("Super+A opens the Assistant"):
           read = lambda key: machine.succeed(f"su - alice -c 'dconf read {key}'").strip()
@@ -86,6 +93,9 @@
               "gdbus call --session -d org.Cinnamon -o /org/Cinnamon -m org.Cinnamon.Eval Main.runState' "
               "| grep -q 'true,..2'"
           )
+          # The default look: Tulsi Leaf wallpaper and the TulsiOS start button.
+          machine.sleep(10)
+          machine.screenshot("desktop")
 
       with subtest("the display server is XLibre, with XLibre's drivers"):
           version = machine.succeed("X -version 2>&1")
