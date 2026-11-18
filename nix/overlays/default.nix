@@ -7,4 +7,6 @@ final: prev: {
   ocimum-software-center = final.callPackage ../packages/ocimum-software-center.nix { };
   ocimum-assistant = final.callPackage ../packages/ocimum-assistant.nix { };
   ocimum-greeter = final.callPackage ../packages/ocimum-greeter.nix { };
+  tulsi-installer = final.callPackage ../packages/tulsi-installer.nix { };
+  calamares-tulsios-extensions = final.callPackage ../packages/calamares-tulsios-extensions.nix { };
 }

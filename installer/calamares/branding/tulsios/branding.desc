@@ -1,0 +1,36 @@
+---
+componentName:  tulsios
+welcomeStyleCalamares:   false
+welcomeExpandingLogo:   true
+windowExpanding:    normal
+windowSize: 820px,560px
+windowPlacement: center
+sidebar: widget
+navigation: widget
+
+strings:
+    productName:         TulsiOS
+    shortProductName:    TulsiOS
+    version:             "@version@"
+    shortVersion:        "@version@"
+    versionedName:       TulsiOS @version@
+    shortVersionedName:  TulsiOS
+    bootloaderEntryName: TulsiOS
+    productUrl:          https://github.com/lukskrp/TulsiOS
+    supportUrl:          https://github.com/lukskrp/TulsiOS
+    knownIssuesUrl:      https://github.com/lukskrp/TulsiOS/blob/main/docs/ROADMAP.md
+    releaseNotesUrl:     https://github.com/lukskrp/TulsiOS/releases
+
+images:
+    productIcon:         "logo.svg"
+    productLogo:         "logo.svg"
+    productWelcome:      "logo.svg"
+
+style:
+   SidebarBackground:        "#1b1f1c"
+   SidebarText:              "#c9d1ca"
+   SidebarTextCurrent:       "#ffffff"
+   SidebarBackgroundCurrent: "#3f8a4f"
+
+slideshow:               "show.qml"
+slideshowAPI: 2

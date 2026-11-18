@@ -1,0 +1,22 @@
+# TulsiOS system flake. Machine-managed choices live in ./tulsi/state.json (use
+# `tulsi`, the Software Center or the Assistant). Your own settings go in
+# ./configuration.nix. Every change is committed to git here.
+{
+  inputs.tulsi.url = "path:@source@";
+
+  outputs =
+    { tulsi, ... }:
+    {
+      nixosConfigurations."@host@" = tulsi.inputs.nixpkgs.lib.nixosSystem {
+        modules = [
+          tulsi.nixosModules.default
+          "${tulsi}/@hostModule@"
+          ./configuration.nix
+          ({ lib, ... }: { tulsi.state.file = lib.mkForce ./tulsi/state.json; })
+        ]
+        # Disks, file systems and kernel modules of this machine, written by the
+        # installer (nixos-generate-config). Development VMs have none.
+        ++ tulsi.inputs.nixpkgs.lib.optional (builtins.pathExists ./hardware-configuration.nix) ./hardware-configuration.nix;
+      };
+    };
+}

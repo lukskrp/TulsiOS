@@ -11,6 +11,9 @@
     ./assistant.nix
     ./ocimum-desktop.nix
     ./ocimum-greeter.nix
+    ./desktop.nix
+    ./dwm.nix
+    ./installer.nix
     ./gtk3-o.nix
     ./cache.nix
     ./adopt.nix

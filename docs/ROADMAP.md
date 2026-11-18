@@ -11,7 +11,7 @@
 | 5b | Ocimum Assistant | chat window: plain-language request → tulsi-mcp → approve → applied | done |
 | 6a | tulsipkgs + TulsiOS cache | flake on tulsipkgs; CI builds TulsiOS-owned packages and pushes them to cache.skarptech.org | in progress (cache server pending) |
 | 6b | Ocimum Desktop | hard fork of Cinnamon 6.8 built by tulsipkgs; branding, TulsiOS defaults, Tulsi applets | in progress |
-| 7 | Installer ISO + release | Calamares ISO installs TulsiOS on Hyper-V / bare metal | |
+| 7 | Installer ISO + release | Calamares ISO installs TulsiOS (Ocimum or dwm) on Hyper-V / bare metal | in progress |
 
 ## Phase 3 (done)
 - [x] Toolkit decision: GTK 3 via GTK3-O, GUI apps in Python + PyGObject (ADR 0005)
@@ -126,3 +126,23 @@ Known limits:
   brings `gtk4` into the desktop closure, and `xapp` brings the GTK 3 `gtk-layer-shell`.
 - No Wayland session: Ocimum runs on X11, served by XLibre (ADR 0009).
 - `tigervnc` (and Xvfb in build sandboxes) still use Xorg 21.1, as `xorg-server-xorg` in tulsipkgs.
+
+## Phase 7 (in progress): installer, ISO, release (ADR 0016)
+- [x] `tulsi.desktop.session = "ocimum" | "dwm"`; only the chosen desktop is installed
+- [x] dwm 6.8 + systray patch (ported), TulsiOS `config.h` (Super, Super+A/S); XDG autostart,
+      polkit agent, dunst, nm-applet, slstatus, GTK theme; `checks.dwm-session`
+- [x] `nix/hosts/desktop` for installed machines; one flake template for tulsid and the installer
+- [x] `tulsi-install-system` (`apps/tulsi-installer`): validated answers -> system flake ->
+      `nixos-install --flake`, offline (`tulsi.installer.offlineSystems`, `nix/lib/install-closure.nix`)
+- [x] Calamares: `calamares-tulsios-extensions` (desktop page, `tulsios` job, branding, slideshow)
+- [x] `checks.install-dwm`, `checks.install-ocimum`: empty disk -> offline install -> boots, greeter
+      login, `/etc/nixos` evaluates to the running system
+- [ ] Live ISO `nixosConfigurations.tulsi-iso` (hybrid ISO = the dd image), artwork, Plymouth
+- [ ] Calamares run by hand in QEMU (BIOS and UEFI), Hyper-V Gen 2 and one bare-metal machine
+- [ ] Artwork package of its own (wallpaper and logo without Cinnamon), dwm wallpaper
+- [ ] Upgrades of installed machines (release channel or `tulsi upgrade`)
+- [ ] Release v0.1.0: ISO + SHA-256 on GitHub Releases
+
+Known limits:
+- The Calamares GUI is not covered by automated tests; its install job is (`tulsi-install-system`).
+- Installed machines are pinned to the TulsiOS source they were installed from until upgrades exist.

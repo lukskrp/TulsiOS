@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "packages": ["firefox"],
+  "browserExtensions": {
+    "firefox": [],
+    "chromium": []
+  },
+  "services": {}
+}

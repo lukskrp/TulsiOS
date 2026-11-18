@@ -163,6 +163,23 @@ wallpaper; `ocimum.desktop` adds the TulsiOS defaults (Mint-Y-Dark theme, that w
 the start icon chosen by `ocimum.desktop.startIcon`, Super+A for the Assistant) as gsettings/dconf defaults, which users can change.
 `checks.ocimum-desktop` verifies the installed session and these defaults.
 
+### Desktops and the installer (ADR 0016), `nix/modules/{desktop,dwm,installer}.nix`
+`tulsi.desktop.session` is `"ocimum"` or `"dwm"` (suckless dwm 6.8 with the systray
+patch, plus what a bare window manager lacks: XDG autostart, a polkit agent, dunst, the
+GTK theme). Both log in through the Ocimum Greeter on XLibre.
+
+Installed machines use the host module `nix/hosts/desktop`. `tulsi-install-system`
+(`apps/tulsi-installer`) writes their `/etc/nixos`:
+- `flake.nix` from `data/system-flake.nix.in`, the template tulsid's bootstrap also uses;
+- `configuration.nix` with hostname, users, locale, keyboard, boot loader and desktop;
+- `hardware-configuration.nix`;
+- `tulsi/state.json`.
+
+It then runs `nixos-install --flake`. That works offline, because reference installs'
+closures are kept in the live system (`tulsi.installer.offlineSystems`). On the ISO,
+Calamares (`calamares-tulsios-extensions`) collects the answers, and its `tulsios` job
+hands them to `tulsi-install-system`.
+
 ## Security model (summary)
 - Unprivileged UIs → D-Bus → tulsid. Every mutating call is polkit-authorized.
 - `state.json` is strictly validated (crates/tulsi-state). Package names are attribute

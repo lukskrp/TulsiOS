@@ -57,8 +57,14 @@
           ];
           # A bootstrapped system flake uses this source tree as its input…
           tulsi.daemon.bootstrap.source = lib.mkDefault self.outPath;
-          # …and needs the pinned nixpkgs source to evaluate offline.
-          system.extraDependencies = lib.mkIf config.tulsi.daemon.bootstrap.enable [ nixpkgs.outPath ];
+          # …and needs the pinned inputs' sources to evaluate offline (as does the
+          # installer, which builds the new system from the same flake).
+          system.extraDependencies =
+            lib.mkIf (config.tulsi.daemon.bootstrap.enable || config.tulsi.installer.enable)
+              [
+                nixpkgs.outPath
+                starah.outPath
+              ];
           # The pinned nixpkgs, for tulsi-mcp's packaging tools (agent-built local packages).
           environment.etc."tulsi/nixpkgs".source = nixpkgs.outPath;
           tulsi.daemon.packageIndex = lib.mkDefault (
@@ -76,6 +82,8 @@
           ocimum-software-center
           ocimum-assistant
           ocimum-greeter
+          tulsi-installer
+          calamares-tulsios-extensions
           ;
         default = pkgs.tulsi-tools;
       });
@@ -128,7 +136,14 @@
           test = file: pkgs.testers.runNixOSTest (import file { inherit self; });
         in
         {
-          inherit (pkgs) tulsi-tools ocimum-software-center ocimum-assistant ocimum-greeter;
+          inherit (pkgs)
+            tulsi-tools
+            ocimum-software-center
+            ocimum-assistant
+            ocimum-greeter
+            tulsi-installer
+            calamares-tulsios-extensions
+            ;
           gtk3-o-abi = pkgs.gtk3-o.abiCheck;
           vm-toplevel = self.nixosConfigurations.tulsi-vm.config.system.build.toplevel;
           state-packages = test ./nix/tests/state-packages.nix;
@@ -141,6 +156,20 @@
           greeter-login = test ./nix/tests/ocimum-greeter.nix;
           starah-setup = test ./nix/tests/starah-setup.nix;
           adopt = test ./nix/tests/adopt.nix;
+          # ADR 0016: the dwm session, and installing each desktop onto an empty disk.
+          dwm-session = test ./nix/tests/dwm-session.nix;
+          install-dwm = pkgs.testers.runNixOSTest (
+            import ./nix/tests/install.nix {
+              inherit self;
+              desktop = "dwm";
+            }
+          );
+          install-ocimum = pkgs.testers.runNixOSTest (
+            import ./nix/tests/install.nix {
+              inherit self;
+              desktop = "ocimum";
+            }
+          );
           # A state with a local package (tulsi/pkgs/<name>/package.nix) installs it.
           local-package-eval =
             let
