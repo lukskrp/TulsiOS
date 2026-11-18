@@ -150,6 +150,16 @@ def install(a: argparse.Namespace) -> int:
     if a.write_only:
         return 0
 
+    # Lock first, in its own step: if nixos-install's evaluation wrote
+    # flake.lock itself, the path: flake would change under it ("NAR hash
+    # mismatch"). The only input is a local path, so this works offline.
+    lock = subprocess.run(
+        ["nix", "--extra-experimental-features", "nix-command flakes", "flake", "lock", f"path:{etc}"],
+        stdin=subprocess.DEVNULL,
+    )
+    if lock.returncode != 0:
+        return lock.returncode
+
     cmd = [
         "nixos-install",
         "--root", a.root,
@@ -159,6 +169,11 @@ def install(a: argparse.Namespace) -> int:
         # Calamares mounts the root under /tmp; Nix wants a build directory
         # without world-writable parents.
         "--option", "build-dir", "/nix/var/nix/builds",
+        # Copy what the live system already has, even outputs of trivial builders
+        # (allowSubstitutes = false: buildEnv, writeText, …). Otherwise Nix
+        # rebuilds those, which needs their build-time inputs, which a live
+        # system does not carry.
+        "--option", "always-allow-substitutes", "true",
     ]
     if a.progress_json:
         cmd += ["--log-format", "internal-json"]

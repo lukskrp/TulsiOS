@@ -60,8 +60,9 @@ in
       type = lib.types.listOf lib.types.package;
       default = [ ];
       description = ''
-        What building the per-machine parts of a TulsiOS system needs, offline
-        (see nix/lib/install-closure.nix).
+        What building the per-machine parts of a TulsiOS system needs, offline:
+        nix/lib/install-closure.nix (build tools) plus
+        nix/lib/offline-rebuild-inputs.nix applied to each reference system.
       '';
     };
   };

@@ -133,7 +133,8 @@ Known limits:
       polkit agent, dunst, nm-applet, slstatus, GTK theme; `checks.dwm-session`
 - [x] `nix/hosts/desktop` for installed machines; one flake template for tulsid and the installer
 - [x] `tulsi-install-system` (`apps/tulsi-installer`): validated answers -> system flake ->
-      `nixos-install --flake`, offline (`tulsi.installer.offlineSystems`, `nix/lib/install-closure.nix`)
+      `nixos-install --flake`, offline (`tulsi.installer.offlineSystems`, `nix/lib/install-closure.nix`,
+      `nix/lib/offline-rebuild-inputs.nix`)
 - [x] Calamares: `calamares-tulsios-extensions` (desktop page, `tulsios` job, branding, slideshow)
 - [x] `checks.install-dwm`, `checks.install-ocimum`: empty disk -> offline install -> boots, greeter
       login, `/etc/nixos` evaluates to the running system

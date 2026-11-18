@@ -77,7 +77,8 @@ in
         tulsi.installer = {
           enable = true;
           offlineSystems = [ reference.config.system.build.toplevel ];
-          buildDependencies = import ../lib/install-closure.nix pkgs;
+          buildDependencies =
+            import ../lib/install-closure.nix pkgs ++ import ../lib/offline-rebuild-inputs.nix reference;
         };
         nix.settings = {
           substituters = lib.mkForce [ ];
@@ -95,23 +96,29 @@ in
         virtualisation.memorySize = 4096;
         virtualisation.cores = 4;
         virtualisation.useEFIBoot = true;
+        # OVMFFull needs SMM (q35,smm=on), which nested KVM under Hyper-V/WSL2
+        # cannot enter ("KVM: entry failed"); plain OVMF has no secure boot and no SMM.
+        virtualisation.efi.OVMF = pkgs.OVMF;
       };
 
     # The installed disk, booted through its own boot loader.
-    target = {
-      virtualisation.useBootLoader = true;
-      virtualisation.useEFIBoot = true;
-      virtualisation.useDefaultFilesystems = false;
-      virtualisation.efi.keepVariables = false;
-      virtualisation.fileSystems."/" = {
-        device = "/dev/disk/by-label/this-is-not-real-and-will-never-be-used";
-        fsType = "ext4";
+    target =
+      { pkgs, ... }:
+      {
+        virtualisation.useBootLoader = true;
+        virtualisation.useEFIBoot = true;
+        virtualisation.efi.OVMF = pkgs.OVMF;
+        virtualisation.useDefaultFilesystems = false;
+        virtualisation.efi.keepVariables = false;
+        virtualisation.fileSystems."/" = {
+          device = "/dev/disk/by-label/this-is-not-real-and-will-never-be-used";
+          fsType = "ext4";
+        };
+        virtualisation.diskImage = "./target.qcow2";
+        virtualisation.diskSize = 24 * 1024;
+        virtualisation.memorySize = 4096;
+        virtualisation.cores = 4;
       };
-      virtualisation.diskImage = "./target.qcow2";
-      virtualisation.diskSize = 24 * 1024;
-      virtualisation.memorySize = 4096;
-      virtualisation.cores = 4;
-    };
   };
 
   testScript = ''
@@ -131,6 +138,7 @@ in
             "udevadm settle",
             "mkfs.vfat -n ESP /dev/vda1",
             "mkfs.ext4 -L nixos /dev/vda2",
+            "mkdir -p /mnt",
             "mount LABEL=nixos /mnt",
             "mkdir -p /mnt/boot",
             "mount LABEL=ESP /mnt/boot",

@@ -46,9 +46,29 @@ tulsid's bootstrap generated that flake on first boot, and only for the developm
   - the output is checked with `nix-instantiate --parse` in its tests.
 - **Who calls it:** Calamares and the VM tests both call it, so the GUI only collects
   answers and the install logic is tested without a GUI.
-- **Offline install.** `tulsi.installer.offlineSystems` keeps reference installs' closures
-  in the live system's store, and `nix/lib/install-closure.nix` lists the build tools for
-  the parts that differ per machine. So nixos-install needs no network.
+- **Offline install.** nixos-install needs no network, for three reasons:
+  - `tulsi.installer.offlineSystems` keeps reference installs' closures in the live
+    system's store.
+  - The answers only change small files (hostname, fstab, users, time zone, keyboard).
+    Everything above them is rebuilt too: /etc and its unit trees, the system profile,
+    the initrd and the toplevel. Those rebuilds need their inputs, and a runtime closure
+    doesn't carry them all:
+    - the initrd is compressed, so it keeps no references;
+    - buildEnv drops shadowed packages;
+    - `xkbvalidate` is a build-time tool.
+
+    `nix/lib/offline-rebuild-inputs.nix` keeps them: for each of those derivations it
+    writes its attributes to a file, and that file references every input. Plain
+    `inputDerivation` misses inputs passed through files or structured attributes.
+    `nix/lib/install-closure.nix` adds the generic build tools, as nixpkgs' installer
+    test does.
+  - `tulsi-install-system` passes `always-allow-substitutes`. Without it, Nix rebuilds
+    trivial builders (`allowSubstitutes = false`, e.g. buildEnv) even though the live
+    store has them. That drags in their build-time inputs, and in the end the whole
+    bootstrap toolchain.
+
+  `checks.install-*` installs build exactly the per-machine derivations (38 of them) and
+  copy everything else from the live store.
 
 ### Calamares, only on the live ISO
 - **Package.** `calamares-tulsios-extensions` reuses upstream's settings for locale,
