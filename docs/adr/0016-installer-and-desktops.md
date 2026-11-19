@@ -84,6 +84,24 @@ tulsid's bootstrap generated that flake on first boot, and only for the developm
 - **Qt stays on the ISO.** Calamares is Qt 6 with KPMcore and runs only there; installed
   systems stay free of Qt (as with the login screen, ADR 0010).
 
+### The live ISO
+- **What it is.** `nixosConfigurations.tulsi-iso` (`nix build .#iso`) is nixpkgs'
+  graphical installer base plus `nix/hosts/iso/live.nix`: Ocimum Desktop, logged in as
+  `nixos`, with Calamares started at login (as root, through pkexec). Starah's first-login
+  setup and adopt hints are off; tulsid, the Software Center and the Assistant are off too,
+  since nothing on a system in RAM needs undoing. It is a hybrid ISO, so `dd` or Etcher
+  onto a USB stick gives the same image for BIOS and UEFI machines.
+- **Offline, on any hardware.** The ISO carries two reference installs
+  (`nix/hosts/iso/references.nix`, `nix/lib/reference-system.nix`): Ocimum with
+  systemd-boot and dwm with GRUB, so between them both desktops and both boot loaders.
+  They switch on what a real machine's `hardware-configuration.nix` and Calamares'
+  answers may need: every disk controller module (`hardware.enableAllHardware`), both CPU
+  vendors' microcode, ext4/btrfs/xfs/f2fs, LUKS and Hyper-V guest support. The machine's
+  own initrd, udev rules and boot entries are then rebuilt from what is in the store.
+- **Names.** All TulsiOS systems call themselves TulsiOS in `/etc/os-release`
+  (`ID=tulsios`, `ID_LIKE=nixos`), `/etc/issue` and boot menus (`nix/modules/branding.nix`).
+  The ISO's boot menus use the Tulsi Leaf wallpaper, and Plymouth shows the TulsiOS logo.
+
 ### dwm: suckless dwm 6.8 with one patch, the system tray
 - **Choosing a desktop.** `tulsi.desktop.session = "ocimum" | "dwm"` picks the desktop.
   Only the chosen one is installed; switching later is one line.
@@ -112,7 +130,25 @@ tulsid's bootstrap generated that flake on first boot, and only for the developm
     that only the chosen desktop is there, that the greeter logs into it, and that
     `/etc/nixos` evaluates to exactly the running system.
   - `checks.dwm-session` checks the dwm session's pieces.
-  - The Calamares GUI itself is tested by hand on the ISO.
+  - The ISO is tested in layers, each where it is cheap, so a test never waits on a
+    squashfs it does not need:
+    - `checks.live-session`: the live session in an ordinary VM (minutes), with Calamares
+      running and its welcome page passing its checks;
+    - `checks.install-iso-references`: an offline install with the ISO's own reference
+      installs onto QEMU hardware they were not made for, in a combination neither has
+      (dwm with UEFI). It builds the machine's kernel module set, initrd and boot entries
+      (53 derivations) and copies the rest;
+    - `checks.iso-boot`: the ISO itself boots on UEFI and on BIOS into the live session
+      with Calamares (about 12 minutes, the ISO build included).
+  - The Calamares pages themselves are clicked through by hand, in Hyper-V Gen 2 with the
+    release ISO, once per desktop.
+- **Found on the way.** The Ocimum Greeter's session launcher replaced the session's
+  `PATH`, so sessions had no `/run/wrappers/bin`: pkexec and sudo were the unprivileged
+  store binaries ("pkexec must be setuid root"). The launcher now hands the session the
+  login `PATH`, and `checks.live-session` checks it.
+- **Known limits of the ISO.** It is not signed for Secure Boot (turn Secure Boot off).
+  The VirtualBox guest module is an out-of-tree kernel module, which an offline install
+  cannot build; installs inside VirtualBox need a network for it.
 - **Rebasing.** dwm releases need the systray patch rebased. dwm changes rarely, and the
   patch is the one most dwm users run.
 - **Artwork.** The wallpaper and the TulsiOS logo live in Ocimum Desktop's sources.

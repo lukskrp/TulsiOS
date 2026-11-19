@@ -86,6 +86,10 @@
           calamares-tulsios-extensions
           ;
         default = pkgs.tulsi-tools;
+      }
+      # The live ISO (hybrid: also the dd image for USB sticks), ADR 0016.
+      // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
+        iso = self.nixosConfigurations.tulsi-iso.config.system.build.isoImage;
       });
 
       devShells = forAllSystems (pkgs: {
@@ -124,6 +128,13 @@
         modules = [
           self.nixosModules.default
           ./nix/hosts/vm
+        ];
+      };
+
+      nixosConfigurations.tulsi-iso = lib.nixosSystem {
+        modules = [
+          self.nixosModules.default
+          (import ./nix/hosts/iso { inherit self; })
         ];
       };
 
@@ -170,6 +181,22 @@
               desktop = "ocimum";
             }
           );
+          # Installing with the ISO's own reference installs, onto QEMU hardware they
+          # weren't made for, in a combination neither has (dwm with UEFI).
+          install-iso-references = pkgs.testers.runNixOSTest (
+            import ./nix/tests/install.nix {
+              inherit self;
+              desktop = "dwm";
+              references = import ./nix/hosts/iso/references.nix {
+                inherit self;
+                testing = true;
+              };
+            }
+          );
+          # The ISO's live session (Ocimum + Calamares), without building an ISO.
+          live-session = test ./nix/tests/live-session.nix;
+          # The live ISO boots (UEFI and BIOS) into the live session with Calamares.
+          iso-boot = pkgs.testers.runNixOSTest (import ./nix/tests/iso-boot.nix { inherit self pkgs; });
           # A state with a local package (tulsi/pkgs/<name>/package.nix) installs it.
           local-package-eval =
             let

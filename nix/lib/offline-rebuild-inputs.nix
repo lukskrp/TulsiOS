@@ -35,6 +35,8 @@ map inputsOf (
     c.system.path
     c.system.build.initialRamdisk
   ]
+  # The boot loader's install script names the disk (GRUB's device).
+  ++ derivations [ c.system.build.installBootLoader ]
   ++ sources c.environment.etc
   ++ sources c.boot.initrd.systemd.contents
   ++ unitFiles c.systemd.units

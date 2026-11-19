@@ -79,6 +79,14 @@ let
   # (autologin: Exec and desktop names are read from NAME.desktop).
   sessionLauncher = pkgs.writeShellScriptBin "ocimum-x-session" ''
     set -eu
+    # The session keeps the login PATH (from /etc/profile: the setuid wrappers
+    # such as pkexec and sudo, the user's profiles); these tools are for this
+    # script only. /etc/profile does not set PATH a second time.
+    login_path=''${PATH:-/run/current-system/sw/bin}
+    case ":$login_path:" in
+      *:/run/wrappers/bin:*) ;;
+      *) login_path=/run/wrappers/bin:$login_path ;;
+    esac
     export PATH=${toolPath}:/run/current-system/sw/bin
     if [ "''${1:-}" = "--session" ]; then
       file=${sessionsDir}/"$2".desktop
@@ -89,7 +97,10 @@ let
       set -- "$exec_line"
     fi
     ${startX}
-    exec systemd-cat -t ocimum-x-session xinit ${dm.sessionData.wrapper} "$@" -- $(x_server)
+    server=$(x_server)
+    export PATH="$login_path"
+    exec ${config.systemd.package}/bin/systemd-cat -t ocimum-x-session \
+      ${pkgs.xinit}/bin/xinit ${dm.sessionData.wrapper} "$@" -- $server
   '';
 in
 {

@@ -138,7 +138,8 @@ Known limits:
 - [x] Calamares: `calamares-tulsios-extensions` (desktop page, `tulsios` job, branding, slideshow)
 - [x] `checks.install-dwm`, `checks.install-ocimum`: empty disk -> offline install -> boots, greeter
       login, `/etc/nixos` evaluates to the running system
-- [ ] Live ISO `nixosConfigurations.tulsi-iso` (hybrid ISO = the dd image), artwork, Plymouth
+- [x] Live ISO `nixosConfigurations.tulsi-iso` (hybrid ISO = the dd image), artwork, Plymouth;
+      `checks.live-session`, `checks.install-iso-references`, `checks.iso-boot`
 - [ ] Calamares run by hand in QEMU (BIOS and UEFI), Hyper-V Gen 2 and one bare-metal machine
 - [ ] Artwork package of its own (wallpaper and logo without Cinnamon), dwm wallpaper
 - [ ] Upgrades of installed machines (release channel or `tulsi upgrade`)

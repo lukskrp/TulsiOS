@@ -3,7 +3,15 @@
 # disk boots on its own (UEFI, systemd-boot), shows only the chosen desktop,
 # logs in through the greeter, and its /etc/nixos flake evaluates to exactly the
 # running system. Modelled on nixpkgs' nixos/tests/installer.nix.
-{ self, desktop }:
+#
+# references: the reference installs whose closures the installer carries. By
+# default one made for this test (same desktop, QEMU); the ISO's own
+# (nix/hosts/iso/references.nix) in checks.install-iso-references.
+{
+  self,
+  desktop,
+  references ? null,
+}:
 let
   lib = self.inputs.nixpkgs.lib;
   password = "tulsi";
@@ -49,6 +57,8 @@ let
     ];
   };
 
+  refs = if references == null then [ reference ] else references;
+
   sessionCheck =
     if desktop == "dwm" then
       ''target.wait_until_succeeds("pgrep -u alice -x dwm", timeout=300)''
@@ -57,7 +67,7 @@ let
   otherDesktop = if desktop == "dwm" then "-cinnamon-[0-9]" else "-dwm-[0-9]";
 in
 {
-  name = "install-${desktop}";
+  name = "install-${desktop}" + lib.optionalString (references != null) "-iso-references";
 
   nodes = {
     # The live system that installs (stands in for the ISO).
@@ -76,9 +86,10 @@ in
         ];
         tulsi.installer = {
           enable = true;
-          offlineSystems = [ reference.config.system.build.toplevel ];
+          offlineSystems = map (r: r.config.system.build.toplevel) refs;
           buildDependencies =
-            import ../lib/install-closure.nix pkgs ++ import ../lib/offline-rebuild-inputs.nix reference;
+            import ../lib/install-closure.nix pkgs
+            ++ lib.concatMap (import ../lib/offline-rebuild-inputs.nix) refs;
         };
         nix.settings = {
           substituters = lib.mkForce [ ];

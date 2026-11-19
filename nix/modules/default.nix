@@ -18,5 +18,6 @@
     ./cache.nix
     ./adopt.nix
     ./kernel.nix
+    ./branding.nix
   ];
 }
