@@ -52,6 +52,9 @@ impl Config {
     pub const CONFIG_REL: &'static str = "configuration.nix";
     /// Packages made on this machine: `<PKGS_REL>/<name>/package.nix` (+ meta.json).
     pub const PKGS_REL: &'static str = "tulsi/pkgs";
+    /// Pins the TulsiOS release (the `tulsi` input) and everything it pins;
+    /// `Upgrade` moves it (ADR 0017).
+    pub const LOCK_REL: &'static str = "flake.lock";
 
     pub fn state_path(&self) -> PathBuf {
         self.flake_dir.join(Self::STATE_REL)

@@ -15,7 +15,7 @@ use tokio::process::Command;
 use tokio::sync::{mpsc, Mutex, OwnedMutexGuard};
 use tulsi_client::{
     config_action, PackageInfo, Plan, UndoPlan, ACTION_APPLY, ACTION_CONFIGURE, ACTION_EXTENSIONS,
-    OBJECT_PATH,
+    ACTION_UPGRADE, OBJECT_PATH,
 };
 use tulsi_state::{describe_all, Op, State};
 use zbus::message::Header;
@@ -25,7 +25,7 @@ use zbus::{interface, Connection};
 use crate::config::Config;
 use crate::git::FileChange;
 use crate::index::Index;
-use crate::{git, localpkg, nixfile, polkit};
+use crate::{git, localpkg, nixfile, polkit, upgrade};
 
 /// Upper bound for `Search` results.
 const MAX_SEARCH_RESULTS: u32 = 500;
@@ -579,6 +579,45 @@ impl Manager {
         )
     }
 
+    /// Whether the release branch this machine follows has a newer TulsiOS, as JSON
+    /// `UpgradeInfo`. Needs the network; never fails, problems are in `error`.
+    async fn check_upgrade(&self) -> Result<String> {
+        let info = upgrade::check(&self.cfg.flake_dir).await;
+        Ok(serde_json::to_string(&info).expect("info serializes"))
+    }
+
+    /// Moves to the newest release on the branch this machine follows: flake.lock's
+    /// `tulsi` pin, then the usual rebuild and commit (restored if the rebuild
+    /// fails; undone like any change). Returns a job id at once: fetching the new
+    /// release happens in the job, reported through `Progress`.
+    async fn upgrade(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+    ) -> Result<u64> {
+        self.authorize(conn, &hdr, ACTION_UPGRADE).await?;
+        let guard = self.try_lock()?;
+        let by = self.caller_name(conn, &hdr).await;
+        let job = self.next_job.fetch_add(1, Ordering::Relaxed);
+        let emitter = SignalEmitter::new(conn, OBJECT_PATH)?.into_owned();
+        let cfg = self.cfg.clone();
+        tokio::spawn(async move {
+            let _guard = guard;
+            eprintln!("tulsid: job {job}: upgrade");
+            let result = run_upgrade(&cfg, &emitter, job, &by).await;
+            let (success, text) = match result {
+                Ok(text) => (true, text),
+                Err(e) => (false, e),
+            };
+            eprintln!(
+                "tulsid: job {job} {}: {text}",
+                if success { "succeeded" } else { "failed" }
+            );
+            let _ = Manager::finished(&emitter, job, success, &text).await;
+        });
+        Ok(job)
+    }
+
     /// The latest `limit` changes as JSON, newest first. `action` is always filled
     /// in (inferred for changes recorded before it was).
     async fn history(&self, limit: u32) -> Result<String> {
@@ -666,8 +705,61 @@ fn undo_action(recorded: &str) -> &'static str {
     match recorded {
         ACTION_EXTENSIONS => ACTION_EXTENSIONS,
         ACTION_APPLY => ACTION_APPLY,
+        ACTION_UPGRADE => ACTION_UPGRADE,
         _ => ACTION_CONFIGURE,
     }
+}
+
+/// The upgrade job: is there a newer release, the flake.lock that pins it, then the
+/// ordinary transaction. Returns the message for `Finished`.
+async fn run_upgrade(
+    cfg: &Config,
+    emitter: &SignalEmitter<'static>,
+    job: u64,
+    by: &str,
+) -> std::result::Result<String, String> {
+    let dir = &cfg.flake_dir;
+    let say = |line: String| async move {
+        let _ = Manager::progress(emitter, job, &line).await;
+    };
+    say("Looking for a newer TulsiOS release…".into()).await;
+    let info = upgrade::check(dir).await;
+    if !info.error.is_empty() {
+        return Err(info.error);
+    }
+    if !info.available {
+        return Ok(format!(
+            "TulsiOS {} is the newest release.",
+            info.current_version
+        ));
+    }
+    say(format!(
+        "TulsiOS {} is available (you have {}); fetching it…",
+        info.available_version, info.current_version
+    ))
+    .await;
+    let old = git::read(dir, Config::LOCK_REL);
+    let new = upgrade::updated_lock(dir).await?;
+    if old.as_deref() == Some(new.as_slice()) {
+        return Ok(format!(
+            "TulsiOS {} is the newest release.",
+            info.current_version
+        ));
+    }
+    let summary = format!(
+        "tulsi: upgrade TulsiOS {} \u{2192} {}",
+        info.current_version, info.available_version
+    );
+    let change = FileChange {
+        rel: Config::LOCK_REL.to_string(),
+        old,
+        new: Some(new),
+    };
+    let message = git::commit_message(&summary, ACTION_UPGRADE, by);
+    let commit = run_transaction(cfg, emitter, job, &[change], &message).await?;
+    Ok(format!(
+        "{summary} (commit {commit}). Restart the computer to finish."
+    ))
 }
 
 fn parse_ops(ops: &str) -> Result<Vec<Op>> {

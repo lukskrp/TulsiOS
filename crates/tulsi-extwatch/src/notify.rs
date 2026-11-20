@@ -5,36 +5,13 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use futures_util::StreamExt;
-use zbus::zvariant::Value;
+use tulsi_client::NotificationsProxy;
 
 use crate::scan::Found;
 
 const APP_NAME: &str = "TulsiOS";
 const ICON: &str = "system-software-install";
 const KEEP_ACTION: &str = "keep-imperative";
-
-#[zbus::proxy(
-    interface = "org.freedesktop.Notifications",
-    default_service = "org.freedesktop.Notifications",
-    default_path = "/org/freedesktop/Notifications"
-)]
-trait Notifications {
-    #[allow(clippy::too_many_arguments)]
-    fn notify(
-        &self,
-        app_name: &str,
-        replaces_id: u32,
-        app_icon: &str,
-        summary: &str,
-        body: &str,
-        actions: &[&str],
-        hints: HashMap<&str, Value<'_>>,
-        expire_timeout: i32,
-    ) -> zbus::Result<u32>;
-
-    #[zbus(signal)]
-    fn action_invoked(&self, id: u32, action_key: String) -> zbus::Result<()>;
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Choice {

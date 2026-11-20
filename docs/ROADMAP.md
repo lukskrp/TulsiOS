@@ -142,9 +142,14 @@ Known limits:
       `checks.live-session`, `checks.install-iso-references`, `checks.iso-boot`
 - [ ] Calamares run by hand in QEMU (BIOS and UEFI), Hyper-V Gen 2 and one bare-metal machine
 - [ ] Artwork package of its own (wallpaper and logo without Cinnamon), dwm wallpaper
-- [ ] Upgrades of installed machines (release channel or `tulsi upgrade`)
+- [x] Upgrades (ADR 0017): installed flakes follow `stable`, pinned offline at install;
+      `tulsi upgrade [--check]`, tulsid `CheckUpgrade`/`Upgrade` (undoable), daily
+      notification, Software Center Updates page; `VERSION`; `docs/RELEASING.md`
+- [ ] Create the `stable` branch; a real upgrade over the network, checked by hand
+- [ ] Live ISO: an intermittent boot hang under UEFI (2 of 4 test boots, 2026-11-20).
+      Stage 2 stalls before sysinit.target with plymouth-read-write.service unfinished;
+      the same ISO also boots cleanly. Find the cause before a release.
 - [ ] Release v0.1.0: ISO + SHA-256 on GitHub Releases
 
 Known limits:
 - The Calamares GUI is not covered by automated tests; its install job is (`tulsi-install-system`).
-- Installed machines are pinned to the TulsiOS source they were installed from until upgrades exist.

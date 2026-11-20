@@ -14,6 +14,7 @@
 }:
 let
   lib = self.inputs.nixpkgs.lib;
+  version = lib.fileContents ../../VERSION;
   password = "tulsi";
   # openssl passwd -6 -salt tulsitest tulsi
   passwordHash = "$6$tulsitest$hSDNyVECxMk8PT61eFiFl4gsk0dgTfjOV1/9mBo0S6nVIJD.pFbfmir74OxoAP2ooaRlBdWZZ5V4birKT7nrR1";
@@ -133,6 +134,8 @@ in
   };
 
   testScript = ''
+    import json
+
     args = ("--root /mnt --desktop ${desktop} --hostname tulsi-box --user alice --full-name 'Alice Tester' "
             "--hashed-password '${passwordHash}' --timezone Europe/Stockholm --locale en_US.UTF-8 "
             "--keyboard-layout se --boot uefi")
@@ -164,8 +167,13 @@ in
         assert 'tulsi.desktop.session = "${desktop}";' in config, config
         assert 'networking.hostName = "tulsi-box";' in config, config
         flake = installer.succeed("cat /mnt/etc/nixos/flake.nix")
-        assert 'inputs.tulsi.url = "path:/nix/store/' in flake, flake
+        # Follows the release branch (ADR 0017), pinned to the source the installer
+        # carries, which is found in the store by its narHash: no network needed.
+        assert 'inputs.tulsi.url = "github:lukskrp/TulsiOS/stable";' in flake, flake
         assert '"''${tulsi}/nix/hosts/desktop"' in flake, flake
+        lock = json.loads(installer.succeed("cat /mnt/etc/nixos/flake.lock"))
+        assert lock["nodes"]["tulsi"]["original"]["ref"] == "stable", lock
+        assert lock["nodes"]["tulsi"]["locked"]["narHash"] == "${self.narHash}", lock
         installer.succeed("grep -q firefox /mnt/etc/nixos/tulsi/state.json")
         installer.succeed("grep -q 'fileSystems.\"/\"' /mnt/etc/nixos/hardware-configuration.nix")
         # Let the test driver talk to the installed system, like nixpkgs' installer tests.
@@ -203,6 +211,14 @@ in
         ).strip()
         running = target.succeed("readlink -f /run/current-system").strip()
         assert built == running, f"{built} != {running}"
+
+    with subtest("the machine knows its release and the branch it follows (offline: no crash)"):
+        target.succeed("grep -qx 'TULSIOS_VERSION=\"${version}\"' /etc/os-release")
+        out = target.succeed("tulsi upgrade --check")
+        print(out)
+        assert "TulsiOS ${version}" in out, out
+        assert "follows github:lukskrp/TulsiOS/stable" in out, out
+        assert "cannot check for a newer release" in out, out
 
     with subtest("logs in through the greeter into ${desktop}"):
         target.wait_for_unit("greetd.service")

@@ -18,6 +18,8 @@
 //! | `GetConfig() -> s` | method | configuration.nix ("" if absent) |
 //! | `PlanConfig(contents: s) -> s` | method | syntax check + JSON [`ConfigPlan`]; nothing written |
 //! | `ApplyConfig(contents: s, summary: s) -> t` | method | polkit `org.tulsi.apply` if a rollback fully undoes the edit, else `org.tulsi.configure` ([`config_action`]); job id, 0 = unchanged |
+//! | `CheckUpgrade() -> s` | method | JSON [`UpgradeInfo`]: is there a newer TulsiOS release on the branch this machine follows (needs the network; problems are in `error`) |
+//! | `Upgrade() -> t` | method | polkit `org.tulsi.upgrade`; moves flake.lock's `tulsi` to the newest release and rebuilds; job id; undone like any change (ADR 0017) |
 //! | `Busy` | property | a job is running |
 //! | `Progress(job: t, line: s)` | signal | rebuild output |
 //! | `Finished(job: t, success: b, message: s)` | signal | job result |
@@ -37,6 +39,28 @@ pub const ACTION_EXTENSIONS: &str = "org.tulsi.extensions";
 /// configuration.nix edits a NixOS rollback does not fully undo (accounts, boot, file
 /// systems, scripts, …; ADR 0014). Starah asks the human about these at level 2.
 pub const ACTION_CONFIGURE: &str = "org.tulsi.configure";
+/// Moving to a newer TulsiOS release (ADR 0017). Reversible (undo restores the
+/// previous release), but it changes the whole system, so it has its own action.
+pub const ACTION_UPGRADE: &str = "org.tulsi.upgrade";
+
+/// Whether a newer TulsiOS release is available (`CheckUpgrade`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpgradeInfo {
+    /// The release branch this machine follows, e.g. `github:lukskrp/TulsiOS/stable`;
+    /// empty for a local source (development flakes), which cannot upgrade.
+    pub following: String,
+    pub current_rev: String,
+    /// The VERSION of the release in use ("unknown" if it cannot be read).
+    pub current_version: String,
+    /// The branch's newest commit and its VERSION (empty if it could not be fetched).
+    pub available_rev: String,
+    pub available_version: String,
+    /// The branch has moved past the release in use.
+    pub available: bool,
+    /// Why nothing could be checked (no network, a local source, …); empty if fine.
+    pub error: String,
+}
 
 /// The polkit action for applying `ops`. Browser extensions alone have their own
 /// action. Adding a local package (code an agent may have written, which ends up on
@@ -171,6 +195,8 @@ pub trait Manager {
     fn get_config(&self) -> zbus::Result<String>;
     fn plan_config(&self, contents: &str) -> zbus::Result<String>;
     fn apply_config(&self, contents: &str, summary: &str) -> zbus::Result<u64>;
+    fn check_upgrade(&self) -> zbus::Result<String>;
+    fn upgrade(&self) -> zbus::Result<u64>;
 
     #[zbus(property)]
     fn busy(&self) -> zbus::Result<bool>;
@@ -258,6 +284,31 @@ pub struct License {
     pub name: String,
     #[serde(default)]
     pub url: String,
+}
+
+/// Desktop notifications (org.freedesktop.Notifications, on the session bus), for
+/// tulsi-extwatch and `tulsi upgrade --notify`.
+#[zbus::proxy(
+    interface = "org.freedesktop.Notifications",
+    default_service = "org.freedesktop.Notifications",
+    default_path = "/org/freedesktop/Notifications"
+)]
+pub trait Notifications {
+    #[allow(clippy::too_many_arguments)]
+    fn notify(
+        &self,
+        app_name: &str,
+        replaces_id: u32,
+        app_icon: &str,
+        summary: &str,
+        body: &str,
+        actions: &[&str],
+        hints: std::collections::HashMap<&str, zbus::zvariant::Value<'_>>,
+        expire_timeout: i32,
+    ) -> zbus::Result<u32>;
+
+    #[zbus(signal)]
+    fn action_invoked(&self, id: u32, action_key: String) -> zbus::Result<()>;
 }
 
 /// Connects to the system bus, or the session bus if `TULSI_BUS=session`.

@@ -18,6 +18,8 @@ INTERFACE = "org.tulsi.Manager1"
 # Apply/Undo may wait for the user at a polkit password prompt.
 NO_TIMEOUT = GLib.MAXINT
 DEFAULT_TIMEOUT = 30_000
+# CheckUpgrade downloads the release branch's newest source.
+CHECK_TIMEOUT = 300_000
 
 
 class TulsiError(Exception):
@@ -142,3 +144,12 @@ class Client(GObject.Object):
 
     def history(self, limit: int, on_ok: OnOk, on_error: OnError) -> None:
         self._call("History", GLib.Variant("(u)", (limit,)), on_ok, on_error, decode_json=True)
+
+    def check_upgrade(self, on_ok: OnOk, on_error: OnError) -> None:
+        """on_ok receives {following, currentVersion, availableVersion, available, error, …}.
+        Fetches the release branch, which can take a while."""
+        self._call("CheckUpgrade", None, on_ok, on_error, timeout=CHECK_TIMEOUT, decode_json=True)
+
+    def upgrade(self, on_ok: OnOk, on_error: OnError) -> None:
+        """Moves to the newest TulsiOS release; on_ok receives the job id."""
+        self._call("Upgrade", None, on_ok, on_error, timeout=NO_TIMEOUT)

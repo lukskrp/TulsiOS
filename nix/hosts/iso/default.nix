@@ -12,7 +12,7 @@
 }:
 
 let
-  version = "0.1.0";
+  version = lib.fileContents ../../../VERSION;
 
   # One reference install per desktop, between them both boot loaders: what an
   # install builds on top of is already in the ISO's store.

@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process::ExitCode;
 
 use futures_util::StreamExt;
-use tulsi_client::{HistoryEntry, ManagerProxy, PackageInfo, Plan, UndoPlan};
+use tulsi_client::{HistoryEntry, ManagerProxy, PackageInfo, Plan, UndoPlan, UpgradeInfo};
 use tulsi_state::{Browser, Op, State};
 
 /// `println!` that exits quietly when stdout is closed early
@@ -34,6 +34,9 @@ change the system (asks for authorization):
   service enable|disable NAME       toggle a NixOS service (services.NAME.enable)
   undo [CHANGE]                     revert the most recent change, or the change with
                                     that id from `tulsi history` (alias: rollback)
+  upgrade                           move to the newest TulsiOS release (undo goes back)
+  upgrade --check [--notify]        is a newer release out? (--notify: as a desktop
+                                    notification with an Upgrade button)
 
 inspect:
   search WORDS...                   find packages (installed ones are marked *)
@@ -106,6 +109,12 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
                 enable: *action == "enable",
             }]
         }
+        ["upgrade"] if opts.dry_run => return check_upgrade(false).await,
+        ["upgrade"] => return upgrade(opts).await,
+        ["upgrade", "--check"] => return check_upgrade(false).await,
+        ["upgrade", "--check", "--notify"] | ["upgrade", "--notify", "--check"] => {
+            return check_upgrade(true).await
+        }
         ["undo" | "rollback"] => return undo(opts, None).await,
         ["undo" | "rollback", commit] => return undo(opts, Some(commit)).await,
         ["search", words @ ..] if !words.is_empty() => return search(&words.join(" ")).await,
@@ -133,6 +142,9 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
         }
         ["version" | "--version"] => {
             out!("tulsi {}", env!("CARGO_PKG_VERSION"));
+            if let Some(v) = tulsios_version() {
+                out!("TulsiOS {v}");
+            }
             return Ok(ExitCode::SUCCESS);
         }
         [] | ["help" | "--help" | "-h"] => {
@@ -223,6 +235,122 @@ async fn undo(opts: &Options, commit: Option<&str>) -> Result<ExitCode, String> 
         proxy_ref.undo_change(commit).await
     })
     .await
+}
+
+async fn fetch_upgrade_info(proxy: &ManagerProxy<'_>) -> Result<UpgradeInfo, String> {
+    serde_json::from_str(&proxy.check_upgrade().await.map_err(dbus)?)
+        .map_err(|e| format!("bad reply from tulsid: {e}"))
+}
+
+fn print_upgrade_info(info: &UpgradeInfo) {
+    let short = |rev: &str| rev.chars().take(12).collect::<String>();
+    out!(
+        "TulsiOS {} ({})",
+        info.current_version,
+        short(&info.current_rev)
+    );
+    if !info.following.is_empty() {
+        out!("follows {}", info.following);
+    }
+    if !info.error.is_empty() {
+        out!("cannot check for a newer release: {}", info.error);
+    } else if info.available {
+        out!(
+            "TulsiOS {} is available ({}): run `tulsi upgrade`",
+            info.available_version,
+            short(&info.available_rev)
+        );
+    } else {
+        out!("This is the newest release.");
+    }
+}
+
+async fn upgrade(opts: &Options) -> Result<ExitCode, String> {
+    let proxy = proxy().await?;
+    let proxy_ref = &proxy;
+    run_job(opts, proxy_ref, || async move { proxy_ref.upgrade().await }).await
+}
+
+/// `tulsi upgrade --check [--notify]`. With --notify (the daily user timer), a
+/// newer release is announced once, as a notification whose Upgrade button opens
+/// the Software Center's Updates page.
+async fn check_upgrade(notify: bool) -> Result<ExitCode, String> {
+    let info = fetch_upgrade_info(&proxy().await?).await?;
+    print_upgrade_info(&info);
+    if notify && info.available && info.error.is_empty() {
+        notify_upgrade(&info).await;
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+const UPGRADE_ACTION: &str = "upgrade";
+
+/// Where the last announced release is remembered, so each one is announced once.
+fn notified_path() -> Option<std::path::PathBuf> {
+    let base = std::env::var_os("XDG_STATE_HOME")
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| Path::new(&h).join(".local/state")))?;
+    Some(base.join("tulsi/notified-upgrade"))
+}
+
+async fn notify_upgrade(info: &UpgradeInfo) {
+    let remembered = notified_path();
+    if let Some(path) = &remembered {
+        if std::fs::read_to_string(path).is_ok_and(|r| r.trim() == info.available_rev) {
+            return;
+        }
+    }
+    let sent = async {
+        let conn = zbus::Connection::session().await?;
+        let notifications = tulsi_client::NotificationsProxy::new(&conn).await?;
+        let mut clicks = notifications.receive_action_invoked().await?;
+        let body = format!(
+            "TulsiOS {} is available (you have {}). Upgrading keeps your apps and \
+             settings, and you can undo it in the Software Center.",
+            info.available_version, info.current_version
+        );
+        let id = notifications
+            .notify(
+                "TulsiOS",
+                0,
+                "system-software-update",
+                &format!("TulsiOS {} is available", info.available_version),
+                &body,
+                &[UPGRADE_ACTION, "Upgrade…"],
+                std::collections::HashMap::new(),
+                0,
+            )
+            .await?;
+        if let Some(path) = &remembered {
+            if let Some(dir) = path.parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            let _ = std::fs::write(path, &info.available_rev);
+        }
+        // Wait a while for the button; the notification stays in the tray after that.
+        let clicked = tokio::time::timeout(std::time::Duration::from_secs(3600), async {
+            while let Some(signal) = clicks.next().await {
+                if let Ok(args) = signal.args() {
+                    if args.id == id && args.action_key == UPGRADE_ACTION {
+                        return true;
+                    }
+                }
+            }
+            false
+        })
+        .await
+        .unwrap_or(false);
+        if clicked {
+            let _ = std::process::Command::new("ocimum-software-center")
+                .arg("--upgrade")
+                .spawn();
+        }
+        zbus::Result::Ok(())
+    }
+    .await;
+    if let Err(e) = sent {
+        eprintln!("tulsi: cannot show a notification: {e}");
+    }
 }
 
 /// Subscribes to job signals, starts the job and follows it to the end.
@@ -340,6 +468,15 @@ async fn history(n: u32) -> Result<ExitCode, String> {
         out!("{}  {}  {}{by}", e.commit, format_time(e.time), e.summary);
     }
     Ok(ExitCode::SUCCESS)
+}
+
+/// The running TulsiOS release, from /etc/os-release (`TULSIOS_VERSION`).
+fn tulsios_version() -> Option<String> {
+    let text = std::fs::read_to_string("/etc/os-release").ok()?;
+    text.lines().find_map(|l| {
+        l.strip_prefix("TULSIOS_VERSION=")
+            .map(|v| v.trim_matches('"').to_string())
+    })
 }
 
 fn format_time(unix: i64) -> String {

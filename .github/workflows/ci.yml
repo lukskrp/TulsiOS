@@ -1,7 +1,8 @@
 name: CI
 on:
   push:
-    branches: [main]
+    # stable: the release branch installed machines follow (ADR 0017).
+    branches: [main, stable]
   pull_request:
 
 jobs:

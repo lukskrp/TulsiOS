@@ -57,6 +57,13 @@
           ];
           # A bootstrapped system flake uses this source tree as its input…
           tulsi.daemon.bootstrap.source = lib.mkDefault self.outPath;
+          # …and installed machines follow the release branch, pinned to it (ADR 0017).
+          # A tree with uncommitted changes has no revision: the pin still finds this
+          # source by its narHash; only `tulsi upgrade` would see an unknown revision.
+          tulsi.installer.sourceInfo = lib.mkDefault {
+            rev = self.rev or "0000000000000000000000000000000000000000";
+            inherit (self) narHash lastModified;
+          };
           # …and needs the pinned inputs' sources to evaluate offline (as does the
           # installer, which builds the new system from the same flake).
           system.extraDependencies =

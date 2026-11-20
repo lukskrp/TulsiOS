@@ -155,7 +155,7 @@ tulsid's bootstrap generated that flake on first boot, and only for the developm
   - Calamares takes the logo from `cinnamon.src` (the sources, not the build).
   - A dwm install shows a plain background until the artwork moves into a package of its
     own, so the wallpaper does not bring Cinnamon along.
-- **Open: upgrades.** An installed flake's `tulsi` input is the TulsiOS source path in the
-  store at install time. Moving installed machines to a newer TulsiOS release needs a
-  release channel or a `tulsi upgrade` command. That is decided separately, before the
-  first release.
+- **Upgrades** (decided in ADR 0017). Installed flakes follow the `stable` branch
+  (`github:lukskrp/TulsiOS/stable`), pinned at install time to the source the ISO
+  carries, so installing stays offline; `tulsi upgrade` and the Software Center's
+  Updates page move to newer releases, and undo takes an upgrade back.

@@ -33,6 +33,7 @@ in
       type = lib.types.package;
       default = pkgs.callPackage ../packages/tulsi-installer.nix {
         source = config.tulsi.daemon.bootstrap.source;
+        inherit (cfg) upstream sourceInfo;
         nixos-install-tools = pkgs.symlinkJoin {
           name = "nixos-install-tools";
           paths = [
@@ -43,6 +44,35 @@ in
       };
       defaultText = lib.literalExpression "tulsi-installer for tulsi.daemon.bootstrap.source";
       description = "The tulsi-installer package.";
+    };
+
+    upstream = lib.mkOption {
+      type = lib.types.str;
+      default = "github:lukskrp/TulsiOS/stable";
+      description = ''
+        Where installed machines get TulsiOS releases from: the `tulsi` input of
+        their system flake, which `tulsi upgrade` follows (ADR 0017).
+      '';
+    };
+
+    sourceInfo = lib.mkOption {
+      type = lib.types.nullOr (
+        lib.types.submodule {
+          options = {
+            rev = lib.mkOption { type = lib.types.str; };
+            narHash = lib.mkOption { type = lib.types.str; };
+            lastModified = lib.mkOption { type = lib.types.int; };
+          };
+        }
+      );
+      default = null;
+      description = ''
+        Git revision, narHash and lastModified of tulsi.daemon.bootstrap.source (the
+        TulsiOS flake sets them from `self`). With them, the installed flake.lock pins
+        `upstream` to exactly that source, found in the store without a network.
+        Without them, installed machines use the source as a local path and cannot
+        upgrade.
+      '';
     };
 
     calamares.enable = lib.mkEnableOption "the Calamares installer with TulsiOS's settings, started at login";

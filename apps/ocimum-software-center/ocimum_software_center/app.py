@@ -3,7 +3,7 @@
 Exposes actions on the session bus (org.gtk.Actions on /org/tulsi/SoftwareCenter)
 so other tools, tests and later the Ocimum Assistant can open the app on a
 specific change. Actions still show the confirmation dialog:
-    install(s)  remove(s)  undo  search(s)
+    install(s)  remove(s)  undo  search(s)  history  upgrade
 """
 
 from __future__ import annotations
@@ -34,6 +34,7 @@ class Application(Gtk.Application):
         self._action("search", string, self._search)
         self._action("undo", None, lambda _: self._win().request_undo())
         self._action("history", None, lambda _: self._history())
+        self._action("upgrade", None, lambda _: self._win().show_updates())
         self._action("quit", None, lambda _: self.quit())
         self.set_accels_for_action("app.quit", ["<Primary>q"])
 
@@ -98,15 +99,18 @@ def main() -> int:
     GLib.set_application_name("Software Center")
     GLib.set_prgname(APP_ID)
     app = Application()
-    if "--history" in sys.argv:
-        # Opens the History page (the Assistant's "Recent changes"), in the
-        # running instance if there is one.
-        sys.argv.remove("--history")
-        app.register(None)
-        app.activate_action("history", None)
-        if app.get_is_remote():
-            connection = app.get_dbus_connection()
-            if connection is not None:
-                connection.flush_sync(None)
-            return 0
+    # --history: the History page (the Assistant's "Recent changes"); --upgrade: the
+    # Updates page (the upgrade notification's button). In the running instance if
+    # there is one.
+    for flag, action in (("--history", "history"), ("--upgrade", "upgrade")):
+        if flag in sys.argv:
+            sys.argv.remove(flag)
+            app.register(None)
+            app.activate_action(action, None)
+            if app.get_is_remote():
+                connection = app.get_dbus_connection()
+                if connection is not None:
+                    connection.flush_sync(None)
+                return 0
+            break
     return app.run(sys.argv)

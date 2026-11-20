@@ -1,6 +1,7 @@
 """The files tulsi-install-system writes into <root>/etc/nixos. No I/O here.
 
   flake.nix                   the TulsiOS system flake (the template tulsid also uses)
+  flake.lock                  pins it to the TulsiOS release the ISO carries
   configuration.nix           this machine's settings: hostname, users, locale,
                               keyboard, boot loader and the desktop
   hardware-configuration.nix  from nixos-generate-config, with fixes
@@ -9,6 +10,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 
@@ -117,16 +119,74 @@ def nix_string(s: str) -> str:
     return f'"{escaped}"'
 
 
-def flake_nix(template: str, source: str, host: str) -> str:
-    """Fills in data/system-flake.nix.in, as tulsid's bootstrap does."""
+def flake_nix(template: str, tulsi_url: str, host: str) -> str:
+    """Fills in data/system-flake.nix.in, as tulsid's bootstrap does. tulsi_url is
+    the `tulsi` input: the release branch (github:…) or a local path:…."""
     out = (
-        template.replace("@source@", source)
+        template.replace("@tulsiUrl@", tulsi_url)
         .replace("@host@", host)
         .replace("@hostModule@", HOST_MODULE)
     )
     if re.search(r"@[A-Za-z]+@", out):
         raise InvalidChoice("the system flake template has an unknown @placeholder@")
     return out
+
+
+_GITHUB = re.compile(r"^github:([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/([A-Za-z0-9_./-]+)$")
+_REV = re.compile(r"^[0-9a-f]{40}$")
+
+
+def flake_lock(source_lock: dict, upstream: str, rev: str, nar_hash: str, last_modified: int) -> str:
+    """The system flake's flake.lock, written by the installer instead of `nix flake
+    lock`, so an install needs no network (ADR 0017).
+
+    `tulsi` is locked to the TulsiOS source the ISO carries: upstream is the release
+    branch (github:owner/repo/ref), rev and nar_hash those of the carried source. Nix
+    finds a locked input with that narHash in the store and does not download it.
+    TulsiOS's own inputs (tulsipkgs, Starah) are copied from source_lock, its
+    flake.lock, so the lock is complete and nothing rewrites it during nixos-install.
+    """
+    m = _GITHUB.fullmatch(upstream)
+    if not m:
+        raise InvalidChoice(f"upstream must be github:owner/repo/branch, not {upstream!r}")
+    if not _REV.fullmatch(rev):
+        raise InvalidChoice(f"not a git revision: {rev!r}")
+    if not nar_hash.startswith("sha256-"):
+        raise InvalidChoice(f"not a narHash: {nar_hash!r}")
+    owner, repo, ref = m.groups()
+
+    def renamed(name: str) -> str:
+        return f"tulsi-{name}"
+
+    def inputs(own: dict) -> dict:
+        # A string names a node; a list is a `follows` path from the root, which now
+        # starts at `tulsi`.
+        return {k: (["tulsi", *v] if isinstance(v, list) else renamed(v)) for k, v in own.items()}
+
+    own_root = source_lock["root"]
+    nodes: dict = {}
+    for name, node in source_lock["nodes"].items():
+        if name == own_root:
+            continue
+        node = dict(node)
+        if "inputs" in node:
+            node["inputs"] = inputs(node["inputs"])
+        nodes[renamed(name)] = node
+    nodes["tulsi"] = {
+        "inputs": inputs(source_lock["nodes"][own_root].get("inputs", {})),
+        "locked": {
+            "lastModified": last_modified,
+            "narHash": nar_hash,
+            "owner": owner,
+            "repo": repo,
+            "rev": rev,
+            "type": "github",
+        },
+        "original": {"owner": owner, "ref": ref, "repo": repo, "type": "github"},
+    }
+    nodes["root"] = {"inputs": {"tulsi": "tulsi"}}
+    lock = {"nodes": nodes, "root": "root", "version": source_lock.get("version", 7)}
+    return json.dumps(lock, indent=2, sort_keys=True) + "\n"
 
 
 def configuration_nix(c: Choices) -> str:

@@ -9,7 +9,7 @@
   calamares-nixos-extensions,
   cinnamon,
   python3,
-  version ? "0.1.0",
+  version ? lib.fileContents ../../VERSION,
 }:
 
 let

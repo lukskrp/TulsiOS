@@ -11,11 +11,19 @@ use tulsi_state::State;
 use crate::config::Config;
 
 /// Files (and the local-package directory) whose changes make up tulsid's history.
-pub const MANAGED: [&str; 3] = [Config::STATE_REL, Config::CONFIG_REL, Config::PKGS_REL];
+/// flake.lock is one since upgrades move it (ADR 0017): an upgrade is listed and can
+/// be undone like any other change.
+pub const MANAGED: [&str; 4] = [
+    Config::STATE_REL,
+    Config::CONFIG_REL,
+    Config::PKGS_REL,
+    Config::LOCK_REL,
+];
 
 fn is_managed(rel: &str) -> bool {
     rel == Config::STATE_REL
         || rel == Config::CONFIG_REL
+        || rel == Config::LOCK_REL
         || rel.starts_with(&format!("{}/", Config::PKGS_REL))
 }
 
@@ -279,6 +287,12 @@ pub async fn revert_changes(dir: &Path, commit: &str) -> Result<(Vec<FileChange>
         let current = read(dir, rel);
         let at = show(dir, &hash, rel).await;
         let before = show(dir, &parent, rel).await;
+        if rel == Config::LOCK_REL && before.is_none() {
+            // The change that first wrote flake.lock (a development flake's first
+            // rebuild). Without a lock the next rebuild would fetch the newest
+            // inputs: an upgrade nobody asked for. Keep it.
+            continue;
+        }
         let new = if rel == Config::STATE_REL {
             let parse = |bytes: Option<Vec<u8>>| -> Result<State, String> {
                 let text = String::from_utf8_lossy(bytes.as_deref().unwrap_or(b"{\"version\":1}"))

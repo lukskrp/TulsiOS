@@ -74,7 +74,29 @@ def test_done_text():
     assert done_text("Installing vlc") == "vlc was installed."
     assert done_text("Removing gimp") == "gimp was removed."
     assert done_text("Undoing “Install vlc”") == "The change was undone."
+    assert done_text("Upgrading TulsiOS to 0.2.0").startswith("TulsiOS was upgraded.")
     assert done_text("Other") == "Done."
+
+
+def test_upgrade_status():
+    from ocimum_software_center.model import upgrade_status
+
+    base = {"following": "github:lukskrp/TulsiOS/stable", "currentVersion": "0.1.0", "error": ""}
+    title, detail, can = upgrade_status({**base, "available": True, "availableVersion": "0.2.0"})
+    assert (title, can) == ("TulsiOS 0.2.0 is available", True)
+    assert "You have 0.1.0" in detail and "undo" in detail
+    # Same VERSION, newer commit: fixes on the release branch.
+    _, detail, can = upgrade_status({**base, "available": True, "availableVersion": "0.1.0"})
+    assert can and "newer build" in detail
+    assert upgrade_status({**base, "available": False}) == (
+        "TulsiOS 0.1.0",
+        "This is the newest release.",
+        False,
+    )
+    _, detail, can = upgrade_status({**base, "error": "cannot reach github"})
+    assert not can and "network" in detail
+    _, detail, can = upgrade_status({"following": "", "currentVersion": "0.1.0"})
+    assert not can and "local copy" in detail
 
 
 def test_relative_time():

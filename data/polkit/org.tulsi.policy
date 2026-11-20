@@ -27,6 +27,18 @@
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
   </action>
+  <!-- Moving to a newer TulsiOS release (ADR 0017). Undo takes it back, but it
+       changes the whole system at once, so it is an action of its own. -->
+  <action id="org.tulsi.upgrade">
+    <description>Upgrade TulsiOS to a newer release</description>
+    <message>Authentication is required to upgrade TulsiOS</message>
+    <icon_name>system-software-update</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
   <!-- Changes that only add or remove browser extensions. The
        tulsi.browserExtensions module can allow this for active local users
        without a password (tulsi.browserExtensions.adopt.withoutPassword). -->

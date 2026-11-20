@@ -6,6 +6,11 @@ runs nixos-install. The disks must already be partitioned and mounted at <root>.
 
 The paths of the TulsiOS source, the flake template and the initial state are
 built in (TULSI_SOURCE, TULSI_FLAKE_TEMPLATE, TULSI_INITIAL_STATE).
+
+With TULSI_UPSTREAM (the release branch, github:owner/repo/branch) and the
+source's TULSI_SOURCE_REV / _NAR_HASH / _LAST_MODIFIED, the installed flake follows
+that branch and its flake.lock pins the carried source (ADR 0017). Without them it
+uses the source as a local path: input.
 """
 
 from __future__ import annotations
@@ -52,7 +57,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--template", default=os.environ.get("TULSI_FLAKE_TEMPLATE"))
     p.add_argument("--initial-state", default=os.environ.get("TULSI_INITIAL_STATE"))
     p.add_argument("--state-version", default=os.environ.get("TULSI_STATE_VERSION"))
+    p.add_argument("--upstream", default=os.environ.get("TULSI_UPSTREAM"), help="release branch to follow")
+    p.add_argument("--source-rev", default=os.environ.get("TULSI_SOURCE_REV"))
+    p.add_argument("--source-nar-hash", default=os.environ.get("TULSI_SOURCE_NAR_HASH"))
+    p.add_argument("--source-last-modified", default=os.environ.get("TULSI_SOURCE_LAST_MODIFIED"))
     return p.parse_args(argv)
+
+
+def follows_upstream(a: argparse.Namespace) -> bool:
+    return bool(a.upstream and a.source_rev and a.source_nar_hash and a.source_last_modified)
 
 
 def choices_from_args(a: argparse.Namespace) -> Choices:
@@ -132,13 +145,27 @@ def install(a: argparse.Namespace) -> int:
     try:
         choices = choices_from_args(a)
         config = render.configuration_nix(choices)
-        flake = render.flake_nix(Path(a.template).read_text(), a.source, choices.hostname)
+        template = Path(a.template).read_text()
+        if follows_upstream(a):
+            flake = render.flake_nix(template, a.upstream, choices.hostname)
+            lock = render.flake_lock(
+                json.loads((Path(a.source) / "flake.lock").read_text()),
+                a.upstream,
+                a.source_rev,
+                a.source_nar_hash,
+                int(a.source_last_modified),
+            )
+        else:
+            flake = render.flake_nix(template, f"path:{a.source}", choices.hostname)
+            lock = None
     except InvalidChoice as e:
         print(f"tulsi-install-system: {e}", file=sys.stderr)
         return 2
 
     etc = Path(a.root) / "etc/nixos"
     write(etc / "flake.nix", flake)
+    if lock is not None:
+        write(etc / "flake.lock", lock)
     write(etc / "configuration.nix", config)
     hardware = etc / "hardware-configuration.nix"
     if not (a.keep_hardware_config and hardware.exists()):
@@ -150,15 +177,16 @@ def install(a: argparse.Namespace) -> int:
     if a.write_only:
         return 0
 
-    # Lock first, in its own step: if nixos-install's evaluation wrote
-    # flake.lock itself, the path: flake would change under it ("NAR hash
-    # mismatch"). The only input is a local path, so this works offline.
-    lock = subprocess.run(
-        ["nix", "--extra-experimental-features", "nix-command flakes", "flake", "lock", f"path:{etc}"],
-        stdin=subprocess.DEVNULL,
-    )
-    if lock.returncode != 0:
-        return lock.returncode
+    if lock is None:
+        # Lock first, in its own step: if nixos-install's evaluation wrote
+        # flake.lock itself, the path: flake would change under it ("NAR hash
+        # mismatch"). The only input is a local path, so this works offline.
+        locked = subprocess.run(
+            ["nix", "--extra-experimental-features", "nix-command flakes", "flake", "lock", f"path:{etc}"],
+            stdin=subprocess.DEVNULL,
+        )
+        if locked.returncode != 0:
+            return locked.returncode
 
     cmd = [
         "nixos-install",

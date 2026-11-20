@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -105,8 +106,8 @@ def test_flake_from_the_shared_template(tmp_path):
     template = os.environ.get("TULSI_FLAKE_TEMPLATE")
     if not template:
         pytest.skip("TULSI_FLAKE_TEMPLATE not set")
-    text = render.flake_nix(open(template).read(), "/nix/store/abc-source", "box")
-    assert 'inputs.tulsi.url = "path:/nix/store/abc-source";' in text
+    text = render.flake_nix(open(template).read(), "github:lukskrp/TulsiOS/stable", "box")
+    assert 'inputs.tulsi.url = "github:lukskrp/TulsiOS/stable";' in text
     assert 'nixosConfigurations."box"' in text
     assert '"${tulsi}/nix/hosts/desktop"' in text
     assert "hardware-configuration.nix" in text
@@ -115,7 +116,67 @@ def test_flake_from_the_shared_template(tmp_path):
 
 def test_unknown_placeholder_is_an_error():
     with pytest.raises(InvalidChoice):
-        render.flake_nix("@source@ @surprise@", "/s", "h")
+        render.flake_nix("@tulsiUrl@ @surprise@", "/s", "h")
+
+
+# TulsiOS's own flake.lock, shaped as it is: Starah's nixpkgs follows the root's.
+SOURCE_LOCK = {
+    "nodes": {
+        "nixpkgs": {
+            "locked": {"narHash": "sha256-N", "owner": "lukskrp", "repo": "tulsipkgs", "rev": "1" * 40, "type": "github"},
+            "original": {"owner": "lukskrp", "ref": "tulsi-unstable", "repo": "tulsipkgs", "type": "github"},
+        },
+        "root": {"inputs": {"nixpkgs": "nixpkgs", "starah": "starah"}},
+        "starah": {
+            "inputs": {"nixpkgs": ["nixpkgs"]},
+            "locked": {"narHash": "sha256-S", "owner": "lukskrp", "repo": "starah", "rev": "2" * 40, "type": "github"},
+            "original": {"owner": "lukskrp", "repo": "starah", "type": "github"},
+        },
+    },
+    "root": "root",
+    "version": 7,
+}
+
+
+def test_flake_lock_pins_the_carried_source_to_the_release_branch():
+    lock = json.loads(
+        render.flake_lock(SOURCE_LOCK, "github:lukskrp/TulsiOS/stable", "a" * 40, "sha256-T", 1795124079)
+    )
+    nodes = lock["nodes"]
+    assert lock["root"] == "root" and lock["version"] == 7
+    assert nodes["root"] == {"inputs": {"tulsi": "tulsi"}}
+    assert nodes["tulsi"]["locked"] == {
+        "lastModified": 1795124079,
+        "narHash": "sha256-T",
+        "owner": "lukskrp",
+        "repo": "TulsiOS",
+        "rev": "a" * 40,
+        "type": "github",
+    }
+    assert nodes["tulsi"]["original"] == {"owner": "lukskrp", "ref": "stable", "repo": "TulsiOS", "type": "github"}
+    # TulsiOS's inputs come along, and follows paths now start at `tulsi`.
+    assert nodes["tulsi"]["inputs"] == {"nixpkgs": "tulsi-nixpkgs", "starah": "tulsi-starah"}
+    assert nodes["tulsi-nixpkgs"]["locked"]["narHash"] == "sha256-N"
+    assert nodes["tulsi-starah"]["inputs"] == {"nixpkgs": ["tulsi", "nixpkgs"]}
+    # Every node a lock refers to exists: Nix would otherwise rewrite the lock.
+    for node in nodes.values():
+        for ref in node.get("inputs", {}).values():
+            if isinstance(ref, str):
+                assert ref in nodes
+
+
+@pytest.mark.parametrize(
+    "upstream,rev,nar",
+    [
+        ("path:/nix/store/x", "a" * 40, "sha256-T"),
+        ("github:lukskrp/TulsiOS", "a" * 40, "sha256-T"),
+        ("github:lukskrp/TulsiOS/stable", "dirty", "sha256-T"),
+        ("github:lukskrp/TulsiOS/stable", "a" * 40, "md5-x"),
+    ],
+)
+def test_flake_lock_rejects_bad_input(upstream, rev, nar):
+    with pytest.raises(InvalidChoice):
+        render.flake_lock(SOURCE_LOCK, upstream, rev, nar, 1)
 
 
 def test_btrfs_subvolumes_fixed():

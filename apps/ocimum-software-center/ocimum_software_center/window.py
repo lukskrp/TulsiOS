@@ -1,4 +1,5 @@
-"""Main window: Search, Installed and History pages plus the change flow.
+"""Main window: Search, Installed, Extensions, History and Updates pages plus the
+change flow.
 
 Change flow (same for every page): Plan -> confirmation dialog -> Apply ->
 progress panel follows Progress signals -> on Finished refresh everything and
@@ -24,6 +25,7 @@ from .model import (
     ops_install,
     ops_remove,
     ops_remove_extension,
+    upgrade_status,
 )
 from .progress import ProgressPanel
 from .rows import ExtensionRow, HistoryRow, PackageRow, placeholder
@@ -72,6 +74,7 @@ class Window(Gtk.ApplicationWindow):
         self.stack.add_titled(self._build_installed_page(), "installed", "Installed")
         self.stack.add_titled(self._build_extensions_page(), "extensions", "Extensions")
         self.stack.add_titled(self._build_history_page(), "history", "History")
+        self.stack.add_titled(self._build_updates_page(), "updates", "Updates")
         self.stack.connect("notify::visible-child-name", self._on_page_changed)
 
         header = Gtk.HeaderBar(show_close_button=True)
@@ -204,9 +207,87 @@ class Window(Gtk.ApplicationWindow):
         page.pack_start(frame, True, True, 0)
         return page
 
+    def _build_updates_page(self) -> Gtk.Widget:
+        page = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=12,
+            margin=24,
+            halign=Gtk.Align.CENTER,
+            valign=Gtk.Align.CENTER,
+        )
+        icon = Gtk.Image.new_from_icon_name("system-software-update", Gtk.IconSize.DIALOG)
+        icon.set_pixel_size(64)
+        page.pack_start(icon, False, False, 0)
+        self.updates_title = Gtk.Label(label="TulsiOS")
+        self.updates_title.get_style_context().add_class("title-2")
+        self.updates_title.set_markup("<big><b>TulsiOS</b></big>")
+        page.pack_start(self.updates_title, False, False, 0)
+        self.updates_detail = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER, max_width_chars=60)
+        self.updates_detail.get_style_context().add_class("dim-label")
+        page.pack_start(self.updates_detail, False, False, 0)
+        self.updates_spinner = Gtk.Spinner()
+        page.pack_start(self.updates_spinner, False, False, 0)
+        buttons = Gtk.Box(spacing=8, halign=Gtk.Align.CENTER)
+        self.updates_check = Gtk.Button(label="Check Again")
+        self.updates_check.connect("clicked", lambda _b: self.refresh_updates())
+        self.updates_upgrade = Gtk.Button(label="Upgrade")
+        self.updates_upgrade.get_style_context().add_class("suggested-action")
+        self.updates_upgrade.connect("clicked", lambda _b: self.request_upgrade())
+        buttons.pack_start(self.updates_check, False, False, 0)
+        buttons.pack_start(self.updates_upgrade, False, False, 0)
+        page.pack_start(buttons, False, False, 0)
+        self._upgrade_info: dict = {}
+        return page
+
+    def refresh_updates(self) -> None:
+        self.updates_title.set_markup("<big><b>Checking for a newer TulsiOS…</b></big>")
+        self.updates_detail.set_text("")
+        self.updates_upgrade.set_visible(False)
+        self.updates_check.set_sensitive(False)
+        self.updates_spinner.start()
+
+        def show(info: dict) -> None:
+            self._upgrade_info = info
+            title, detail, can_upgrade = upgrade_status(info)
+            self.updates_title.set_markup(f"<big><b>{GLib.markup_escape_text(title)}</b></big>")
+            self.updates_detail.set_text(detail)
+            self.updates_upgrade.set_visible(can_upgrade)
+            self.updates_upgrade.set_sensitive(can_upgrade and not self.jobs.busy)
+            self.updates_check.set_sensitive(True)
+            self.updates_spinner.stop()
+
+        def failed(error: TulsiError) -> None:
+            show({"following": "?", "error": error.message})
+
+        self.client.check_upgrade(show, failed)
+
+    def show_updates(self) -> None:
+        """The Updates page, checked afresh (the upgrade notification opens it)."""
+        if self.stack.get_visible_child_name() == "updates":
+            self.refresh_updates()
+        else:
+            self.stack.set_visible_child_name("updates")
+        self.present()
+
+    def request_upgrade(self) -> None:
+        if self.jobs.busy:
+            self.show_message("Another change is still being applied.", error=True)
+            return
+        info = self._upgrade_info
+        new = info.get("availableVersion") or "the newest release"
+        lines = [
+            f"From TulsiOS {info.get('currentVersion') or 'unknown'} to {new}",
+            "Your apps, files and settings stay as they are",
+            "Undo it any time in History; restart afterwards to finish",
+        ]
+        if dialogs.confirm(self, f"Upgrade to TulsiOS {new}?", lines, "Upgrade"):
+            self._start(self.client.upgrade, f"Upgrading TulsiOS to {new}")
+
     def _on_page_changed(self, stack: Gtk.Stack, _pspec) -> None:
         name = stack.get_visible_child_name()
-        if name == "installed":
+        if name == "updates":
+            self.refresh_updates()
+        elif name == "installed":
             self.refresh_installed()
         elif name == "extensions":
             self.refresh_extensions()
@@ -446,6 +527,7 @@ class Window(Gtk.ApplicationWindow):
             if isinstance(row, HistoryRow):
                 row.set_busy(busy)
         self.history_undo.set_sensitive(not busy)
+        self.updates_upgrade.set_sensitive(not busy and bool(self._upgrade_info.get("available")))
 
     def _on_request_error(self, error: TulsiError) -> None:
         if error.kind == "NotAuthorized":

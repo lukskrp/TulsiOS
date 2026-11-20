@@ -1,8 +1,11 @@
 # TulsiOS system flake. Machine-managed choices live in ./tulsi/state.json (use
 # `tulsi`, the Software Center or the Assistant). Your own settings go in
 # ./configuration.nix. Every change is committed to git here.
+#
+# `tulsi` is where this machine gets TulsiOS from. Installed machines follow the
+# release branch (`tulsi upgrade`, ADR 0017); flake.lock pins the release in use.
 {
-  inputs.tulsi.url = "path:@source@";
+  inputs.tulsi.url = "@tulsiUrl@";
 
   outputs =
     { tulsi, ... }:

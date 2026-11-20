@@ -38,9 +38,11 @@ let
     );
   };
 
-  # The same template the installer (tulsi-install-system) fills in.
+  # The same template the installer (tulsi-install-system) fills in. A bootstrapped
+  # flake (development VMs) uses the source as a local path; installed machines
+  # follow the release branch (ADR 0017).
   flakeTemplate = pkgs.replaceVars ../../data/system-flake.nix.in {
-    source = toString cfg.bootstrap.source;
+    tulsiUrl = "path:${toString cfg.bootstrap.source}";
     host = cfg.flakeHost;
     hostModule = cfg.bootstrap.hostModule;
   };

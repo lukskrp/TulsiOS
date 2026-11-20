@@ -13,6 +13,7 @@ mod localpkg;
 mod nixfile;
 mod polkit;
 mod service;
+mod upgrade;
 
 use std::path::PathBuf;
 use std::process::ExitCode;

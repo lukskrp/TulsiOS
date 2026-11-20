@@ -152,7 +152,41 @@ def done_text(label: str) -> str:
         return f"{rest} was {past}."
     if verb == "Undoing":
         return "The change was undone."
+    if verb == "Upgrading":
+        return "TulsiOS was upgraded. Restart the computer to finish."
     return "Done."
+
+
+def upgrade_status(info: dict) -> tuple[str, str, bool]:
+    """The Updates page for a CheckUpgrade reply: (title, detail, can upgrade)."""
+    current = info.get("currentVersion") or "unknown"
+    if not info.get("following"):
+        return (
+            f"TulsiOS {current}",
+            "This system uses a local copy of TulsiOS, so there are no releases to "
+            "upgrade to.",
+            False,
+        )
+    if info.get("error"):
+        return (
+            f"TulsiOS {current}",
+            "Could not check for a newer release. Check the network connection and try "
+            f"again.\n({info['error']})",
+            False,
+        )
+    if info.get("available"):
+        new = info.get("availableVersion") or "a newer version"
+        if new == current:
+            detail = f"A newer build of TulsiOS {current} is available, with fixes."
+        else:
+            detail = f"TulsiOS {new} is available. You have {current}."
+        return (
+            f"TulsiOS {new} is available",
+            detail + " Your apps, files and settings stay as they are, and you can "
+            "undo the upgrade in History.",
+            True,
+        )
+    return (f"TulsiOS {current}", "This is the newest release.", False)
 
 
 def relative_time(timestamp: int, now: float | None = None) -> str:

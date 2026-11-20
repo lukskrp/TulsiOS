@@ -1,6 +1,8 @@
 # tulsi-install-system: installs TulsiOS onto a mounted root (ADR 0016).
 # `source` is the TulsiOS flake the new system is built from (the flake's
-# self.outPath); nix/modules/installer.nix passes it.
+# self.outPath); nix/modules/installer.nix passes it, and with `upstream` and
+# `sourceInfo` (its rev, narHash, lastModified) installed machines follow the
+# release branch, pinned to this very source (ADR 0017).
 {
   lib,
   python3Packages,
@@ -8,6 +10,8 @@
   nix,
   nixos-install-tools,
   source ? null,
+  upstream ? null,
+  sourceInfo ? null,
 }:
 
 let
@@ -63,6 +67,20 @@ python3Packages.buildPythonApplication {
     "--set-default"
     "TULSI_SOURCE"
     "${source}"
+  ]
+  ++ lib.optionals (upstream != null && sourceInfo != null) [
+    "--set-default"
+    "TULSI_UPSTREAM"
+    upstream
+    "--set-default"
+    "TULSI_SOURCE_REV"
+    sourceInfo.rev
+    "--set-default"
+    "TULSI_SOURCE_NAR_HASH"
+    sourceInfo.narHash
+    "--set-default"
+    "TULSI_SOURCE_LAST_MODIFIED"
+    (toString sourceInfo.lastModified)
   ];
 
   meta = {
