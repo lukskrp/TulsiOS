@@ -100,7 +100,9 @@ tulsid's bootstrap generated that flake on first boot, and only for the developm
   own initrd, udev rules and boot entries are then rebuilt from what is in the store.
 - **Names.** All TulsiOS systems call themselves TulsiOS in `/etc/os-release`
   (`ID=tulsios`, `ID_LIKE=nixos`), `/etc/issue` and boot menus (`nix/modules/branding.nix`).
-  The ISO's boot menus use the Tulsi Leaf wallpaper, and Plymouth shows the TulsiOS logo.
+  The ISO's boot menus use the Tulsi Leaf wallpaper. The ISO has no boot splash: Plymouth
+  raced the graphics driver taking over from the firmware framebuffer under UEFI and could
+  stall the boot, so boot messages show between the menu and the desktop.
 
 ### dwm: suckless dwm 6.8 with one patch, the system tray
 - **Choosing a desktop.** `tulsi.desktop.session = "ocimum" | "dwm"` picks the desktop.

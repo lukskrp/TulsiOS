@@ -26,9 +26,6 @@ let
     pkgs.runCommand name { nativeBuildInputs = [ pkgs.imagemagick ]; } ''
       magick ${src} -resize ${size}^ -gravity center -extent ${size} -strip PNG24:$out
     '';
-  logo = pkgs.runCommand "tulsios-logo.png" { nativeBuildInputs = [ pkgs.librsvg ]; } ''
-    rsvg-convert -w 128 -h 128 ${art}/icons/hicolor/scalable/apps/tulsi-start.svg -o $out
-  '';
 in
 {
   imports = [
@@ -48,7 +45,13 @@ in
     efiSplashImage = image "tulsios-grub.png" "1920x1080" wallpaper;
     grubTheme = null;
   };
-  boot.plymouth.logo = logo;
+
+  # No boot splash: between the boot menu and the desktop the ISO shows boot
+  # messages. Plymouth (on from installation-cd-graphical-base) races the graphics
+  # driver taking over from the firmware's framebuffer under UEFI: it ends up in a
+  # blocking keyboard read, stops forwarding the console it redirected, and boot
+  # stalls behind systemd's next status line (about 1 boot in 5 in checks.iso-boot).
+  boot.plymouth.enable = lib.mkForce false;
 
   # TulsiOS's kernel (7.3) has no ZFS module, which installer media switch on.
   boot.supportedFilesystems.zfs = lib.mkForce false;

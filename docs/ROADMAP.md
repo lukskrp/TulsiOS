@@ -138,7 +138,7 @@ Known limits:
 - [x] Calamares: `calamares-tulsios-extensions` (desktop page, `tulsios` job, branding, slideshow)
 - [x] `checks.install-dwm`, `checks.install-ocimum`: empty disk -> offline install -> boots, greeter
       login, `/etc/nixos` evaluates to the running system
-- [x] Live ISO `nixosConfigurations.tulsi-iso` (hybrid ISO = the dd image), artwork, Plymouth;
+- [x] Live ISO `nixosConfigurations.tulsi-iso` (hybrid ISO = the dd image), artwork (boot menus);
       `checks.live-session`, `checks.install-iso-references`, `checks.iso-boot`
 - [ ] Calamares run by hand in QEMU (BIOS and UEFI), Hyper-V Gen 2 and one bare-metal machine
 - [ ] Artwork package of its own (wallpaper and logo without Cinnamon), dwm wallpaper
@@ -146,9 +146,9 @@ Known limits:
       `tulsi upgrade [--check]`, tulsid `CheckUpgrade`/`Upgrade` (undoable), daily
       notification, Software Center Updates page; `VERSION`; `docs/RELEASING.md`
 - [ ] Create the `stable` branch; a real upgrade over the network, checked by hand
-- [ ] Live ISO: an intermittent boot hang under UEFI (2 of 4 test boots, 2026-11-20).
-      Stage 2 stalls before sysinit.target with plymouth-read-write.service unfinished;
-      the same ISO also boots cleanly. Find the cause before a release.
+- [x] Live ISO boot hang under UEFI (2026-11-20): Plymouth raced the graphics driver's
+      takeover from the firmware framebuffer and stopped forwarding the console it
+      redirects, stalling systemd. The ISO has no boot splash now (boot messages show)
 - [ ] Release v0.1.0: ISO + SHA-256 on GitHub Releases
 
 Known limits:

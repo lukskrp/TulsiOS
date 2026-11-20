@@ -14,7 +14,7 @@ untick "Enable Secure Boot").
 ## What is in it
 
 - `default.nix`: the image (nixpkgs' graphical installer base, names, boot menu artwork,
-  Plymouth logo, no ZFS) and what installing needs offline;
+  no boot splash, no ZFS) and what installing needs offline;
 - `live.nix`: the live session, Ocimum Desktop logged in as `nixos`, Calamares started at
   login. Tested on its own by `checks.live-session`;
 - `references.nix`: the reference installs (Ocimum + systemd-boot, dwm + GRUB, see
