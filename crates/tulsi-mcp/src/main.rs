@@ -12,8 +12,8 @@
 //!     claude mcp add tulsi -- tulsi-mcp
 
 mod approval;
-mod packaging;
 mod backend;
+mod packaging;
 mod server;
 mod transport;
 

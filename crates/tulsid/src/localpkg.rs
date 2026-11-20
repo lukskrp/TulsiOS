@@ -11,8 +11,8 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
-pub use tulsi_state::check_expression;
 use crate::git::{self, FileChange};
+pub use tulsi_state::check_expression;
 
 /// What the Software Center shows about a local package.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -71,4 +71,3 @@ pub fn remove_changes(dir: &Path, name: &str) -> Vec<FileChange> {
         })
         .collect()
 }
-

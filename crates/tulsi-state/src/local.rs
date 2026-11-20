@@ -170,8 +170,8 @@ fn copy_interpolation(b: &[char], start: usize, out: &mut String) -> usize {
 pub(crate) fn find_path_literal(code: &str) -> Option<String> {
     let chars: Vec<char> = code.chars().collect();
     for i in 0..chars.len() {
-        let prev_ok = i == 0
-            || !(chars[i - 1].is_ascii_alphanumeric() || "_'-.$}/".contains(chars[i - 1]));
+        let prev_ok =
+            i == 0 || !(chars[i - 1].is_ascii_alphanumeric() || "_'-.$}/".contains(chars[i - 1]));
         if !prev_ok {
             continue;
         }
@@ -231,8 +231,14 @@ stdenv.mkDerivation (finalAttrs: {
             "buildInputs = [ zlib ]; x = builtins.readFile /etc/shadow;",
         );
         let problems = check_expression(&bad);
-        assert!(problems.iter().any(|p| p.contains("builtins.readFile")), "{problems:?}");
-        assert!(problems.iter().any(|p| p.contains("/etc/shadow")), "{problems:?}");
+        assert!(
+            problems.iter().any(|p| p.contains("builtins.readFile")),
+            "{problems:?}"
+        );
+        assert!(
+            problems.iter().any(|p| p.contains("/etc/shadow")),
+            "{problems:?}"
+        );
     }
 
     #[test]

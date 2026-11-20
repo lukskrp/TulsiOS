@@ -26,17 +26,38 @@ const MAX_LISTING: usize = 150;
 
 /// Markers that tell how something is built, by file name.
 const MARKERS: &[(&str, &str)] = &[
-    ("configure", "autotools (./configure && make): stdenv.mkDerivation"),
-    ("configure.ac", "autotools source: stdenv.mkDerivation + autoreconfHook"),
+    (
+        "configure",
+        "autotools (./configure && make): stdenv.mkDerivation",
+    ),
+    (
+        "configure.ac",
+        "autotools source: stdenv.mkDerivation + autoreconfHook",
+    ),
     ("CMakeLists.txt", "CMake: stdenv.mkDerivation + cmake"),
-    ("meson.build", "Meson: stdenv.mkDerivation + meson ninja pkg-config"),
-    ("Cargo.toml", "Rust: rustPlatform.buildRustPackage (cargoHash)"),
+    (
+        "meson.build",
+        "Meson: stdenv.mkDerivation + meson ninja pkg-config",
+    ),
+    (
+        "Cargo.toml",
+        "Rust: rustPlatform.buildRustPackage (cargoHash)",
+    ),
     ("go.mod", "Go: buildGoModule (vendorHash)"),
-    ("pyproject.toml", "Python: python3Packages.buildPythonApplication (pyproject = true)"),
+    (
+        "pyproject.toml",
+        "Python: python3Packages.buildPythonApplication (pyproject = true)",
+    ),
     ("setup.py", "Python: python3Packages.buildPythonApplication"),
     ("package.json", "Node.js: buildNpmPackage (npmDepsHash)"),
-    ("Makefile", "make: stdenv.mkDerivation (check the install target / makeFlags PREFIX=$out)"),
-    ("debian-binary", ".deb package: unpack with dpkg -x, then autoPatchelfHook"),
+    (
+        "Makefile",
+        "make: stdenv.mkDerivation (check the install target / makeFlags PREFIX=$out)",
+    ),
+    (
+        "debian-binary",
+        ".deb package: unpack with dpkg -x, then autoPatchelfHook",
+    ),
 ];
 
 fn workspace() -> PathBuf {
@@ -114,7 +135,14 @@ pub async fn fetch_source(args: &Value) -> Result<(String, Value), String> {
             return Err("url must be http(s)".into());
         }
         let (ok, out, err) = run(
-            nix().args(["store", "prefetch-file", "--json", "--hash-type", "sha256", url]),
+            nix().args([
+                "store",
+                "prefetch-file",
+                "--json",
+                "--hash-type",
+                "sha256",
+                url,
+            ]),
             Duration::from_secs(15 * 60),
         )
         .await?;
@@ -127,7 +155,10 @@ pub async fn fetch_source(args: &Value) -> Result<(String, Value), String> {
             v["hash"].as_str().unwrap_or_default().to_string(),
             url.to_string(),
         )
-    } else if let Some(p) = args["store_path"].as_str().filter(|p| p.starts_with("/nix/store/")) {
+    } else if let Some(p) = args["store_path"]
+        .as_str()
+        .filter(|p| p.starts_with("/nix/store/"))
+    {
         let (ok, out, err) = run(
             nix().args(["hash", "file", "--sri", "--type", "sha256", p]),
             Duration::from_secs(120),
@@ -145,8 +176,11 @@ pub async fn fetch_source(args: &Value) -> Result<(String, Value), String> {
     let kind = sniff(file);
     let mut listing = Vec::new();
     if kind.contains("archive") || kind.contains("package") {
-        if let Ok((true, out, _)) =
-            run(Command::new(BSDTAR).arg("-tf").arg(&path), Duration::from_secs(60)).await
+        if let Ok((true, out, _)) = run(
+            Command::new(BSDTAR).arg("-tf").arg(&path),
+            Duration::from_secs(60),
+        )
+        .await
         {
             listing = out.lines().map(str::to_string).collect();
         }
@@ -163,7 +197,13 @@ pub async fn fetch_source(args: &Value) -> Result<(String, Value), String> {
     let desktop: Vec<&String> = listing.iter().filter(|l| l.ends_with(".desktop")).collect();
     let name = file
         .file_name()
-        .map(|n| n.to_string_lossy().split_once('-').map_or(n.to_string_lossy().into_owned(), |(_, rest)| rest.to_string()))
+        .map(|n| {
+            n.to_string_lossy()
+                .split_once('-')
+                .map_or(n.to_string_lossy().into_owned(), |(_, rest)| {
+                    rest.to_string()
+                })
+        })
         .unwrap_or_default();
     let mut text = format!(
         "Source: {origin}\nStore path: {path}\nFile name: {name}\nHash: {hash}\nKind: {kind}\n"
@@ -172,14 +212,30 @@ pub async fn fetch_source(args: &Value) -> Result<(String, Value), String> {
         text.push_str(&format!("Build hints:\n  - {}\n", hints.join("\n  - ")));
     }
     if !desktop.is_empty() {
-        text.push_str(&format!("Desktop entries: {}\n", desktop.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")));
+        text.push_str(&format!(
+            "Desktop entries: {}\n",
+            desktop
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
     }
     if !listing.is_empty() {
         text.push_str(&format!(
             "Contents ({} entries{}):\n{}\n",
             listing.len(),
-            if listing.len() > MAX_LISTING { ", first shown" } else { "" },
-            listing.iter().take(MAX_LISTING).cloned().collect::<Vec<_>>().join("\n")
+            if listing.len() > MAX_LISTING {
+                ", first shown"
+            } else {
+                ""
+            },
+            listing
+                .iter()
+                .take(MAX_LISTING)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("\n")
         ));
     }
     if origin.starts_with("/nix/store/") {
@@ -259,7 +315,11 @@ pub async fn build_package(args: &Value) -> Result<(String, Value), String> {
         format!(
             "Built {out_path}\nPrograms in bin/: {}\nNext: try_package to run it, then \
              propose_local_package.",
-            if bins.is_empty() { "(none)".to_string() } else { bins.join(", ") }
+            if bins.is_empty() {
+                "(none)".to_string()
+            } else {
+                bins.join(", ")
+            }
         ),
         json!({ "outPath": out_path, "programs": bins }),
     ))
@@ -284,7 +344,11 @@ pub async fn try_package(args: &Value) -> Result<(String, Value), String> {
     };
     let argv: Vec<String> = args["args"]
         .as_array()
-        .map(|a| a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_else(|| vec!["--version".into()]);
     let home = dir.join("try-home");
     let _ = std::fs::remove_dir_all(&home);

@@ -222,7 +222,9 @@ async fn starah(req: &Request) -> Decision {
         let mut decided = broker.receive_decided().await?;
         let (id, status, message) = broker.ask(req.action, &description).await?;
         match status.as_str() {
-            "approved" => return Ok::<_, zbus::Error>(Decision::Approved("Starah (the agent's level)")),
+            "approved" => {
+                return Ok::<_, zbus::Error>(Decision::Approved("Starah (the agent's level)"))
+            }
             "rejected" => return Ok(Decision::Rejected(format!("Starah: {message}"))),
             _ => eprintln!("tulsi-mcp: {message}"),
         }
