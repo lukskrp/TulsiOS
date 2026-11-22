@@ -28,6 +28,8 @@ in
   nodes = { };
 
   testScript = ''
+    import time
+
     # Plain OVMF: OVMFFull needs SMM, which nested KVM under Hyper-V/WSL2 can't enter.
     pc = "${qemu} -m 4096 -smp 4 -nic none -cdrom ${iso}"
     firmware = {
@@ -42,6 +44,16 @@ in
         try:
             with subtest(f"{boot}: boots into the live session with Calamares"):
                 live.start()
+                if boot == "uefi":
+                    # The boot menu: TulsiOS's GRUB theme, the wallpaper cropped to
+                    # the screen. A key stops GRUB's countdown (10 s); Enter then
+                    # boots the default entry. (time.sleep: the machine's own sleep
+                    # runs in the guest, which has no shell before it has booted.)
+                    time.sleep(4)
+                    live.send_key("up")
+                    time.sleep(2)
+                    live.screenshot("grub_uefi")
+                    live.send_key("ret")
                 live.wait_for_unit("multi-user.target", timeout=600)
                 live.succeed("grep -qx 'ID=tulsios' /etc/os-release")
                 live.succeed("test -e /run/current-system/sw/bin/tulsi-install-system")

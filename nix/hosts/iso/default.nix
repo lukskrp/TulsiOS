@@ -42,8 +42,10 @@ in
     volumeID = "TULSIOS_${lib.replaceStrings [ "." ] [ "_" ] version}";
     appendToMenuLabel = " Live";
     splashImage = image "tulsios-syslinux.png" "640x480" wallpaper;
+    # Unused while the theme is set (GRUB's fallback without one).
     efiSplashImage = image "tulsios-grub.png" "1920x1080" wallpaper;
-    grubTheme = null;
+    # The UEFI boot menu: the wallpaper cropped to the screen, not stretched.
+    grubTheme = pkgs.callPackage ../../packages/tulsios-grub-theme.nix { };
   };
 
   # No boot splash: between the boot menu and the desktop the ISO shows boot
