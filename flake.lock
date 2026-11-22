@@ -29,11 +29,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794941773,
-        "narHash": "sha256-3TZoucFgRvhDiKcl4zQPGpijrLdhDOORFbJbUxFb1O0=",
+        "lastModified": 1795363728,
+        "narHash": "sha256-2fNwnF5C2hs+QRqWRtDpEea4NPrkHm4hM2nh57XHd6g=",
         "owner": "lukskrp",
         "repo": "starah",
-        "rev": "15c00cacac7f2011905ac8799259f9176ae34976",
+        "rev": "26d9d7389d90571bef089d2f8bfc7874be1c75b5",
         "type": "github"
       },
       "original": {
