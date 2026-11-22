@@ -19,6 +19,35 @@ let
     coloured = "tulsi-start";
     white = "tulsi-start-white";
   };
+  # Panel applets in order, as gsettings' "panel:side:position:uuid" entries.
+  applets = side: lib.imap0 (i: uuid: "panel1:${side}:${toString i}:${uuid}@cinnamon.org");
+  enabledApplets =
+    "["
+    + lib.concatMapStringsSep ", " (a: "'${a}'") (
+      applets "left" [
+        "menu"
+        "show-desktop"
+        "panel-launchers"
+        "separator"
+        "grouped-window-list"
+      ]
+      ++ applets "right" [
+        "systray"
+        "xapp-status"
+        "notifications"
+        "printers"
+        "removable-drives"
+        "trash"
+        "keyboard"
+        "favorites"
+        "network"
+        "sound"
+        "power"
+        "calendar"
+        "cornerbar"
+      ]
+    )
+    + "]";
 in
 {
   options.ocimum.desktop = {
@@ -75,9 +104,19 @@ in
     ];
 
     # Mint-Y-Dark, the Tulsi Leaf wallpaper and the TulsiOS start button as defaults.
+    # The panel is the fork's default plus Show Desktop and Panel Launchers on the
+    # left and Trash on the right; the desktop shows Computer, Home, Trash and drives.
     services.xserver.desktopManager.cinnamon.extraGSettingsOverrides = ''
       [org.cinnamon]
       app-menu-icon-name='${startIcons.${cfg.startIcon}}'
+      enabled-applets=${enabledApplets}
+
+      [org.nemo.desktop]
+      show-desktop-icons=true
+      computer-icon-visible=true
+      home-icon-visible=true
+      trash-icon-visible=true
+      volumes-visible=true
 
       [org.cinnamon.desktop.interface]
       gtk-theme='Mint-Y-Dark'

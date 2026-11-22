@@ -58,6 +58,9 @@
           share = "/run/current-system/sw/share"
           for icon in ["ocimum-symbolic", "tulsi-start", "tulsi-start-white"]:
               machine.succeed(f"ls {share}/icons/hicolor/scalable/apps/{icon}.svg")
+          for icon in ["tulsi-start", "tulsi-start-white"]:
+              # True vectors, not a bitmap wrapped in an SVG (which blurs when drawn large).
+              machine.fail(f"grep -q 'data:image' {share}/icons/hicolor/scalable/apps/{icon}.svg")
           machine.succeed(f"ls {share}/backgrounds/ocimum/tulsios-leaf.png")
           # System Settings → Backgrounds lists it, by a path that exists.
           listed = machine.succeed(f"grep -o '<filename>[^<]*' {share}/cinnamon-background-properties/ocimum.xml")
@@ -78,6 +81,12 @@
           uri = default("org.cinnamon.desktop.background", "picture-uri")
           assert uri.endswith("/share/backgrounds/ocimum/tulsios-leaf.png'"), uri
           machine.succeed(f"test -f {uri.strip(chr(39)).removeprefix('file://')}")
+          applets = default("org.cinnamon", "enabled-applets")
+          for uuid in ["menu", "show-desktop", "panel-launchers", "grouped-window-list", "trash", "calendar"]:
+              assert f":{uuid}@cinnamon.org'" in applets, (uuid, applets)
+          for key in ["show-desktop-icons", "computer-icon-visible", "home-icon-visible",
+                      "trash-icon-visible", "volumes-visible"]:
+              assert default("org.nemo.desktop", key) == "true", key
 
       with subtest("Super+A opens the Assistant"):
           read = lambda key: machine.succeed(f"su - alice -c 'dconf read {key}'").strip()
@@ -93,7 +102,14 @@
               "gdbus call --session -d org.Cinnamon -o /org/Cinnamon -m org.Cinnamon.Eval Main.runState' "
               "| grep -q 'true,..2'"
           )
-          # The default look: Tulsi Leaf wallpaper and the TulsiOS start button.
+          # The session sees the TulsiOS panel (Cinnamon appends an instance id to
+          # each entry once it has loaded them), and the desktop icons are drawn.
+          applets = su("gsettings get org.cinnamon enabled-applets")
+          for uuid in ["show-desktop", "panel-launchers", "trash"]:
+              assert f":{uuid}@cinnamon.org:" in applets, (uuid, applets)
+          machine.wait_until_succeeds("pgrep -u alice -f bin/.*nemo-desktop")
+          # The default look: Tulsi Leaf wallpaper, the TulsiOS start button, the
+          # panel's Show Desktop, launchers and Trash, desktop icons on the left.
           machine.sleep(10)
           machine.screenshot("desktop")
 
