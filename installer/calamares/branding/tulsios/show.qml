@@ -24,6 +24,9 @@ Presentation
             id: logo
             source: "logo.svg"
             width: 120; height: 120
+            // Render the vector at twice the drawn size, so it stays sharp on HiDPI.
+            sourceSize: Qt.size(240, 240)
+            smooth: true
             fillMode: Image.PreserveAspectFit
             anchors.bottom: title.top
             anchors.bottomMargin: 20

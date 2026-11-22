@@ -22,9 +22,9 @@ strings:
     releaseNotesUrl:     https://github.com/lukskrp/TulsiOS/releases
 
 images:
-    productIcon:         "logo.svg"
-    productLogo:         "logo.svg"
-    productWelcome:      "logo.svg"
+    productIcon:         "logo.png"
+    productLogo:         "logo.png"
+    productWelcome:      "logo.png"
 
 style:
    SidebarBackground:        "#1b1f1c"

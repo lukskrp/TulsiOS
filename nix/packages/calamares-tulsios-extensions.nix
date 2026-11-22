@@ -9,6 +9,7 @@
   calamares-nixos-extensions,
   cinnamon,
   python3,
+  librsvg,
   version ? lib.fileContents ../../VERSION,
 }:
 
@@ -24,7 +25,10 @@ stdenvNoCC.mkDerivation {
     fileset = root;
   };
 
-  nativeBuildInputs = [ python3 ];
+  nativeBuildInputs = [
+    python3
+    librsvg
+  ];
 
   installPhase = ''
     runHook preInstall
@@ -44,10 +48,13 @@ stdenvNoCC.mkDerivation {
     cp -r branding/tulsios $out/share/calamares/branding/
     chmod -R u+w $out/share/calamares/branding
     substituteInPlace $out/share/calamares/branding/tulsios/branding.desc --replace-fail @version@ ${version}
-    # The TulsiOS logo from Ocimum Desktop's sources (not its build).
+    # The TulsiOS logo from Ocimum Desktop's sources (not its build): the vector
+    # for the slideshow, and a 512 px PNG for the branding images, which Calamares
+    # would otherwise rasterise at the SVG's own small size and then scale up.
     icons=${cinnamon.src}/files/usr/share/icons/hicolor/scalable/apps
     if [ -e $icons/tulsi-start.svg ]; then logo=$icons/tulsi-start.svg; else logo=$icons/ocimum.svg; fi
     install -m644 $logo $out/share/calamares/branding/tulsios/logo.svg
+    rsvg-convert -w 512 -h 512 $logo -o $out/share/calamares/branding/tulsios/logo.png
     runHook postInstall
   '';
 

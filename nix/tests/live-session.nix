@@ -68,5 +68,15 @@
         machine.sleep(45)
         machine.screenshot("calamares_welcome")
         machine.succeed("ps -u root -o args= | grep -v -e pkexec -e grep | grep -q calamares")
+
+    with subtest("the installer's logo is sharp: a 512 px PNG and the vector"):
+        branding = machine.succeed(
+            "ls -d /nix/store/*-calamares-tulsios-extensions-*/share/calamares/branding/tulsios | head -1"
+        ).strip()
+        machine.succeed(f"grep -q 'productLogo: *\"logo.png\"' {branding}/branding.desc")
+        size = machine.succeed(f"od -An -tu1 -j16 -N8 {branding}/logo.png").split()
+        width = int.from_bytes(bytes(map(int, size[0:4])), "big")
+        assert width == 512, size
+        machine.fail(f"grep -q 'data:image' {branding}/logo.svg")
   '';
 }
