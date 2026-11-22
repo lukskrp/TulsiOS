@@ -48,6 +48,77 @@ let
       ]
     )
     + "]";
+
+  # Runs once per user, at the session's Initialization phase (before
+  # nemo-desktop draws the desktop): copies the launchers onto the desktop and
+  # gives them positions in the top-right corner. Nemo trusts an executable
+  # launcher, and reads an icon's position from the file's
+  # metadata::nemo-icon-position ("x,y" in desktop pixels; it snaps to its grid).
+  desktopDefaults = pkgs.writeShellApplication {
+    name = "ocimum-desktop-defaults";
+    runtimeInputs = with pkgs; [
+      coreutils
+      gawk
+      gnugrep
+      glib
+      xdg-user-dirs
+      xrandr
+    ];
+    text = ''
+      stamp="''${XDG_STATE_HOME:-$HOME/.local/state}/ocimum/desktop-defaults"
+      [ -e "$stamp" ] && exit 0
+
+      desk=$(xdg-user-dir DESKTOP 2>/dev/null || true)
+      if [ -z "$desk" ] || [ "$desk" = "$HOME" ]; then desk="$HOME/Desktop"; fi
+      mkdir -p "$desk"
+
+      # The primary monitor (else the first connected one): its index among the
+      # active monitors, width and offset.
+      read -r mi mw mx my < <(xrandr --current 2>/dev/null | awk '
+        / connected/ && match($0, /[0-9]+x[0-9]+\+[0-9]+\+[0-9]+/) {
+          split(substr($0, RSTART, RLENGTH), g, /[x+]/)
+          line = (n + 0) " " g[1] " " g[3] " " g[4]; n++
+          if (/ connected primary/) { print line; found = 1; exit }
+          if (first == "") first = line
+        }
+        END { if (!found && first != "") print first }') || true
+
+      # Nemo auto-arranges the desktop (one column from the top left) unless the
+      # desktop folder says otherwise, and then ignores stored positions. Turn it
+      # off for the primary monitor; right-click > Auto-arrange turns it back on.
+      metadata="''${XDG_CONFIG_HOME:-$HOME/.config}/nemo/desktop-metadata"
+      if [ -n "''${mi:-}" ] && ! grep -qs "^\[desktop-monitor-$mi\]" "$metadata"; then
+        mkdir -p "$(dirname "$metadata")"
+        printf '[desktop-monitor-%s]\nnemo-icon-view-auto-layout=false\n\n' "$mi" >> "$metadata"
+      fi
+
+      launchers=(${lib.escapeShellArgs cfg.topRightLaunchers})
+      row=0
+      for launcher in "''${launchers[@]}"; do
+        target="$desk/$(basename "$launcher")"
+        [ -e "$launcher" ] && [ ! -e "$target" ] || continue
+        install -m755 "$launcher" "$target"
+        if [ -n "''${mw:-}" ]; then
+          gio set "$target" metadata::nemo-icon-position \
+            "$((mx + mw - ${toString cell.right})),$((my + ${toString cell.top} + row * ${toString cell.height}))" || true
+          # With its monitor recorded Nemo takes the position as it is; without,
+          # it snaps the icon to a free cell, and counts the icon's own cell as taken.
+          gio set "$target" metadata::monitor "$mi" || true
+        fi
+        row=$((row + 1))
+      done
+
+      mkdir -p "$(dirname "$stamp")"
+      touch "$stamp"
+    '';
+  };
+  # Where the launchers go, in desktop pixels at the default icon size: mirroring
+  # Computer in the top-left corner, then 100 px (one row) apart.
+  cell = {
+    height = 100;
+    right = 146;
+    top = 22;
+  };
 in
 {
   options.ocimum.desktop = {
@@ -76,6 +147,19 @@ in
         `tulsi-start-white`).
       '';
     };
+
+    topRightLaunchers = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = lib.optional (
+        config.services.starah.enable && config.services.starah.session.enable
+      ) "${config.services.starah.session.package}/share/applications/org.starah.Session.desktop";
+      defaultText = lib.literalMD "Starah's Agent Privileges, when Starah's session app is on";
+      description = ''
+        Launchers (.desktop files) put on each user's desktop at their first
+        login, in the top-right corner, one below the other. Users can move or
+        delete them; they are not put back.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -96,6 +180,23 @@ in
       enable = true;
       user = cfg.autoLoginUser;
     };
+
+    # First login: launchers in the desktop's top-right corner (Starah's Agent
+    # Privileges by default). Initialization runs before nemo-desktop starts.
+    environment.etc."xdg/autostart/ocimum-desktop-defaults.desktop" =
+      lib.mkIf (cfg.topRightLaunchers != [ ])
+        {
+          text = ''
+            [Desktop Entry]
+            Type=Application
+            Name=Ocimum Desktop defaults
+            Exec=${lib.getExe desktopDefaults}
+            OnlyShowIn=X-Cinnamon;
+            NoDisplay=true
+            X-GNOME-Autostart-Phase=Initialization
+            X-GNOME-AutoRestart=false
+          '';
+        };
 
     # System Settings → Backgrounds lists the Ocimum wallpapers from here.
     environment.pathsToLink = [

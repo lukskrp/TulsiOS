@@ -7,7 +7,12 @@
   name = "ocimum-desktop";
 
   nodes.machine =
-    { modulesPath, pkgs, ... }:
+    {
+      config,
+      modulesPath,
+      pkgs,
+      ...
+    }:
     {
       imports = [
         self.nixosModules.default
@@ -18,8 +23,15 @@
       # Starah's first-login window would cover the sampled desktop pixel; it has
       # its own test (starah-setup).
       services.starah.session.enable = false;
-      # Diagnostics for the wallpaper subtest.
-      environment.systemPackages = [ pkgs.xprop ];
+      # So its launcher is asked for explicitly (the default follows the session app).
+      ocimum.desktop.topRightLaunchers = [
+        "${config.services.starah.session.package}/share/applications/org.starah.Session.desktop"
+      ];
+      # Diagnostics for the wallpaper subtest; Starah's app for its launcher's icon.
+      environment.systemPackages = [
+        pkgs.xprop
+        config.services.starah.session.package
+      ];
       virtualisation.memorySize = 2048;
     };
 
@@ -108,6 +120,21 @@
           for uuid in ["show-desktop", "panel-launchers", "trash"]:
               assert f":{uuid}@cinnamon.org:" in applets, (uuid, applets)
           machine.wait_until_succeeds("pgrep -u alice -f bin/.*nemo-desktop")
+          # Starah's launcher, on the desktop at first login, trusted (executable)
+          # and placed in the top-right corner.
+          launcher = "/home/alice/Desktop/org.starah.Session.desktop"
+          machine.wait_until_succeeds(f"test -x {launcher}")
+          machine.succeed("test -e /home/alice/.local/state/ocimum/desktop-defaults")
+          position = su(f"gio info -a metadata::nemo-icon-position {launcher}")
+          machine.log(position)
+          found = re.search(r"nemo-icon-position: (\d+),(\d+)", position)
+          assert found is not None, position
+          x, y = int(found.group(1)), int(found.group(2))
+          assert x > 512 and y < 100, (x, y)
+          monitor = su(f"gio info -a metadata::monitor {launcher}")
+          assert "metadata::monitor: 0" in monitor, monitor
+          machine.succeed("grep -A1 '^\\[desktop-monitor-0\\]' /home/alice/.config/nemo/desktop-metadata "
+                          "| grep -qx 'nemo-icon-view-auto-layout=false'")
           # The default look: Tulsi Leaf wallpaper, the TulsiOS start button, the
           # panel's Show Desktop, launchers and Trash, desktop icons on the left.
           machine.sleep(10)
