@@ -1,5 +1,5 @@
-"""Main window: Search, Installed, Extensions, History and Updates pages plus the
-change flow.
+"""Main window: Search, AI Agents, Installed, Extensions, History and Updates
+pages plus the change flow.
 
 Change flow (same for every page): Plan -> confirmation dialog -> Apply ->
 progress panel follows Progress signals -> on Finished refresh everything and
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import threading
 
-from gi.repository import GLib, Gtk
+from gi.repository import Gio, GLib, Gtk
 
 from . import dialogs
 from .client import Client, TulsiError
@@ -77,6 +77,7 @@ class Window(Gtk.ApplicationWindow):
 
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE)
         self.stack.add_titled(self._build_search_page(), "search", "Search")
+        self.stack.add_titled(self._build_ai_page(), "ai", "AI Agents")
         self.stack.add_titled(self._build_installed_page(), "installed", "Installed")
         self.stack.add_titled(self._build_extensions_page(), "extensions", "Extensions")
         self.stack.add_titled(self._build_history_page(), "history", "History")
@@ -138,6 +139,88 @@ class Window(Gtk.ApplicationWindow):
         self.search_stack.add_named(_scrolled(self.search_list), "results")
         page.pack_start(self.search_stack, True, True, 0)
         return page
+
+    def _build_ai_page(self) -> Gtk.Widget:
+        """Agent CLIs and local model runners, picked out of the package index
+        (ai-agents.json, ADR 0023), with the hardware check one click away."""
+        from . import ai_agents, ai_check
+
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin=12)
+        top = Gtk.Box(spacing=12)
+        icon = Gtk.Image.new_from_icon_name("org.tulsi.AIAgents", Gtk.IconSize.DIALOG)
+        icon.set_pixel_size(48)
+        top.pack_start(icon, False, False, 0)
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, valign=Gtk.Align.CENTER)
+        intro = Gtk.Label(
+            label="Cloud agents run on their company's servers: you need an account, not a "
+            "fast computer. Local models run here, privately, if your hardware allows.",
+            xalign=0,
+            wrap=True,
+        )
+        text.pack_start(intro, False, False, 0)
+        self.ai_verdict = Gtk.Label(xalign=0, wrap=True)
+        self.ai_verdict.get_style_context().add_class("dim-label")
+        text.pack_start(self.ai_verdict, False, False, 0)
+        top.pack_start(text, True, True, 0)
+        check = Gtk.Button.new_with_mnemonic("_Check What My Computer Can Run…")
+        check.set_valign(Gtk.Align.CENTER)
+        check.connect("clicked", lambda _b: self.run_ai_check())
+        top.pack_end(check, False, False, 0)
+        page.pack_start(top, False, False, 0)
+
+        sections = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.ai_lists: list[Gtk.ListBox] = []
+        runner = ai_check.last_runner()
+        for section in ai_agents.load():
+            heading = Gtk.Label(xalign=0, margin_top=6)
+            heading.set_markup(f"<b>{GLib.markup_escape_text(section.title)}</b>")
+            sections.pack_start(heading, False, False, 0)
+            note = Gtk.Label(label=section.intro, xalign=0, wrap=True)
+            note.get_style_context().add_class("dim-label")
+            sections.pack_start(note, False, False, 0)
+            listbox = _listbox()
+            for agent in section.agents:
+                # The hardware check's pick (ollama-cuda, …) in place of the plain runner.
+                attr = runner if runner in agent.variants.values() else agent.attr
+                package = Package(
+                    attr=attr,
+                    pname=agent.name,
+                    description=f"{agent.vendor} · {agent.blurb} Needs: {agent.needs}.",
+                )
+                package.installed = attr in self.installed
+                listbox.add(self._package_row(package))
+            frame = Gtk.Frame()
+            frame.add(listbox)
+            sections.pack_start(frame, False, False, 0)
+            self.ai_lists.append(listbox)
+        page.pack_start(_scrolled(sections), True, True, 0)
+
+        # The check (in a terminal) writes its result; show it when it does.
+        self._ai_monitor = Gio.File.new_for_path(str(ai_check.cache_file())).monitor_file(
+            Gio.FileMonitorFlags.NONE, None)
+        self._ai_monitor.connect("changed", lambda *_a: self._show_ai_verdict())
+        self._show_ai_verdict()
+        return page
+
+    def _show_ai_verdict(self) -> None:
+        from . import ai_check
+
+        verdict = ai_check.last_verdict()
+        self.ai_verdict.set_text(
+            f"Last hardware check: {verdict}" if verdict
+            else "Not sure what your computer can run? Check it first.")
+
+    def run_ai_check(self) -> None:
+        """tulsi-ai-check in the desktop's terminal, kept open to read."""
+        import shutil
+        import subprocess
+
+        terminal = shutil.which("tulsi-terminal")
+        if not terminal:
+            self.show_message("tulsi-terminal is not installed.", error=True)
+            return
+        subprocess.Popen([terminal, "--hold", "--", "tulsi-ai-check"], start_new_session=True,
+                         stdin=subprocess.DEVNULL)
 
     def _build_installed_page(self) -> Gtk.Widget:
         self.installed_stack = Gtk.Stack()
@@ -324,6 +407,8 @@ class Window(Gtk.ApplicationWindow):
             self.refresh_history()
         elif name == "search":
             self.search_entry.grab_focus()
+        elif name == "ai":
+            self._show_ai_verdict()
 
     # --------------------------------------------------------------- search
 
@@ -392,7 +477,7 @@ class Window(Gtk.ApplicationWindow):
         self.client.get_state(done, lambda e: self.show_message(e.message, error=True))
 
     def _sync_rows(self) -> None:
-        for row in self.search_list.get_children():
+        for row in [r for box in (self.search_list, *self.ai_lists) for r in box.get_children()]:
             if isinstance(row, PackageRow):
                 row.set_installed(row.package.attr in self.installed)
                 row.set_busy(self.jobs.busy)
@@ -620,7 +705,7 @@ class Window(Gtk.ApplicationWindow):
 
     def _set_busy(self) -> None:
         busy = self.jobs.busy
-        for listbox in (self.search_list, self.installed_list, self.extensions_list):
+        for listbox in (self.search_list, self.installed_list, self.extensions_list, *self.ai_lists):
             for row in listbox.get_children():
                 if isinstance(row, (PackageRow, ExtensionRow)):
                     row.set_busy(busy)

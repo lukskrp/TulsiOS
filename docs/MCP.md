@@ -40,6 +40,9 @@ Then ask, for example: *"install a lightweight video player and enable printing"
 | `build_package` | no | Save a `callPackage` expression as a draft and build it in Nix's sandbox |
 | `try_package` | no | Run a program of the last build briefly (empty home, no display) |
 | `propose_local_package` | **yes, after approval** | Add the built package to this computer as a local package (ADR 0013) |
+| `list_themes` | no | The desktop themes (palettes) the person can switch to (ADR 0021) |
+| `set_theme` | the person's own setting, no approval | Switch their desktop's colours and background; only in their own desktop session |
+| `undo_theme` | the person's own setting, no approval | Back to the theme before (or the desktop's own look) |
 
 Operations use the `state.json` format, e.g. `{"op":"addPackage","name":"vlc"}`
 (see `crates/tulsi-state/src/ops.rs`).

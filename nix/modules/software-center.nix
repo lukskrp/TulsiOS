@@ -38,7 +38,11 @@ in
         message = "ocimum.softwareCenter requires tulsi.daemon.enable = true.";
       }
     ];
-    environment.systemPackages = [ cfg.package ];
+    # tulsi-terminal: the AI Agents page and launcher open tulsi-ai-check in it.
+    environment.systemPackages = [
+      cfg.package
+      (pkgs.callPackage ../packages/tulsi-terminal.nix { })
+    ];
 
     # `tulsi upgrade --check --notify` announces each new release once; its button
     # opens the Software Center's Updates page.

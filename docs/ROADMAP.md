@@ -193,5 +193,35 @@ Known limits:
 - [ ] The release pipeline pushes the SonicDE closure and popular Sonic-built KDE apps to the cache
 - [ ] QXLibre (Qt's XLibre platform plugin); the splash screen's D-Bus timeout at login
 
+### Themes from palettes (ADR 0021)
+- [x] `tulsi-theme`: Omarchy's `colors.toml` → Mint-Y (GTK 3 + Cinnamon, recoloured and
+      compiled at switch time), Mint-Y icon colour, GNOME Terminal profile, background;
+      per person, no rebuild; undo back to the desktop's own look
+- [x] Ten stock palettes (Tulsi Leaf + nine MIT schemes), credited; no Omarchy wallpapers
+- [x] Themes app (`ocimum-themes`): cards, Dark/Light, backgrounds, credits, Install from Git
+      (data only: colours, images, text)
+- [x] tulsi-mcp `list_themes`, `set_theme`, `undo_theme`; `checks.ocimum-themes-vm`
+- [ ] Licensed, credited backgrounds for the stock themes
+- [ ] SonicDE: `checks.sonic-desktop` switches a palette (the colour scheme writer is done)
+- [x] dwm: TulsiOS' colour patch reloads dwm's colours on `xrdb -merge` (bars, borders,
+      tray, dmenu); st's patch takes the terminal colours; GTK settings and the wallpaper
+      survive login; `checks.dwm-session` switches a palette and back
+
+### Agent skills (ADR 0022)
+- [x] `tulsios`, `tulsios-make-theme`, `tulsios-diagnose-crash` skills and a shared AGENTS.md
+- [x] `tulsi.agentSkills`: linked into coding-agent CLIs at login, never over a person's files;
+      `checks.agent-skills`
+
+### AI onboarding (ADR 0023)
+- [x] Software Center "AI Agents" page: agent CLIs, agent IDEs and local runners (Ollama,
+      llama.cpp) from a curated list (`ai-agents.json`), installed like any package;
+      `--page ai`; `checks.ai-agents-index` keeps the list in the package index
+- [x] `tulsi-ai-check`: hardware → which model size classes fit, where and how fast;
+      `tulsi-terminal` opens it in the desktop's own terminal
+- [x] The "AI Agents" launcher: Ocimum's desktop, SonicDE's panel, every menu; dwm
+      Super+Shift+A
+- [ ] Translations of the launcher (ADR 0024: `po/`, 78 languages listed; `.po` files to come)
+- [ ] The Software Center's own strings marked for gettext
+
 Known limits:
 - The Calamares GUI is not covered by automated tests; its install job is (`tulsi-install-system`).

@@ -33,9 +33,13 @@ in
       type = lib.types.package;
       default = pkgs.dwm.override {
         conf = ../../data/dwm/config.h;
-        patches = [ ../../data/dwm/dwm-systray-6.8.diff ];
+        patches = [
+          ../../data/dwm/dwm-systray-6.8.diff
+          # Colours from X resources, reloaded on xrdb -merge (themes, ADR 0021).
+          ../../data/dwm/dwm-colours-xrdb-6.8.diff
+        ];
       };
-      defaultText = lib.literalExpression "pkgs.dwm with TulsiOS's config.h and the systray patch";
+      defaultText = lib.literalExpression "pkgs.dwm with TulsiOS's config.h, the systray and colour patches";
       description = "The dwm package.";
     };
 
@@ -58,7 +62,15 @@ in
       enable = true;
       package = cfg.package;
       extraSessionCommands = ''
-        ${background} || true
+        # The person's theme (tulsi-theme), before dwm reads its colours.
+        if [ -f "$HOME/.config/tulsi/theme.Xresources" ]; then
+          ${pkgs.xrdb}/bin/xrdb -merge "$HOME/.config/tulsi/theme.Xresources" || true
+        fi
+        if [ -f "$HOME/.config/tulsi/theme.wallpaper" ]; then
+          ${pkgs.xwallpaper}/bin/xwallpaper --zoom "$(cat "$HOME/.config/tulsi/theme.wallpaper")" || ${background} || true
+        else
+          ${background} || true
+        fi
         # The status text in the bar (date and time).
         ${pkgs.slstatus}/bin/slstatus &
       '';
@@ -72,7 +84,8 @@ in
 
     environment.systemPackages = [
       pkgs.dmenu
-      pkgs.st
+      # st with its colours from X resources (a theme's terminal colours).
+      (pkgs.st.override { patches = [ ../../data/dwm/st-colours-xrdb-0.9.3.diff ]; })
       pkgs.slstatus
       pkgs.mint-themes
       pkgs.mint-y-icons

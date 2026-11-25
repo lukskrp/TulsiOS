@@ -112,7 +112,7 @@
           shown = su("/tmp/panel.sh")
           machine.log(f"panel: {shown}")
           for want in ["preferred://browser", "org.kde.konsole.desktop", "org.tulsi.SoftwareCenter.desktop",
-                       "org.tulsi.Assistant.desktop", "icon=tulsi-start"]:
+                       "org.tulsi.Assistant.desktop", "org.tulsi.AIAgents.desktop", "icon=tulsi-start"]:
               assert want in shown, (want, shown)
           assert su("xdg-mime query default x-scheme-handler/https").strip() == "brave-origin.desktop"
           machine.sleep(5)

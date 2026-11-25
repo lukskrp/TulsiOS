@@ -15,6 +15,7 @@ mod approval;
 mod backend;
 mod packaging;
 mod server;
+mod themes;
 mod transport;
 
 use std::process::ExitCode;

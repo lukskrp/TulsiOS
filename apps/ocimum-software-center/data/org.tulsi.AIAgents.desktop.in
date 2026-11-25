@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=AI Agents
+GenericName=AI Coding Agents
+Comment=Install AI coding agents and check which local models your computer can run
+Exec=ocimum-software-center --page ai
+Icon=org.tulsi.AIAgents
+Terminal=false
+Categories=GTK;Development;System;
+Keywords=AI;agent;LLM;model;assistant;Claude;Codex;OpenCode;Gemini;Ollama;llama;
+StartupNotify=true
+StartupWMClass=org.tulsi.SoftwareCenter
+Actions=check;
+
+[Desktop Action check]
+Name=Check My Hardware
+Exec=tulsi-terminal --hold -- tulsi-ai-check

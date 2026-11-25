@@ -49,9 +49,11 @@ let
     )
     + "]";
 
-  # Runs once per user, at the session's Initialization phase (before
-  # nemo-desktop draws the desktop): copies the launchers onto the desktop and
-  # gives them positions in the top-right corner. Nemo trusts an executable
+  # Runs at each login, at the session's Initialization phase (before
+  # nemo-desktop draws the desktop): copies launchers it has not placed before
+  # onto the desktop and gives them positions in the top-right corner. Each is
+  # placed once (a list in ~/.local/state/ocimum), so one a person deleted stays
+  # deleted, and one added to TulsiOS later still arrives. Nemo trusts an executable
   # launcher, and reads an icon's position from the file's
   # metadata::nemo-icon-position ("x,y" in desktop pixels; it snaps to its grid).
   desktopDefaults = pkgs.writeShellApplication {
@@ -65,8 +67,20 @@ let
       xrandr
     ];
     text = ''
-      stamp="''${XDG_STATE_HOME:-$HOME/.local/state}/ocimum/desktop-defaults"
-      [ -e "$stamp" ] && exit 0
+      state="''${XDG_STATE_HOME:-$HOME/.local/state}/ocimum"
+      placed="$state/desktop-launchers"
+      mkdir -p "$state"
+      # Before the list there was a stamp, set after placing Starah's launcher.
+      if [ -e "$state/desktop-defaults" ] && [ ! -e "$placed" ]; then
+        echo org.starah.Session.desktop > "$placed"
+      fi
+      touch "$placed"
+      all=(${lib.escapeShellArgs cfg.topRightLaunchers})
+      launchers=()
+      for launcher in "''${all[@]}"; do
+        grep -qxF "$(basename "$launcher")" "$placed" || launchers+=("$launcher")
+      done
+      [ ''${#launchers[@]} -eq 0 ] && exit 0
 
       desk=$(xdg-user-dir DESKTOP 2>/dev/null || true)
       if [ -z "$desk" ] || [ "$desk" = "$HOME" ]; then desk="$HOME/Desktop"; fi
@@ -92,11 +106,12 @@ let
         printf '[desktop-monitor-%s]\nnemo-icon-view-auto-layout=false\n\n' "$mi" >> "$metadata"
       fi
 
-      launchers=(${lib.escapeShellArgs cfg.topRightLaunchers})
-      row=0
+      row=$(wc -l < "$placed")
       for launcher in "''${launchers[@]}"; do
         target="$desk/$(basename "$launcher")"
-        [ -e "$launcher" ] && [ ! -e "$target" ] || continue
+        [ -e "$launcher" ] || continue
+        basename "$launcher" >> "$placed"
+        [ ! -e "$target" ] || continue
         install -m755 "$launcher" "$target"
         if [ -n "''${mw:-}" ]; then
           gio set "$target" metadata::nemo-icon-position \
@@ -107,9 +122,6 @@ let
         fi
         row=$((row + 1))
       done
-
-      mkdir -p "$(dirname "$stamp")"
-      touch "$stamp"
     '';
   };
   # Where the launchers go, in desktop pixels at the default icon size: mirroring
@@ -152,12 +164,15 @@ in
       type = lib.types.listOf lib.types.path;
       default = lib.optional (
         config.services.starah.enable && config.services.starah.session.enable
-      ) "${config.services.starah.session.package}/share/applications/org.starah.Session.desktop";
-      defaultText = lib.literalMD "Starah's Agent Privileges, when Starah's session app is on";
+      ) "${config.services.starah.session.package}/share/applications/org.starah.Session.desktop"
+      # The AI Agents page of the Software Center (ADR 0023).
+      ++ lib.optional config.ocimum.softwareCenter.enable "${config.ocimum.softwareCenter.package}/share/applications/org.tulsi.AIAgents.desktop";
+      defaultText = lib.literalMD "Starah's Agent Privileges, when Starah's session app is on; AI Agents, with the Software Center";
       description = ''
         Launchers (.desktop files) put on each user's desktop at their first
-        login, in the top-right corner, one below the other. Users can move or
-        delete them; they are not put back.
+        login (or the first after a launcher joins the list), in the top-right
+        corner, one below the other. Users can move or delete them; they are
+        not put back.
       '';
     };
 

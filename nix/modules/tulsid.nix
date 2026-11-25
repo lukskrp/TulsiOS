@@ -132,6 +132,10 @@ in
         "cursor-cli"
         "github-copilot-cli"
         "crush"
+        # Google Antigravity, on the Software Center's AI Agents page (ADR 0023).
+        "antigravity-cli"
+        "antigravity-ide"
+        "antigravity-hub"
       ];
       description = ''
         Unfree AI agent CLIs that can be installed (Software Center, `tulsi`) once a

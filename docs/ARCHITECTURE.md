@@ -155,6 +155,23 @@ follows the cursor. Opened on a failed Recipe's draft (`--draft DIR`, from the i
 window's "Edit It Yourself"), it builds it with `tulsi recipe build-draft` and installs it
 through the Software Center's `apply-ops`.
 
+### Themes, `apps/ocimum-themes`, `nix/modules/themes.nix`
+ADR 0021. A theme is Omarchy's `colors.toml` palette plus optional backgrounds
+(stock ones in `share/tulsi/themes`, a person's in `~/.config/tulsi/themes`).
+`tulsi-theme set` turns it into the running desktop's own theme, per person and with
+no rebuild: on Ocimum, Mint-Y's SASS recoloured and compiled with libsass into
+`~/.local/share/themes/Tulsi-<slug>` (GTK 3 + Cinnamon, accent images re-rendered),
+the nearest Mint-Y icon colour, a GNOME Terminal profile and the background; on
+SonicDE a KDE colour scheme; on dwm X resources. `tulsi-theme undo` steps back to the
+desktop's own look. The Themes app (`ocimum-themes`) is the window over it; tulsi-mcp
+offers `list_themes` / `set_theme` / `undo_theme`.
+
+### Agent skills, `agents/`, `nix/modules/agent-skills.nix`
+ADR 0022. `SKILL.md` files (`tulsios`, `tulsios-make-theme`, `tulsios-diagnose-crash`)
+and an `AGENTS.md` at `/etc/tulsi/agents`, linked at login into the folders of the
+coding-agent CLIs a person uses, never over their own files, so those agents change
+the system through `tulsi`.
+
 ### Ocimum Assistant, `apps/ocimum-assistant` (docs/ASSISTANT.md)
 Chat window (Python/GTK 3). It runs `tulsi-mcp` as a subprocess and drives a manual
 tool loop with a pluggable provider: Claude (`claude-opus-5-5` by default, streaming,

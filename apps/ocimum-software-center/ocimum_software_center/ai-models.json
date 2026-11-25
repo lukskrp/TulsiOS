@@ -1,0 +1,11 @@
+{
+  "comment": "Example open models per size class for tulsi-ai-check (ADR 0023). Models change every few months: update the examples and 'as_of', keep the classes. params_b is the smallest size in the class, in billions of parameters; the memory it needs is worked out from it.",
+  "as_of": "2026-11",
+  "classes": [
+    {"id": "tiny", "params_b": 3, "label": "up to 3B", "good_for": "quick questions, autocomplete, summaries", "examples": ["qwen3:1.7b", "llama3.2:3b", "gemma3:1b"]},
+    {"id": "small", "params_b": 7, "label": "7–8B", "good_for": "everyday chat, simple coding help", "examples": ["qwen3:8b", "llama3.1:8b", "mistral:7b"]},
+    {"id": "medium", "params_b": 12, "label": "12–14B", "good_for": "better reasoning, reasonable coding", "examples": ["qwen3:14b", "gemma3:12b", "phi4:14b"]},
+    {"id": "large", "params_b": 27, "label": "27–32B", "good_for": "serious coding and agent use", "examples": ["qwen3-coder:30b", "gemma3:27b", "qwen3:32b"]},
+    {"id": "huge", "params_b": 70, "label": "70B and up", "good_for": "close to the cloud models, slowly", "examples": ["llama3.3:70b", "gpt-oss:120b"]}
+  ]
+}

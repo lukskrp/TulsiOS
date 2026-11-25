@@ -113,6 +113,15 @@
           assert gtk_libs(zpid) == ["${gtk3o}"], gtk_libs(zpid)
           machine.succeed(f"kill {zpid}")
 
+      with subtest("--page ai shows the AI Agents page in the running app (ADR 0023)"):
+          # Hands over to the running instance and exits.
+          machine.succeed(alice("timeout 20 ocimum-software-center --page ai"))
+          machine.sleep(2)
+          machine.screenshot("01-ai-agents")
+          machine.succeed(alice("tulsi-ai-check --json") + " | grep -q '\"verdict\"'")
+          machine.succeed("test -s /home/alice/.cache/tulsi/ai-check.json")
+          print(machine.succeed(alice("NO_COLOR=1 tulsi-ai-check")))
+
       with subtest("search finds packages from the index"):
           machine.succeed(alice("sc-action search cow"))
           machine.sleep(2)

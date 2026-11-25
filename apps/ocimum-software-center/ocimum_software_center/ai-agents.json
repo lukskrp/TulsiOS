@@ -1,0 +1,38 @@
+{
+  "comment": "The Software Center's AI Agents page (ADR 0023). Every attr must exist in the package index; the package's build checks it. Unfree ones need tulsi.daemon.unfreeAgents.",
+  "sections": [
+    {
+      "kind": "cloud-cli",
+      "title": "Coding agents in the terminal",
+      "intro": "Each needs an account or an API key with its company; some can also use local models."
+    },
+    {
+      "kind": "cloud-ide",
+      "title": "Agent IDEs",
+      "intro": "Graphical editors built around an agent."
+    },
+    {
+      "kind": "local-runner",
+      "title": "Run models on this computer",
+      "intro": "Private and offline, if your hardware is up to it. Check what fits first."
+    }
+  ],
+  "agents": [
+    {"attr": "opencode", "name": "OpenCode", "kind": "cloud-cli", "vendor": "SST", "homepage": "https://opencode.ai", "needs": "Any provider's API key, or a local model", "blurb": "Open-source terminal agent that works with many model providers."},
+    {"attr": "claude-code", "name": "Claude Code", "kind": "cloud-cli", "vendor": "Anthropic", "homepage": "https://claude.com/product/claude-code", "needs": "Claude account or API key", "blurb": "Anthropic's agentic coding tool for the terminal."},
+    {"attr": "codex", "name": "Codex CLI", "kind": "cloud-cli", "vendor": "OpenAI", "homepage": "https://github.com/openai/codex", "needs": "ChatGPT account or OpenAI API key", "blurb": "OpenAI's lightweight coding agent for the terminal."},
+    {"attr": "gemini-cli", "name": "Gemini CLI", "kind": "cloud-cli", "vendor": "Google", "homepage": "https://github.com/google-gemini/gemini-cli", "needs": "Google account or Gemini API key", "blurb": "Google's open-source agent that brings Gemini to the terminal."},
+    {"attr": "qwen-code", "name": "Qwen Code", "kind": "cloud-cli", "vendor": "Qwen (Alibaba)", "homepage": "https://github.com/QwenLM/qwen-code", "needs": "Qwen account or an OpenAI-compatible API", "blurb": "Terminal agent tuned for the Qwen coder models."},
+    {"attr": "aider-chat", "name": "Aider", "kind": "cloud-cli", "vendor": "Aider", "homepage": "https://aider.chat", "needs": "Any provider's API key, or a local model", "blurb": "Pair programming in the terminal, committing each change to git."},
+    {"attr": "goose-cli", "name": "Goose", "kind": "cloud-cli", "vendor": "Block", "homepage": "https://block.github.io/goose", "needs": "Any provider's API key, or a local model", "blurb": "Open-source, extensible agent that can install, run, edit and test."},
+    {"attr": "crush", "name": "Crush", "kind": "cloud-cli", "vendor": "Charm", "homepage": "https://github.com/charmbracelet/crush", "needs": "Any provider's API key, or a local model", "blurb": "A glamorous terminal coding agent from the makers of Bubble Tea."},
+    {"attr": "github-copilot-cli", "name": "GitHub Copilot CLI", "kind": "cloud-cli", "vendor": "GitHub", "homepage": "https://github.com/github/copilot-cli", "needs": "GitHub Copilot subscription", "blurb": "GitHub Copilot's coding agent in the terminal."},
+    {"attr": "antigravity-cli", "name": "Antigravity CLI (agy)", "kind": "cloud-cli", "vendor": "Google", "homepage": "https://antigravity.google", "needs": "Google account", "blurb": "Google Antigravity's terminal agent."},
+    {"attr": "amp-cli", "name": "Amp", "kind": "cloud-cli", "vendor": "Amp", "homepage": "https://ampcode.com", "needs": "Amp account", "blurb": "Agentic coding tool, in the terminal."},
+    {"attr": "cursor-cli", "name": "Cursor CLI", "kind": "cloud-cli", "vendor": "Anysphere", "homepage": "https://cursor.com/cli", "needs": "Cursor account", "blurb": "Cursor's agent, without the editor."},
+    {"attr": "antigravity-ide", "name": "Google Antigravity", "kind": "cloud-ide", "vendor": "Google", "homepage": "https://antigravity.google", "needs": "Google account", "blurb": "Agent-first development platform: an editor built around agents."},
+    {"attr": "antigravity-hub", "name": "Antigravity Hub", "kind": "cloud-ide", "vendor": "Google", "homepage": "https://antigravity.google", "needs": "Google account", "blurb": "Desktop app for running several agents across separate projects."},
+    {"attr": "ollama", "name": "Ollama", "kind": "local-runner", "vendor": "Ollama", "homepage": "https://ollama.com", "needs": "Enough memory for a model (see the check)", "blurb": "Download and run open models with one command. Start it with “ollama serve”, then “ollama run MODEL”.", "variants": {"nvidia": "ollama-cuda", "amd": "ollama-rocm", "other-gpu": "ollama-vulkan"}},
+    {"attr": "llama-cpp", "name": "llama.cpp", "kind": "local-runner", "vendor": "ggml.org", "homepage": "https://github.com/ggml-org/llama.cpp", "needs": "A GGUF model file (see the check)", "blurb": "The fast C/C++ engine under many runners: llama-cli, and llama-server with a web chat.", "variants": {"other-gpu": "llama-cpp-vulkan"}}
+  ]
+}

@@ -42,6 +42,9 @@ call undo_change with that id; later changes stay. If a later change edited the 
 lines, it is refused: say which change to undo first.
 - Each change result carries a receipt (structuredContent.receipt). Report only what the \
 receipts say happened.
+- Desktop colours and background: list_themes, set_theme, undo_theme. They change only \
+the person's own settings, so they need no approval; if set_theme says you are not in \
+their session, suggest the Themes app instead.
 
 Packaging software that is not in the Software Center (local packages):
 - Only when search_packages finds nothing suitable. Ask for a download URL if you have none.
@@ -229,6 +232,15 @@ impl<B: Backend> Server<B> {
                 .await
                 .map(|(t, v)| ToolOutput::data(t, v)),
             "propose_local_package" => self.propose_local(args, transport).await,
+            "list_themes" => crate::themes::list()
+                .await
+                .map(|(t, v)| ToolOutput::data(t, v)),
+            "set_theme" => crate::themes::set(args)
+                .await
+                .map(|(t, v)| ToolOutput::data(t, v)),
+            "undo_theme" => crate::themes::undo()
+                .await
+                .map(|(t, v)| ToolOutput::data(t, v)),
             _ => return None,
         };
         Some(out.unwrap_or_else(ToolOutput::error))
@@ -764,6 +776,16 @@ fn tool_list() -> Vec<Value> {
                 "description": { "type": "string" },
                 "origin": { "type": "string", "description": "where the software came from (URL or file name)" },
                 "reason": reason } }), false),
+        tool("list_themes", "Desktop themes",
+            "The desktop themes (palettes) this person can switch to; * marks the one on.",
+            empty.clone(), true),
+        tool("set_theme", "Switch the desktop theme",
+            "Switch this person's desktop colours and background to a theme from list_themes. Their own setting, applied at once and undone with undo_theme; works when you run in their desktop session.",
+            json!({ "type": "object", "required": ["theme"], "properties": {
+                "theme": { "type": "string", "description": "slug from list_themes" },
+                "background": { "type": "integer", "minimum": 0, "default": 0, "description": "which of the theme's backgrounds" } } }), false),
+        tool("undo_theme", "Undo the theme switch",
+            "Go back to the theme before the last switch (or the desktop's own look).", empty, false),
     ]
 }
 
@@ -915,8 +937,9 @@ mod tests {
             .iter()
             .map(|t| t["name"].as_str().unwrap())
             .collect();
-        assert_eq!(tools.len(), 15);
+        assert_eq!(tools.len(), 18);
         assert!(tools.contains(&"undo_change"));
+        assert!(tools.contains(&"set_theme"));
         assert!(tools.contains(&"propose_local_package"));
         assert!(tools.contains(&"apply_configuration_edit"));
         assert_eq!(out[2]["error"]["code"], METHOD_NOT_FOUND);

@@ -115,6 +115,7 @@ tulsid's bootstrap generated that flake on first boot, and only for the developm
 - **Keys.** TulsiOS's `config.h` keeps dwm's keys with Super as the modifier, and adds:
   - Super+A for the Assistant;
   - Super+S for the Software Center;
+  - Super+Shift+A for the Software Center's AI Agents page (ADR 0023);
   - Super+Shift+L for slock.
 - **What Cinnamon would otherwise provide**, `tulsi.dwm` turns on:
   - XDG autostart and `graphical-session.target`, which start Starah's session helper and

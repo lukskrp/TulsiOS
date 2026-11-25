@@ -24,6 +24,8 @@ let
     "applications:org.kde.konsole.desktop"
     "applications:org.tulsi.SoftwareCenter.desktop"
     "applications:org.tulsi.Assistant.desktop"
+    # The Software Center's AI Agents page (ADR 0023).
+    "applications:org.tulsi.AIAgents.desktop"
   ];
   layout = ''
     // TulsiOS (Silver): Sonic's bottom panel, with TulsiOS's start button,

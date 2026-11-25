@@ -17,16 +17,27 @@ static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
 static const char *fonts[]          = { "monospace:size=10" };
 static const char dmenufont[]       = "monospace:size=10";
-/* TulsiOS colours: dark background, leaf green for the selection. */
-static const char col_bg[]          = "#1b1f1c";
-static const char col_border[]      = "#3a423c";
-static const char col_fg[]          = "#c9d1ca";
-static const char col_selfg[]       = "#ffffff";
-static const char col_leaf[]        = "#3f8a4f";
+/* TulsiOS colours: dark background, leaf green for the selection. A theme
+ * (tulsi-theme, ADR 0021) sets them through X resources, dwm.normbgcolor and
+ * the rest, and dwm takes the new ones when they change (dwm-colours-xrdb-6.8.diff). */
+static char normbgcolor[]           = "#1b1f1c";
+static char normbordercolor[]       = "#3a423c";
+static char normfgcolor[]           = "#c9d1ca";
+static char selfgcolor[]            = "#ffffff";
+static char selbgcolor[]            = "#3f8a4f";
+static char selbordercolor[]        = "#3f8a4f";
 static const char *colors[][3]      = {
-	/*               fg         bg         border   */
-	[SchemeNorm] = { col_fg,    col_bg,    col_border },
-	[SchemeSel]  = { col_selfg, col_leaf,  col_leaf   },
+	/*               fg           bg           border   */
+	[SchemeNorm] = { normfgcolor, normbgcolor, normbordercolor },
+	[SchemeSel]  = { selfgcolor,  selbgcolor,  selbordercolor  },
+};
+static const ColourResource resources[] = {
+	{ "dwm.normbgcolor",     normbgcolor },
+	{ "dwm.normbordercolor", normbordercolor },
+	{ "dwm.normfgcolor",     normfgcolor },
+	{ "dwm.selbgcolor",      selbgcolor },
+	{ "dwm.selbordercolor",  selbordercolor },
+	{ "dwm.selfgcolor",      selfgcolor },
 };
 
 /* tagging */
@@ -69,10 +80,11 @@ static const Layout layouts[] = {
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_bg, "-nf", col_fg, "-sb", col_leaf, "-sf", col_selfg, NULL };
+static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
 static const char *termcmd[]  = { "st", NULL };
 static const char *assistantcmd[] = { "ocimum-assistant", NULL };
 static const char *softwarecmd[]  = { "ocimum-software-center", NULL };
+static const char *aiagentscmd[]  = { "ocimum-software-center", "--page", "ai", NULL };
 static const char *lockcmd[]      = { "slock", NULL };
 
 static const Key keys[] = {
@@ -81,6 +93,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_a,      spawn,          {.v = assistantcmd } },
 	{ MODKEY,                       XK_s,      spawn,          {.v = softwarecmd } },
+	{ MODKEY|ShiftMask,             XK_a,      spawn,          {.v = aiagentscmd } }, /* AI Agents (ADR 0023) */
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },

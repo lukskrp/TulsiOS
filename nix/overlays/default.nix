@@ -6,7 +6,9 @@ final: prev: {
   tulsi-package-index = final.callPackage ../packages/package-index.nix { nixpkgsSrc = nixpkgs-src; };
   tulsi-program-index = final.callPackage ../packages/program-index.nix { };
   ocimum-software-center = final.callPackage ../packages/ocimum-software-center.nix { };
+  tulsi-terminal = final.callPackage ../packages/tulsi-terminal.nix { };
   ocimum-nix-editor = final.callPackage ../packages/ocimum-nix-editor.nix { };
+  ocimum-themes = final.callPackage ../packages/ocimum-themes.nix { };
   ocimum-assistant = final.callPackage ../packages/ocimum-assistant.nix { };
   ocimum-greeter = final.callPackage ../packages/ocimum-greeter.nix { };
   tulsi-installer = final.callPackage ../packages/tulsi-installer.nix { };

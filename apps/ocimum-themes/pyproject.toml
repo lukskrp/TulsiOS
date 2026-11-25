@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocimum-themes"
+version = "0.1.0"
+description = "Themes: the desktop's colours and background from palettes (Omarchy's colors.toml)"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject", "libsass"]
+
+[project.scripts]
+tulsi-theme = "tulsi_theme.cli:main"
+ocimum-themes = "ocimum_themes.app:main"
+
+[tool.setuptools.packages.find]
+include = ["tulsi_theme*", "ocimum_themes*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

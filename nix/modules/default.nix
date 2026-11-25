@@ -9,6 +9,8 @@
     ./browser-extensions.nix
     ./software-center.nix
     ./nix-editor.nix
+    ./themes.nix
+    ./agent-skills.nix
     ./assistant.nix
     ./ocimum-desktop.nix
     ./sonic-desktop.nix

@@ -6,10 +6,16 @@
   wrapGAppsHook3,
   gobject-introspection,
   gtk3,
+  gettext,
 }:
 
 let
   root = ../../apps/ocimum-software-center;
+  # TulsiOS' translations (po/<lang>.po), merged into the launchers at build time.
+  po = lib.fileset.toSource {
+    root = ../../po;
+    fileset = lib.fileset.fileFilter (f: f.hasExt "po") ../../po;
+  };
 in
 python3Packages.buildPythonApplication {
   pname = "ocimum-software-center";
@@ -26,6 +32,7 @@ python3Packages.buildPythonApplication {
   nativeBuildInputs = [
     wrapGAppsHook3
     gobject-introspection
+    gettext
   ];
   buildInputs = [ gtk3 ];
   dependencies = [ python3Packages.pygobject3 ];
@@ -41,6 +48,17 @@ python3Packages.buildPythonApplication {
 
   postInstall = ''
     install -Dm644 data/org.tulsi.SoftwareCenter.desktop -t $out/share/applications
+    # The AI Agents shortcut (ADR 0023), with Name[xx]= etc. from each po/xx.po.
+    # msgfmt reads the languages from LINGUAS: the .po files there are.
+    mkdir -p po && cp -r ${po}/. po/ && chmod -R u+w po
+    find po -maxdepth 1 -name '*.po' -printf '%f\n' | sed 's/\.po$//' | sort > po/LINGUAS
+    if [ -s po/LINGUAS ]; then
+      msgfmt --desktop --template=data/org.tulsi.AIAgents.desktop.in -d po \
+        -o $out/share/applications/org.tulsi.AIAgents.desktop
+    else
+      install -Dm644 data/org.tulsi.AIAgents.desktop.in $out/share/applications/org.tulsi.AIAgents.desktop
+    fi
+    install -Dm644 data/org.tulsi.AIAgents.svg -t $out/share/icons/hicolor/scalable/apps
   '';
 
   meta = {

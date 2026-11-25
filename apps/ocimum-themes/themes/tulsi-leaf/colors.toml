@@ -1,0 +1,34 @@
+# Tulsi Leaf: TulsiOS' own colours, the leaf green of the start button and dwm
+# bar on Mint-Y-Dark's greys. The background is Tulsi Leaf (tulsios-leaf.png).
+
+mode = "dark"
+
+accent = "#3f8a4f"
+selection = "#2f3a32"
+muted = "#4a554c"
+
+background = "#1f2420"
+dark_background = "#1b1f1c"
+darker_background = "#141815"
+lighter_background = "#283029"
+
+foreground = "#c9d1ca"
+dark_foreground = "#7d877f"
+light_foreground = "#b7c0b8"
+bright_foreground = "#e4ebe5"
+
+red = "#e06c6c"
+yellow = "#d9b66a"
+orange = "#e0905a"
+green = "#7fb77e"
+cyan = "#6fb3a8"
+blue = "#6f9fd8"
+magenta = "#b88ac9"
+brown = "#6f5040"
+
+bright_red = "#f08080"
+bright_yellow = "#eccc80"
+bright_green = "#98d197"
+bright_cyan = "#86ccc0"
+bright_blue = "#8ab6ec"
+bright_magenta = "#cba0db"

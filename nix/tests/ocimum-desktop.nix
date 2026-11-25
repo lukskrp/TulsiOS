@@ -26,6 +26,7 @@
       # So its launcher is asked for explicitly (the default follows the session app).
       ocimum.desktop.topRightLaunchers = [
         "${config.services.starah.session.package}/share/applications/org.starah.Session.desktop"
+        "${config.ocimum.softwareCenter.package}/share/applications/org.tulsi.AIAgents.desktop"
       ];
       # Diagnostics for the wallpaper subtest; Starah's app for its launcher's icon.
       environment.systemPackages = [
@@ -128,13 +129,22 @@
           # and placed in the top-right corner.
           launcher = "/home/alice/Desktop/org.starah.Session.desktop"
           machine.wait_until_succeeds(f"test -x {launcher}")
-          machine.succeed("test -e /home/alice/.local/state/ocimum/desktop-defaults")
+          machine.succeed("grep -qx org.starah.Session.desktop /home/alice/.local/state/ocimum/desktop-launchers")
           position = su(f"gio info -a metadata::nemo-icon-position {launcher}")
           machine.log(position)
           found = re.search(r"nemo-icon-position: (\d+),(\d+)", position)
           assert found is not None, position
           x, y = int(found.group(1)), int(found.group(2))
           assert x > 512 and y < 100, (x, y)
+          # The AI Agents shortcut (ADR 0023): one row below Starah's, opening the
+          # Software Center's AI Agents page.
+          ai = "/home/alice/Desktop/org.tulsi.AIAgents.desktop"
+          machine.succeed(f"test -x {ai}")
+          machine.succeed(f"grep -qx 'Exec=ocimum-software-center --page ai' {ai}")
+          ai_position = su(f"gio info -a metadata::nemo-icon-position {ai}")
+          ai_found = re.search(r"nemo-icon-position: (\d+),(\d+)", ai_position)
+          assert ai_found is not None, ai_position
+          assert abs(int(ai_found.group(1)) - x) < 50 and int(ai_found.group(2)) > y, ai_position
           monitor = su(f"gio info -a metadata::monitor {launcher}")
           assert "metadata::monitor: 0" in monitor, monitor
           machine.succeed("grep -A1 '^\\[desktop-monitor-0\\]' /home/alice/.config/nemo/desktop-metadata "

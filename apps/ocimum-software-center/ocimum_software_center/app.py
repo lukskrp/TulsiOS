@@ -4,7 +4,7 @@ Exposes actions on the session bus (org.gtk.Actions on /org/tulsi/SoftwareCenter
 so other tools, tests and later the Ocimum Assistant can open the app on a
 specific change. Actions still show the confirmation dialog:
     install(s)  remove(s)  service(s)  add-extension(s)  apply-ops(s)  undo  search(s)
-    history  upgrade
+    show-page(s)  history  upgrade
 (service: turn on services.<name>; add-extension: a store page's link; apply-ops:
 {"ops": [...], "label": "..."}, e.g. a local package a recipe built.)
 """
@@ -41,6 +41,8 @@ class Application(Gtk.Application):
         # "Install from a file or link": the step-by-step tulsi-adopt window with it.
         self._action("install-file", string, lambda path: self._win().open_adopt("file", path))
         self._action("search", string, self._search)
+        # show-page: a page by name (ai: the AI Agents page, the desktops' shortcut).
+        self._action("show-page", string, self._show_page)
         self._action("undo", None, lambda _: self._win().request_undo())
         self._action("history", None, lambda _: self._history())
         self._action("upgrade", None, lambda _: self._win().show_updates())
@@ -70,6 +72,12 @@ class Application(Gtk.Application):
         window = self._win()
         window.stack.set_visible_child_name("search")
         window.search_entry.set_text(text)
+
+    def _show_page(self, name: str) -> None:
+        window = self._win()
+        if window.stack.get_child_by_name(name) is not None:
+            window.stack.set_visible_child_name(name)
+        window.present()
 
     def _apply_ops(self, payload: str) -> None:
         """{"ops": [...], "label": "Installing frob"}: any change, with the usual
@@ -126,6 +134,22 @@ def main() -> int:
     GLib.set_application_name("Software Center")
     GLib.set_prgname(APP_ID)
     app = Application()
+    # --page NAME: that page (--page ai: the AI Agents shortcut).
+    page = None
+    if "--page" in sys.argv:
+        i = sys.argv.index("--page")
+        if i + 1 < len(sys.argv):
+            page = sys.argv[i + 1]
+            del sys.argv[i : i + 2]
+    if page is not None:
+        app.register(None)
+        app.activate_action("show-page", GLib.Variant("s", page))
+        if app.get_is_remote():
+            connection = app.get_dbus_connection()
+            if connection is not None:
+                connection.flush_sync(None)
+            return 0
+        return app.run(sys.argv)
     # --history: the History page (the Assistant's "Recent changes"); --upgrade: the
     # Updates page (the upgrade notification's button). In the running instance if
     # there is one.

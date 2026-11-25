@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Themes
+GenericName=Desktop Colours
+Comment=Change the desktop's colours and background, from ready-made palettes or your own
+Exec=ocimum-themes
+Icon=org.tulsi.Themes
+StartupWMClass=ocimum-themes
+Terminal=false
+Categories=Settings;DesktopSettings;GTK;
+Keywords=theme;colour;color;palette;dark;light;wallpaper;background;omarchy;
+StartupNotify=true

@@ -91,8 +91,10 @@
           gtk3-o
           tulsi-package-index
           tulsi-program-index
+          tulsi-terminal
           ocimum-software-center
           ocimum-nix-editor
+          ocimum-themes
           ocimum-assistant
           ocimum-greeter
           tulsi-installer
@@ -168,12 +170,18 @@
             tulsi-tools
             ocimum-software-center
             ocimum-nix-editor
+            ocimum-themes
             ocimum-assistant
             ocimum-greeter
             tulsi-installer
             calamares-tulsios-extensions
             ;
           gtk3-o-abi = pkgs.gtk3-o.abiCheck;
+          # ADR 0023: every package on the AI Agents page is in the index, and the
+          # unfree ones can be installed (tulsi.daemon.unfreeAgents).
+          ai-agents-index = pkgs.callPackage ./nix/tests/ai-agents-index.nix {
+            inherit (self.nixosConfigurations.tulsi-vm.config.tulsi.daemon) unfreeAgents;
+          };
           vm-toplevel = self.nixosConfigurations.tulsi-vm.config.system.build.toplevel;
           state-packages = test ./nix/tests/state-packages.nix;
           tulsid = test ./nix/tests/tulsid.nix;
@@ -187,6 +195,10 @@
           adopt = test ./nix/tests/adopt.nix;
           # ADR 0019: the Nix Editor with nixd, offline, and its guide.
           nix-editor = test ./nix/tests/nix-editor.nix;
+          # ADR 0021: themes from palettes, on Ocimum.
+          ocimum-themes-vm = test ./nix/tests/ocimum-themes.nix;
+          # ADR 0022: TulsiOS skills for coding-agent CLIs.
+          agent-skills = test ./nix/tests/agent-skills.nix;
           # ADR 0020: SonicDE, the KDE-style desktop on X11.
           sonic-desktop = test ./nix/tests/sonic-desktop.nix;
           nix-guide = pkgs.callPackage ./nix/tests/nix-guide.nix { };
