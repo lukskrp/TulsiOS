@@ -127,6 +127,20 @@ pub fn describe_all(ops: &[Op]) -> String {
 }
 
 impl State {
+    /// `ops` as they are meant: removing a package made on this computer
+    /// (`tulsi remove frob`, the Software Center's Remove) is removing the local
+    /// package, so its record, its kept download and `tulsi/pkgs/<name>` go too.
+    pub fn resolve_ops(&self, ops: Vec<Op>) -> Vec<Op> {
+        ops.into_iter()
+            .map(|op| match op {
+                Op::RemovePackage { name } if self.local_packages.contains(&name) => {
+                    Op::RemoveLocalPackage { name }
+                }
+                op => op,
+            })
+            .collect()
+    }
+
     /// Returns a new state with `ops` applied, validated. Adding something
     /// already present is a no-op; removing something absent is an error so
     /// typos are reported instead of silently ignored.
@@ -482,6 +496,19 @@ mod tests {
             .with_ops(&ops(r#"[{"op":"removeLocalPackage","name":"frob"}]"#))
             .unwrap();
         assert_eq!(gone, base);
+        // A plain removePackage of it means the same, once resolved.
+        let resolved = next.resolve_ops(ops(
+            r#"[{"op":"removePackage","name":"frob"},{"op":"removePackage","name":"vlc"}]"#,
+        ));
+        assert_eq!(
+            describe_all(&resolved),
+            "remove local package frob, remove vlc"
+        );
+        assert_eq!(
+            next.with_ops(&resolved[..1]).unwrap(),
+            base,
+            "record, package and kept download all go"
+        );
         assert!(base
             .with_ops(&ops(
                 r#"[{"op":"addLocalPackage","name":"Bad/Name","expression":"x"}]"#

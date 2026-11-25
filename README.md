@@ -28,10 +28,21 @@ tulsi search video player         # search 130k+ nixpkgs packages
 tulsi install vlc gimp            # asks for your password, rebuilds, done
 tulsi remove gimp
 tulsi ext add firefox uBlock0@raymondhill.net
-tulsi service enable docker
+tulsi service enable printing     # services.printing.enable
 tulsi -n install obs-studio       # dry run: show what would change
 tulsi history                     # every change is a git commit in /etc/nixos
 tulsi undo                        # revert the latest change
+```
+
+Any other NixOS setting goes into `configuration.nix`, through `tulsi config` so it is
+recorded and undoable like the rest. Docker, for example:
+
+```sh
+tulsi config show > ~/configuration.nix
+# add:  virtualisation.docker.enable = true;
+# and "docker" to the extraGroups list in your users.users block
+tulsi config diff ~/configuration.nix
+tulsi config apply ~/configuration.nix --summary "Docker"
 ```
 
 ### Let an AI agent do it

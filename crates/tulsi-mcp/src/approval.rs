@@ -193,20 +193,9 @@ where
     }
 }
 
-#[zbus::proxy(
-    interface = "org.starah.Broker1",
-    default_service = "org.starah.Broker1",
-    default_path = "/org/starah/Broker1"
-)]
-trait StarahBroker {
-    fn ask(&self, action: &str, description: &str) -> zbus::Result<(u64, String, String)>;
-    #[zbus(signal)]
-    fn decided(&self, id: u64, approved: bool, status: &str) -> zbus::Result<()>;
-}
-
 /// Asks Starah's broker; waits for the human when the agent's level says so.
 async fn starah(req: &Request) -> Decision {
-    use futures_util::StreamExt;
+    use tulsi_client::agents::{starah_ask, Decision as Starah};
 
     let description = json!({
         "title": req.title,
@@ -215,35 +204,13 @@ async fn starah(req: &Request) -> Decision {
         "diff": req.diff,
     })
     .to_string();
-    let asked = async {
-        let conn = zbus::Connection::system().await?;
-        let broker = StarahBrokerProxy::new(&conn).await?;
-        // Subscribe before asking, so a quick answer is not missed.
-        let mut decided = broker.receive_decided().await?;
-        let (id, status, message) = broker.ask(req.action, &description).await?;
-        match status.as_str() {
-            "approved" => {
-                return Ok::<_, zbus::Error>(Decision::Approved("Starah (the agent's level)"))
-            }
-            "rejected" => return Ok(Decision::Rejected(format!("Starah: {message}"))),
-            _ => eprintln!("tulsi-mcp: {message}"),
-        }
-        while let Some(signal) = decided.next().await {
-            let a = signal.args()?;
-            if a.id == id {
-                return Ok(if a.approved {
-                    Decision::Approved("Starah (the human)")
-                } else {
-                    Decision::Rejected(format!("the request was {} in Starah", a.status))
-                });
-            }
-        }
-        Ok(Decision::Rejected("lost the connection to Starah".into()))
-    };
-    match tokio::time::timeout(DIALOG_TIMEOUT, asked).await {
-        Ok(Ok(decision)) => decision,
-        Ok(Err(e)) => Decision::Rejected(format!("cannot ask Starah: {e}")),
-        Err(_) => Decision::Rejected("nobody answered the request in Starah".into()),
+    let decision = starah_ask(req.action, &description, DIALOG_TIMEOUT, |message| {
+        eprintln!("tulsi-mcp: {message}")
+    })
+    .await;
+    match decision {
+        Starah::Approved(by) => Decision::Approved(by),
+        Starah::Rejected(why) => Decision::Rejected(why),
     }
 }
 

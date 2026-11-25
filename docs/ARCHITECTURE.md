@@ -83,8 +83,12 @@ unfree packages unless `nixpkgs.config.allowUnfree` is set, all before any rebui
 
 ### tulsi CLI, `crates/tulsi-cli`
 `tulsi install|remove PKG…`, `tulsi search WORDS…`, `tulsi ext add|remove firefox|chromium ID`,
-`tulsi service enable|disable NAME`, `tulsi undo`, `tulsi status`, `tulsi history`,
-`--dry-run`. Runs `pkttyagent` for terminal password prompts when no desktop agent exists.
+`tulsi service enable|disable NAME`, `tulsi config show|diff FILE|apply FILE --summary TEXT`
+(any other NixOS setting, through tulsid's `GetConfig`/`PlanConfig`/`ApplyConfig`, like
+tulsi-mcp's configuration tools), `tulsi undo [ID]`, `tulsi status`, `tulsi history`,
+Recipes, upgrades, `--dry-run`. `service enable` refuses names that are settings, not
+`services.*` (docker, podman, libvirtd, steam…), and points at `tulsi config`. Runs
+`pkttyagent` for terminal password prompts when no desktop agent exists.
 
 ### Ocimum Software Center, `apps/ocimum-software-center`, `nix/modules/software-center.nix`
 Python + PyGObject on GTK 3 (ADR 0005), so on TulsiOS it runs on GTK3-O. Pages:

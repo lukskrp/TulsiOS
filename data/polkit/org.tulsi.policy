@@ -2,6 +2,9 @@
 <!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
   "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
+  <!-- Changes ask every time (auth_admin, not _keep): a coding agent a person
+       started in their terminal runs as them, and must not ride on an approval
+       given minutes earlier for something else (ADR 0026). -->
   <vendor>TulsiOS</vendor>
   <action id="org.tulsi.apply">
     <description>Change the system configuration</description>
@@ -10,7 +13,7 @@
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
-      <allow_active>auth_admin_keep</allow_active>
+      <allow_active>auth_admin</allow_active>
     </defaults>
   </action>
   <!-- configuration.nix edits a NixOS rollback does not fully undo: accounts,
@@ -24,7 +27,7 @@
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
-      <allow_active>auth_admin_keep</allow_active>
+      <allow_active>auth_admin</allow_active>
     </defaults>
   </action>
   <!-- Moving to a newer TulsiOS release (ADR 0017). Undo takes it back, but it
@@ -36,7 +39,7 @@
     <defaults>
       <allow_any>auth_admin</allow_any>
       <allow_inactive>auth_admin</allow_inactive>
-      <allow_active>auth_admin_keep</allow_active>
+      <allow_active>auth_admin</allow_active>
     </defaults>
   </action>
   <!-- Changes that only add or remove browser extensions. The

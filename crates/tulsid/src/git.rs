@@ -128,6 +128,14 @@ pub async fn put(dir: &Path, rel: &str, contents: Option<&[u8]>) -> Result<(), S
                 std::fs::remove_file(&path)
                     .map_err(|e| format!("cannot remove {}: {e}", path.display()))?;
             }
+            // Folders left empty (a local package's tulsi/pkgs/NAME) go too.
+            let mut parent = path.parent();
+            while let Some(p) = parent.filter(|p| *p != dir && p.starts_with(dir)) {
+                if std::fs::remove_dir(p).is_err() {
+                    break; // not empty
+                }
+                parent = p.parent();
+            }
             // Unlike `git add`, this also works if git never knew the file.
             git(
                 dir,

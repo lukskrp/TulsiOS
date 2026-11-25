@@ -1,0 +1,38 @@
+# Hong Kong Cantonese translations for TulsiOS package.
+# Copyright (C) 2026 THE TulsiOS'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the TulsiOS package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TulsiOS\n"
+"Report-Msgid-Bugs-To: https://github.com/lukskrp/TulsiOS\n"
+"POT-Creation-Date: 2026-11-25 15:44+0200\n"
+"PO-Revision-Date: 2026-11-25 16:00+0200\n"
+"Last-Translator: \n"
+"Language-Team: none\n"
+"Language: zh_HK\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:3
+msgid "AI Agents"
+msgstr "AI 智能體"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:4
+msgid "AI Coding Agents"
+msgstr "AI 編程智能體"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:5
+msgid ""
+"Install AI coding agents and check which local models your computer can run"
+msgstr "安裝 AI 編程智能體，查看你嘅電腦可以運行邊啲本地模型"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:10
+msgid "AI;agent;LLM;model;assistant;Claude;Codex;OpenCode;Gemini;Ollama;llama;"
+msgstr "AI;智能體;大型語言模型;模型;助手;Claude;Codex;OpenCode;Gemini;Ollama;llama;"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:16
+msgid "Check My Hardware"
+msgstr "檢查我嘅硬件"

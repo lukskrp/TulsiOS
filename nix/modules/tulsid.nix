@@ -49,8 +49,9 @@ let
   };
 
   configurationTemplate = pkgs.writeText "tulsi-configuration.nix" ''
-    # Your own NixOS settings. Edit freely; rebuild with
-    #   sudo nixos-rebuild switch --flake ${cfg.flakeDir}#${cfg.flakeHost}
+    # Your own NixOS settings. Change them with `tulsi config`, so each edit is
+    # recorded and can be undone: `tulsi config show > FILE`, edit FILE, then
+    # `tulsi config apply FILE --summary "what changed"`.
     { config, lib, pkgs, ... }:
     {
     }

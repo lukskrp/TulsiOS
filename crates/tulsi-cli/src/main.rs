@@ -9,7 +9,8 @@ use std::process::ExitCode;
 
 use futures_util::StreamExt;
 use tulsi_client::{
-    Candidate, HistoryEntry, ManagerProxy, MatchHint, PackageInfo, Plan, UndoPlan, UpgradeInfo,
+    Candidate, ConfigPlan, HistoryEntry, ManagerProxy, MatchHint, PackageInfo, Plan, UndoPlan,
+    UpgradeInfo,
 };
 use tulsi_state::{Browser, Op, State};
 
@@ -31,9 +32,12 @@ usage: tulsi [-n|--dry-run] [-q|--quiet] <command>
 
 change the system (asks for authorization):
   install PKG...                    install nixpkgs packages (e.g. vlc, python3Packages.requests)
-  remove PKG...                     remove packages installed with tulsi
+  remove PKG...                     remove packages installed with tulsi (alias: uninstall)
   ext add|remove BROWSER ID         browser extension (firefox | chromium) by store id
   service enable|disable NAME       toggle a NixOS service (services.NAME.enable)
+  config apply FILE --summary TEXT  replace configuration.nix with FILE (any other NixOS
+                                    setting: Docker, groups, firewall, drivers…); recorded,
+                                    rolled back if the rebuild fails, undone with `undo`
   keep-source NAME on|off           keep the download a package made on this computer is
                                     built from (on), or let cleanup remove it (off)
   undo [CHANGE]                     revert the most recent change, or the change with
@@ -48,6 +52,9 @@ inspect:
                                     name (e.g. `match --tool apt python3-requests`)
   inspect FILE                      what a downloaded file is, as JSON (kind, name,
                                     version, programs inside)
+  config show                       print configuration.nix (copy it, edit the copy)
+  config diff FILE                  what `config apply FILE` would change, and whether it
+                                    is routine or always asks the person
 
 package downloaded software without a model (Recipes, ADR 0018):
   recipe plan FILE                  which recipe fits, and the suggested answers (JSON)
@@ -91,6 +98,17 @@ async fn main() -> ExitCode {
     }
     let args: Vec<&str> = args.iter().map(String::as_str).collect();
 
+    // A coding agent the person started (ADR 0026): its changes are made as the
+    // agent's own Starah account, so the person's level for it decides.
+    if changes_system(&opts, &args) {
+        if let Some(name) = tulsi_client::agents::detect_here() {
+            let declared = tulsi_client::agents::declared_agents();
+            if let Some(agent) = tulsi_client::agents::starah_agent(&name, &declared) {
+                return relay_through_starah(&opts, &args, &name, &agent);
+            }
+        }
+    }
+
     match run(&opts, &args).await {
         Ok(code) => code,
         Err(msg) => {
@@ -129,6 +147,14 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
                 keep: *setting == "on",
             }]
         }
+        ["service", "enable", name] if setting_not_service(name).is_some() => {
+            let option = setting_not_service(name).unwrap_or_default();
+            eprintln!(
+                "tulsi: {name} is not a service: it is `{option} = true;`, a system setting.
+                 Add it to configuration.nix with `tulsi config` (see `tulsi help`)."
+            );
+            return Ok(ExitCode::from(2));
+        }
         ["service", action @ ("enable" | "disable"), name] => {
             vec![Op::SetService {
                 name: name.to_string(),
@@ -140,6 +166,22 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
         ["upgrade", "--check"] => return check_upgrade(false).await,
         ["upgrade", "--check", "--notify"] | ["upgrade", "--notify", "--check"] => {
             return check_upgrade(true).await
+        }
+        ["config", "show"] => {
+            out!(
+                "{}",
+                proxy().await?.get_config().await.map_err(dbus)?.trim_end()
+            );
+            return Ok(ExitCode::SUCCESS);
+        }
+        ["config", "diff", file] => {
+            return config_diff(Path::new(file))
+                .await
+                .map(|_| ExitCode::SUCCESS)
+        }
+        ["config", "apply", file, "--summary", summary]
+        | ["config", "apply", "--summary", summary, file] => {
+            return config_apply(opts, Path::new(file), summary).await
         }
         ["undo" | "rollback"] => return undo(opts, None).await,
         ["undo" | "rollback", commit] => return undo(opts, Some(commit)).await,
@@ -275,10 +317,247 @@ async fn change(opts: &Options, ops: Vec<Op>) -> Result<ExitCode, String> {
     if opts.dry_run {
         return Ok(ExitCode::SUCCESS);
     }
+    starah_gate(
+        tulsi_client::ops_action(&ops),
+        &tulsi_state::describe_all(&ops),
+        &plan.changes,
+        None,
+    )
+    .await?;
 
     let proxy_ref = &proxy;
     run_job(opts, proxy_ref, || async move {
         proxy_ref.apply(&ops_json).await
+    })
+    .await
+}
+
+/// NixOS settings people ask to "enable" that are not `services.NAME`: `tulsi
+/// service enable docker` would fail at the rebuild ("option does not exist").
+fn setting_not_service(name: &str) -> Option<&'static str> {
+    Some(match name {
+        "docker" => "virtualisation.docker.enable",
+        "podman" => "virtualisation.podman.enable",
+        "libvirt" | "libvirtd" => "virtualisation.libvirtd.enable",
+        "virtualbox" => "virtualisation.virtualbox.host.enable",
+        "lxd" => "virtualisation.lxd.enable",
+        "incus" => "virtualisation.incus.enable",
+        "waydroid" => "virtualisation.waydroid.enable",
+        "containerd" => "virtualisation.containerd.enable",
+        "steam" => "programs.steam.enable",
+        "nix-ld" => "programs.nix-ld.enable",
+        "gamemode" => "programs.gamemode.enable",
+        _ => return None,
+    })
+}
+
+/// A file's contents, or standard input's for `-`.
+fn read_input(file: &Path) -> Result<String, String> {
+    if file == Path::new("-") {
+        let mut text = String::new();
+        std::io::Read::read_to_string(&mut std::io::stdin(), &mut text)
+            .map_err(|e| format!("standard input: {e}"))?;
+        return Ok(text);
+    }
+    std::fs::read_to_string(file).map_err(|e| format!("{}: {e}", file.display()))
+}
+
+fn read_config_file(file: &Path) -> Result<String, String> {
+    read_input(file)
+}
+
+/// Commands that change the system (not dry runs, not reading).
+fn changes_system(opts: &Options, args: &[&str]) -> bool {
+    !opts.dry_run
+        && matches!(
+            args,
+            ["install" | "remove" | "uninstall", _, ..]
+                | ["ext", "add" | "remove", _, _]
+                | ["keep-source", _, _]
+                | ["service", "enable" | "disable", _]
+                | ["config", "apply", ..]
+                | ["undo" | "rollback", ..]
+                | ["upgrade"]
+                | ["recipe", "install", _]
+        )
+}
+
+/// The arguments to run as the agent, with files it could not read from its
+/// sandbox replaced by `-` (their contents go on standard input).
+type Relay = (Vec<String>, Option<String>);
+
+fn relay_args(args: &[&str]) -> Result<Relay, String> {
+    let own = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+    Ok(match args {
+        ["config", "apply", file, "--summary", summary]
+        | ["config", "apply", "--summary", summary, file] => (
+            own(&["config", "apply", "-", "--summary", summary]),
+            Some(read_input(Path::new(file))?),
+        ),
+        ["recipe", "install", file] => (
+            own(&["recipe", "install", "-"]),
+            Some(read_input(Path::new(file))?),
+        ),
+        _ => (own(args), None),
+    })
+}
+
+/// Runs this command again as Starah agent `agent` (`starah run`), passing the
+/// output and exit status through.
+fn relay_through_starah(opts: &Options, args: &[&str], name: &str, agent: &str) -> ExitCode {
+    use std::io::Write as _;
+    let (args, input) = match relay_args(args) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("tulsi: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let me = Path::new("/run/current-system/sw/bin/tulsi");
+    let me = if me.exists() {
+        me.to_path_buf()
+    } else {
+        std::env::current_exe().unwrap_or_else(|_| "tulsi".into())
+    };
+    eprintln!(
+        "tulsi: started by the coding agent {name:?}: making this change as Starah agent \
+         {agent:?}, so the level the person chose for it decides"
+    );
+    let mut cmd = std::process::Command::new("starah");
+    cmd.args(["run", "--agent", agent, "--"]).arg(me);
+    if opts.quiet {
+        cmd.arg("-q");
+    }
+    cmd.args(&args);
+    if input.is_some() {
+        cmd.stdin(std::process::Stdio::piped());
+    }
+    let mut child = match cmd.spawn() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("tulsi: cannot start starah: {e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    if let (Some(text), Some(mut stdin)) = (input, child.stdin.take()) {
+        let _ = stdin.write_all(text.as_bytes());
+    }
+    match child.wait() {
+        Ok(status) => ExitCode::from(status.code().unwrap_or(1).clamp(0, 255) as u8),
+        Err(e) => {
+            eprintln!("tulsi: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Inside Starah (`STARAH_AGENT` set): asks the broker about a change before
+/// making it. The agent's level answers, or the person in Starah's Agent
+/// Request window; an approval lets this one change through. Elsewhere, polkit
+/// asks the person as usual and this does nothing.
+async fn starah_gate(
+    action: &str,
+    title: &str,
+    changes: &[String],
+    diff: Option<&str>,
+) -> Result<(), String> {
+    use tulsi_client::agents::{starah_ask, Decision, STARAH_AGENT_ENV};
+    if std::env::var(STARAH_AGENT_ENV).map_or(true, |a| a.is_empty()) {
+        return Ok(());
+    }
+    let description = serde_json::json!({
+        "title": title,
+        "reason": "",
+        "changes": changes,
+        "diff": diff,
+    })
+    .to_string();
+    let decision = starah_ask(
+        action,
+        &description,
+        std::time::Duration::from_secs(15 * 60),
+        |message| {
+            eprintln!("tulsi: {message}");
+            eprintln!("tulsi: waiting for the person to answer in Starah's Agent Request window…");
+        },
+    )
+    .await;
+    match decision {
+        Decision::Approved(by) => {
+            eprintln!("tulsi: approved by {by}");
+            Ok(())
+        }
+        Decision::Rejected(why) => Err(format!("NotAuthorized: {why}")),
+    }
+}
+
+/// Prints what replacing configuration.nix with `file` changes and which approval
+/// it needs; returns the new contents and whether anything changes.
+async fn config_diff(file: &Path) -> Result<(String, bool), String> {
+    config_plan(file).await.map(|p| (p.new, p.changed))
+}
+
+struct ConfigEdit {
+    new: String,
+    changed: bool,
+    diff: String,
+    action: &'static str,
+}
+
+async fn config_plan(file: &Path) -> Result<ConfigEdit, String> {
+    let new = read_config_file(file)?;
+    let proxy = proxy().await?;
+    let old = proxy.get_config().await.map_err(dbus)?;
+    let plan: ConfigPlan = serde_json::from_str(&proxy.plan_config(&new).await.map_err(dbus)?)
+        .map_err(|e| format!("bad reply from tulsid: {e}"))?;
+    if !plan.changed {
+        out!("Nothing to change.");
+        return Ok(ConfigEdit {
+            new,
+            changed: false,
+            diff: String::new(),
+            action: tulsi_client::ACTION_APPLY,
+        });
+    }
+    out!("{}", plan.diff.trim_end());
+    let (action, outside) = tulsi_client::config_action(&old, &new);
+    if action == tulsi_client::ACTION_APPLY {
+        out!("Approval: routine ({action}); a rollback undoes it completely.");
+    } else {
+        out!(
+            "Approval: always asks the person ({action}), because it changes: {}",
+            outside.join(", ")
+        );
+    }
+    Ok(ConfigEdit {
+        new,
+        changed: true,
+        diff: plan.diff,
+        action,
+    })
+}
+
+async fn config_apply(opts: &Options, file: &Path, summary: &str) -> Result<ExitCode, String> {
+    if summary.trim().is_empty() {
+        return Err("--summary needs a short description of the edit".into());
+    }
+    let edit = config_plan(file).await?;
+    if !edit.changed || opts.dry_run {
+        return Ok(ExitCode::SUCCESS);
+    }
+    starah_gate(
+        edit.action,
+        &format!("Edit configuration.nix: {summary}"),
+        &[summary.to_string()],
+        Some(&edit.diff),
+    )
+    .await?;
+    let new = edit.new;
+    let proxy = proxy().await?;
+    let proxy_ref = &proxy;
+    let (new, summary) = (new.as_str(), summary);
+    run_job(opts, proxy_ref, || async move {
+        proxy_ref.apply_config(new, summary).await
     })
     .await
 }
@@ -311,6 +590,13 @@ async fn undo(opts: &Options, commit: Option<&str>) -> Result<ExitCode, String> 
     if opts.dry_run {
         return Ok(ExitCode::SUCCESS);
     }
+    starah_gate(
+        &plan.action,
+        &format!("Undo {}", plan.summary.trim_start_matches("tulsi: ")),
+        &plan.changes,
+        None,
+    )
+    .await?;
     let proxy_ref = &proxy;
     let commit = commit.as_str();
     run_job(opts, proxy_ref, || async move {
@@ -348,6 +634,13 @@ fn print_upgrade_info(info: &UpgradeInfo) {
 }
 
 async fn upgrade(opts: &Options) -> Result<ExitCode, String> {
+    starah_gate(
+        tulsi_client::ACTION_UPGRADE,
+        "Upgrade TulsiOS to the newest release",
+        &[],
+        None,
+    )
+    .await?;
     let proxy = proxy().await?;
     let proxy_ref = &proxy;
     run_job(opts, proxy_ref, || async move { proxy_ref.upgrade().await }).await
@@ -555,8 +848,7 @@ async fn recipe_plan(file: &Path) -> tulsi_recipes::Plan {
 /// The ops that install what `recipe build` printed (saved to `result`): accepting
 /// its licence if it is proprietary, and adding it as a local package.
 fn recipe_install_ops(result: &Path) -> Result<Vec<Op>, String> {
-    let text = std::fs::read_to_string(result)
-        .map_err(|e| format!("cannot read {}: {e}", result.display()))?;
+    let text = read_input(result).map_err(|e| format!("cannot read {e}"))?;
     let v: serde_json::Value =
         serde_json::from_str(&text).map_err(|e| format!("{}: {e}", result.display()))?;
     if v["ok"] != serde_json::Value::Bool(true) {
@@ -738,6 +1030,40 @@ fn print_summary(state: &State) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn which_commands_go_through_starah() {
+        let o = super::Options {
+            dry_run: false,
+            quiet: false,
+        };
+        let changing = |a: &[&str]| super::changes_system(&o, a);
+        assert!(changing(&["install", "vlc"]));
+        assert!(changing(&["config", "apply", "f", "--summary", "s"]));
+        assert!(changing(&["undo"]) && changing(&["upgrade"]));
+        assert!(!changing(&["search", "vlc"]) && !changing(&["upgrade", "--check"]));
+        assert!(!changing(&["config", "diff", "f"]) && !changing(&["status"]));
+        let dry = super::Options {
+            dry_run: true,
+            quiet: false,
+        };
+        assert!(!super::changes_system(&dry, &["install", "vlc"]));
+        let (args, input) = super::relay_args(&["install", "vlc"]).unwrap();
+        assert_eq!(
+            (args, input),
+            (vec!["install".to_string(), "vlc".into()], None)
+        );
+    }
+
+    #[test]
+    fn settings_that_are_not_services() {
+        assert_eq!(
+            super::setting_not_service("docker"),
+            Some("virtualisation.docker.enable")
+        );
+        assert_eq!(super::setting_not_service("printing"), None);
+        assert_eq!(super::setting_not_service("openssh"), None);
+    }
+
     #[test]
     fn formats_time() {
         assert_eq!(super::format_time(0), "1970-01-01 00:00");

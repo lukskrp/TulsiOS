@@ -1,0 +1,19 @@
+{
+  "comment": "Coding-agent CLIs TulsiOS gates through Starah (ADR 0026). `markers` are environment variables each CLI sets for the commands it runs, checked against the CLI's source (value \"*\": any value). `generic` variables carry an agent's name; the skill asks agents to set TULSI_AGENT. An agent the system does not know runs as `fallback`. Read by tulsi-client (Rust) and nix/modules/agent-gating.nix.",
+  "fallback": "terminal-agent",
+  "generic": ["TULSI_AGENT", "AI_AGENT", "AGENT"],
+  "agents": [
+    {"name": "claude", "title": "Claude Code", "attr": "claude-code", "markers": {"CLAUDECODE": "1"}},
+    {"name": "codex", "title": "Codex CLI", "attr": "codex", "markers": {"CODEX_THREAD_ID": "*"}},
+    {"name": "gemini", "title": "Gemini CLI", "attr": "gemini-cli", "markers": {"GEMINI_CLI": "1"}},
+    {"name": "qwen", "title": "Qwen Code", "attr": "qwen-code", "markers": {"QWEN_CODE": "1"}},
+    {"name": "crush", "title": "Crush", "attr": "crush", "markers": {"CRUSH": "1"}},
+    {"name": "goose", "title": "Goose", "attr": "goose-cli", "markers": {"GOOSE_TERMINAL": "1"}},
+    {"name": "opencode", "title": "OpenCode", "attr": "opencode", "markers": {}},
+    {"name": "aider", "title": "Aider", "attr": "aider-chat", "markers": {}},
+    {"name": "copilot", "title": "GitHub Copilot CLI", "attr": "github-copilot-cli", "markers": {}},
+    {"name": "amp", "title": "Amp", "attr": "amp-cli", "markers": {}},
+    {"name": "cursor", "title": "Cursor CLI", "attr": "cursor-cli", "markers": {}},
+    {"name": "agy", "title": "Antigravity CLI", "attr": "antigravity-cli", "markers": {}}
+  ]
+}

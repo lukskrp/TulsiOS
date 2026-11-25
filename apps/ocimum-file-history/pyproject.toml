@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocimum-file-history"
+version = "0.1.0"
+description = "File History (earlier versions from /home's snapshots) and the TulsiOS Welcome window"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+ocimum-file-history = "ocimum_file_history.app:main"
+tulsi-file-history = "ocimum_file_history.cli:main"
+tulsi-welcome = "ocimum_file_history.welcome_app:main"
+
+[tool.setuptools.packages.find]
+include = ["ocimum_file_history*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

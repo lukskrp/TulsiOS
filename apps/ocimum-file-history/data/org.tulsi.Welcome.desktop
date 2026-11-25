@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to TulsiOS
+Comment=Start here: the Software Center, AI agents, themes and your files' history
+Exec=tulsi-welcome
+Icon=tulsi-start
+Terminal=false
+Categories=GTK;System;
+StartupNotify=true

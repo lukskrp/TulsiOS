@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to TulsiOS
+Comment=Shown once, at the first login after installing TulsiOS
+Exec=tulsi-welcome --first-login
+Icon=tulsi-start
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-Delay=5

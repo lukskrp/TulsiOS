@@ -23,6 +23,9 @@ description: >
      FILE` (the `tulsios` skill), which wraps it with what it needs.
    - "cannot open display" or D-Bus errors from a terminal outside the session:
      run it from the desktop's own terminal.
+   - Debugging tools are a command away without installing them:
+     `nix shell nixpkgs#gdb nixpkgs#strace`, then `strace -f PROGRAM` or
+     `gdb -p PID`.
    - A GTK 3 program drawing wrongly: TulsiOS runs every GTK 3 program on GTK3-O
      (an ABI-compatible GTK 3 fork). Note it in the report; the theme can be
      switched back with `tulsi-theme undo` to rule a theme out.

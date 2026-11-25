@@ -1,0 +1,8 @@
+[Nemo Action]
+Name=Previous Versions…
+Comment=Earlier versions of %N in your files' history
+Exec=ocimum-file-history %F
+Icon-Name=document-open-recent
+Selection=s
+Extensions=any;
+Quote=double

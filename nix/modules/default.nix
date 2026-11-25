@@ -23,5 +23,8 @@
     ./adopt.nix
     ./kernel.nix
     ./branding.nix
+    ./cleanup.nix
+    ./agent-gating.nix
+    ./home-snapshots.nix
   ];
 }

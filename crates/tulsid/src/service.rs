@@ -429,9 +429,9 @@ impl Manager {
 
     /// What `ops` would change, without applying anything.
     async fn plan(&self, ops: &str) -> Result<String> {
-        let ops = parse_ops(ops)?;
-        self.check_packages(&ops)?;
         let old = self.current_state()?;
+        let ops = old.resolve_ops(parse_ops(ops)?);
+        self.check_packages(&ops)?;
         let new = old.with_ops(&ops)?;
         let plan = Plan {
             changes: old.diff(&new),
@@ -448,7 +448,7 @@ impl Manager {
         #[zbus(connection)] conn: &Connection,
         ops: &str,
     ) -> Result<u64> {
-        let ops = parse_ops(ops)?;
+        let ops = self.current_state()?.resolve_ops(parse_ops(ops)?);
         self.check_packages(&ops)?;
         self.refuse_agent_licence(conn, &hdr, &ops).await?;
         self.authorize(conn, &hdr, required_action(&ops)).await?;

@@ -28,6 +28,8 @@
 
 use serde::{Deserialize, Serialize};
 
+pub mod agents;
+
 pub use tulsi_state::{Browser, Op, State};
 
 pub const BUS_NAME: &str = "org.tulsi.Manager1";

@@ -44,7 +44,8 @@ async fn run(args: &[&str]) -> Result<String, String> {
 /// `list_themes`: the palettes, which is on, dark or light.
 pub async fn list() -> Result<(String, Value), String> {
     let text = run(&["list", "--json"]).await?;
-    let themes: Value = serde_json::from_str(&text).map_err(|e| format!("tulsi-theme list: {e}"))?;
+    let themes: Value =
+        serde_json::from_str(&text).map_err(|e| format!("tulsi-theme list: {e}"))?;
     let lines = themes
         .as_array()
         .into_iter()
@@ -52,7 +53,11 @@ pub async fn list() -> Result<(String, Value), String> {
         .map(|t| {
             format!(
                 "{}{} ({}, {})",
-                if t["current"].as_bool() == Some(true) { "* " } else { "  " },
+                if t["current"].as_bool() == Some(true) {
+                    "* "
+                } else {
+                    "  "
+                },
                 t["slug"].as_str().unwrap_or("?"),
                 t["name"].as_str().unwrap_or("?"),
                 t["mode"].as_str().unwrap_or("?"),
@@ -86,7 +91,10 @@ pub async fn undo() -> Result<(String, Value), String> {
         return Err(NO_SESSION.into());
     }
     let said = run(&["undo"]).await?;
-    Ok((said.clone(), json!({ "receipt": { "undone": true, "now": said } })))
+    Ok((
+        said.clone(),
+        json!({ "receipt": { "undone": true, "now": said } }),
+    ))
 }
 
 #[cfg(test)]

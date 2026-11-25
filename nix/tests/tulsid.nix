@@ -78,6 +78,39 @@
         machine.fail(f"grep -q cowsay {state}")
         machine.succeed(as_user("alice", "tulsi history") + " | grep -q 'undo install cowsay'")
 
+    with subtest("tulsi config: other settings, recorded and undoable"):
+        config = machine.succeed(as_user("alice", "tulsi config show"))
+        # This machine has no configuration.nix yet (show prints nothing): start one.
+        body = config.rstrip().removesuffix("}") if config.strip() else "{ config, lib, pkgs, ... }:\n{\n"
+        def write(name, lines):
+            text = body + "".join(f"  {line}\n" for line in lines) + "}\n"
+            path = machine.shared_dir / f"{name}.nix"
+            path.write_text(text)
+            machine.succeed(f"install -m644 /tmp/shared/{name}.nix /tmp/{name}.nix")
+        if not config.strip():
+            # Creating the file is a top-level change (it asks; alice is an administrator).
+            write("base", [])
+            machine.succeed(as_user("alice", 'tulsi config apply /tmp/base.nix --summary "start configuration.nix"'))
+        write("docker", ["virtualisation.docker.enable = true;"])
+        out = machine.succeed(as_user("alice", "tulsi config diff /tmp/docker.nix"))
+        assert "+  virtualisation.docker.enable = true;" in out and "always asks" in out, out
+        write("hello", ["environment.systemPackages = [ pkgs.hello ];"])
+        out = machine.succeed(as_user("alice", "tulsi config diff /tmp/hello.nix"))
+        assert "routine" in out, out
+        machine.fail(as_user("alice", "tulsi config apply /tmp/hello.nix --summary \" \""))
+        rebuilds = int(machine.succeed("wc -l < /tmp/rebuilds"))
+        out = machine.succeed(as_user("alice", 'tulsi config apply /tmp/hello.nix --summary "hello from config"'))
+        assert "Done" in out, out
+        machine.succeed("grep -q 'pkgs.hello' /etc/nixos/configuration.nix")
+        machine.succeed("git -C /etc/nixos log -1 --format=%s | grep -q 'hello from config'")
+        assert int(machine.succeed("wc -l < /tmp/rebuilds")) == rebuilds + 1
+        machine.succeed(as_user("alice", "tulsi undo"))
+        machine.fail("grep -q 'pkgs.hello' /etc/nixos/configuration.nix")
+
+    with subtest("Docker and the like are settings, not services: tulsi says so"):
+        rc, out = machine.execute(as_user("alice", "tulsi service enable docker 2>&1"))
+        assert rc == 2 and "virtualisation.docker.enable" in out and "tulsi config" in out, (rc, out)
+
     with subtest("users who are not administrators are refused"):
         out = machine.fail(as_user("bob", "tulsi install sl 2>&1"))
         assert "NotAuthorized" in out, out

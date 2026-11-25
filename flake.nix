@@ -95,6 +95,8 @@
           ocimum-software-center
           ocimum-nix-editor
           ocimum-themes
+          ocimum-file-history
+          tulsi-wiki
           ocimum-assistant
           ocimum-greeter
           tulsi-installer
@@ -199,6 +201,13 @@
           ocimum-themes-vm = test ./nix/tests/ocimum-themes.nix;
           # ADR 0022: TulsiOS skills for coding-agent CLIs.
           agent-skills = test ./nix/tests/agent-skills.nix;
+          agent-skills-commands = pkgs.callPackage ./nix/tests/agent-skills-commands.nix { };
+          # ADR 0025: old system versions are removed weekly.
+          cleanup = test ./nix/tests/cleanup.nix;
+          # ADR 0026: coding agents started in a terminal change the system through Starah.
+          agent-gating = test ./nix/tests/agent-gating.nix;
+          # ADR 0027: home folder snapshots, File History, the Welcome window, the trash.
+          home-snapshots = test ./nix/tests/home-snapshots.nix;
           # ADR 0020: SonicDE, the KDE-style desktop on X11.
           sonic-desktop = test ./nix/tests/sonic-desktop.nix;
           nix-guide = pkgs.callPackage ./nix/tests/nix-guide.nix { };

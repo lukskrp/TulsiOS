@@ -211,6 +211,10 @@ Known limits:
 - [x] `tulsios`, `tulsios-make-theme`, `tulsios-diagnose-crash` skills and a shared AGENTS.md
 - [x] `tulsi.agentSkills`: linked into coding-agent CLIs at login, never over a person's files;
       `checks.agent-skills`
+- [x] The `tulsios` skill covers every kind of change: the right scope (`nix run`/`nix shell`,
+      dev shells, `tulsi install`, services, `tulsi config` for other settings, Recipes),
+      approval and refusals, undo, pip/npm, upgrades, tulsi-mcp; `tulsi config` added to the
+      CLI; `checks.agent-skills-commands` keeps the skills' commands real
 
 ### AI onboarding (ADR 0023)
 - [x] Software Center "AI Agents" page: agent CLIs, agent IDEs and local runners (Ollama,
@@ -222,6 +226,22 @@ Known limits:
       Super+Shift+A
 - [ ] Translations of the launcher (ADR 0024: `po/`, 78 languages listed; `.po` files to come)
 - [ ] The Software Center's own strings marked for gettext
+
+### Disk, agents in terminals, home folder history (ADRs 0025-0027)
+- [x] Weekly cleanup: system versions older than 30 days (the newest 10 kept), `nix-store --gc`,
+      store optimisation, 10 boot entries, journal capped at 1 GB; `checks.cleanup`
+- [x] Coding agents started in a terminal change the system as their own Starah accounts
+      (recognised by their environment variables, or `TULSI_AGENT`); people's approvals are
+      no longer remembered; `checks.agent-gating`
+- [x] Step 2 (ADR 0028): agent CLIs installed through TulsiOS start under Starah
+      (`starah run --interactive`: a terminal, the project folder through an idmapped mount,
+      their own home with TulsiOS' skills, API keys); "May use my whole home folder" per agent
+      in Agent Privileges, explained in the Welcome window
+- [x] The TulsiOS Wiki, offline (`docs/wiki` → HTML, app menu, `tulsi-wiki`): AI agents and
+      Starah (with the warning about agents installed outside TulsiOS), file history, disk space
+- [x] btrfs by default; opt-in snapshots of /home from the Welcome window; File History
+      (restore, Free Space Now, right-click "Previous Versions…"); the trash empties after
+      30 days; `checks.home-snapshots`
 
 Known limits:
 - The Calamares GUI is not covered by automated tests; its install job is (`tulsi-install-system`).

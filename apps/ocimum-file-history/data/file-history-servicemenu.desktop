@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Service
+MimeType=all/all;
+Actions=previousVersions;
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+
+[Desktop Action previousVersions]
+Name=Previous Versions…
+Icon=document-open-recent
+Exec=ocimum-file-history %f

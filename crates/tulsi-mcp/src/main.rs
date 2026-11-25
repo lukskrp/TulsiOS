@@ -68,6 +68,16 @@ async fn main() -> ExitCode {
         }
     };
 
+    // Started by a coding agent the person runs (claude mcp add tulsi -- tulsi-mcp):
+    // serve as that agent's own Starah account, so the person's level for it decides
+    // (ADR 0026). Only in the default mode; an explicit mode is the person's choice.
+    if mode == Mode::Auto && !approver_given {
+        if let Some(err) = run_as_starah_agent() {
+            eprintln!("tulsi-mcp: {err}");
+            return ExitCode::FAILURE;
+        }
+    }
+
     let backend = match backend::Dbus::connect().await {
         Ok(b) => b,
         Err(e) => {
@@ -80,4 +90,27 @@ async fn main() -> ExitCode {
         .serve(&mut transport)
         .await;
     ExitCode::SUCCESS
+}
+
+/// Replaces this process with `starah run --agent NAME -- tulsi-mcp --approval
+/// starah` when a known agent CLI started it and Starah declares an agent for it.
+/// Returns only on failure (or with None when there is nothing to do).
+fn run_as_starah_agent() -> Option<String> {
+    use std::os::unix::process::CommandExt;
+    use tulsi_client::agents;
+
+    let name = agents::detect_here()?;
+    let agent = agents::starah_agent(&name, &agents::declared_agents())?;
+    let me = ["/run/current-system/sw/bin/tulsi-mcp"]
+        .into_iter()
+        .map(std::path::PathBuf::from)
+        .find(|p| p.exists())
+        .or_else(|| std::env::current_exe().ok())?;
+    eprintln!("tulsi-mcp: started by {name}; serving as Starah agent {agent:?}");
+    let err = std::process::Command::new("starah")
+        .args(["run", "--agent", &agent, "--"])
+        .arg(me)
+        .args(["--approval", "starah"])
+        .exec();
+    Some(format!("cannot start through Starah: {err}"))
 }

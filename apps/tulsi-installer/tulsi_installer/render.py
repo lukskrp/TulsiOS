@@ -193,10 +193,11 @@ def configuration_nix(c: Choices) -> str:
     validate(c)
     s = nix_string
     out = [
-        "# This machine's own NixOS settings, written by the TulsiOS installer. Edit",
-        "# freely; software chosen in the Software Center or the Assistant is kept in",
-        "# ./tulsi/state.json instead. Rebuild with",
-        f"#   sudo nixos-rebuild switch --flake /etc/nixos#{c.hostname}",
+        "# This machine's own NixOS settings, written by the TulsiOS installer.",
+        "# Software chosen in the Software Center or the Assistant is kept in",
+        "# ./tulsi/state.json instead. Change these settings with `tulsi config`, so",
+        "# each edit is recorded and can be undone: `tulsi config show > FILE`, edit",
+        "# FILE, then `tulsi config apply FILE --summary \"what changed\"`.",
         "{ config, lib, pkgs, ... }:",
         "",
         "{",

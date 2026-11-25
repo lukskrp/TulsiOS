@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=File History
+GenericName=Previous Versions
+Comment=Bring back earlier versions of your files and folders
+Exec=ocimum-file-history %f
+Icon=document-open-recent
+Terminal=false
+Categories=GTK;Utility;FileTools;
+Keywords=restore;undo;deleted;previous;version;snapshot;backup;history;
+StartupNotify=true

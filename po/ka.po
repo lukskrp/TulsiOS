@@ -1,0 +1,38 @@
+# Georgian translations for TulsiOS package.
+# Copyright (C) 2026 THE TulsiOS'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the TulsiOS package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TulsiOS\n"
+"Report-Msgid-Bugs-To: https://github.com/lukskrp/TulsiOS\n"
+"POT-Creation-Date: 2026-11-25 15:44+0200\n"
+"PO-Revision-Date: 2026-11-25 16:00+0200\n"
+"Last-Translator: \n"
+"Language-Team: none\n"
+"Language: ka\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:3
+msgid "AI Agents"
+msgstr "ხელოვნური ინტელექტის აგენტები"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:4
+msgid "AI Coding Agents"
+msgstr "ხელოვნური ინტელექტის კოდირების აგენტები"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:5
+msgid ""
+"Install AI coding agents and check which local models your computer can run"
+msgstr "დააყენეთ ხელოვნური ინტელექტის კოდირების აგენტები და შეამოწმეთ, რომელი ადგილობრივი მოდელებით შეძლებთ მუშაობას"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:10
+msgid "AI;agent;LLM;model;assistant;Claude;Codex;OpenCode;Gemini;Ollama;llama;"
+msgstr "ხელოვნური ინტელექტი;აგენტი;დიდი ენის მოდელი;მოդელი;ასისტენტი;Claude;Codex;OpenCode;Gemini;Ollama;llama;"
+
+#: apps/ocimum-software-center/data/org.tulsi.AIAgents.desktop.in:16
+msgid "Check My Hardware"
+msgstr "ჰარდवेარის შემოწმება"

@@ -9,6 +9,8 @@ final: prev: {
   tulsi-terminal = final.callPackage ../packages/tulsi-terminal.nix { };
   ocimum-nix-editor = final.callPackage ../packages/ocimum-nix-editor.nix { };
   ocimum-themes = final.callPackage ../packages/ocimum-themes.nix { };
+  ocimum-file-history = final.callPackage ../packages/ocimum-file-history.nix { };
+  tulsi-wiki = final.callPackage ../packages/tulsi-wiki.nix { };
   ocimum-assistant = final.callPackage ../packages/ocimum-assistant.nix { };
   ocimum-greeter = final.callPackage ../packages/ocimum-greeter.nix { };
   tulsi-installer = final.callPackage ../packages/tulsi-installer.nix { };

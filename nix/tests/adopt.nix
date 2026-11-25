@@ -437,6 +437,14 @@ in
         machine.fail(kept)
         machine.succeed(alice("tulsi undo"))
         machine.succeed(kept)
+        # `tulsi remove` of it removes the local package: its record, kept download and files.
+        machine.succeed(alice("tulsi remove squeezer"))
+        machine.succeed("! jq -e '.localPackages | index(\"squeezer\")' /etc/nixos/tulsi/state.json")
+        machine.fail(kept)
+        machine.succeed("test ! -e /etc/nixos/tulsi/pkgs/squeezer")
+        machine.succeed(alice("tulsi undo"))
+        machine.succeed("test -e /etc/nixos/tulsi/pkgs/squeezer/package.nix")
+        machine.succeed(kept)
         # Taking back the install itself (by its id) removes the package and its kept download.
         install = machine.succeed("git -C /etc/nixos log -1 --format=%H --grep='add local package squeezer'").strip()
         machine.succeed(alice(f"tulsi undo {install}"))
