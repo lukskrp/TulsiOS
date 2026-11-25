@@ -2,6 +2,7 @@
   lib,
   rustPlatform,
   libarchive,
+  bubblewrap,
   gitMinimal,
 }:
 
@@ -31,6 +32,8 @@ rustPlatform.buildRustPackage {
   # tulsi-mcp's packaging tools list archives with bsdtar (ADR 0013). Compiled in rather
   # than wrapped, so the process keeps its name (`pgrep -x tulsi-mcp`, Starah's audit).
   env.TULSI_BSDTAR = lib.getExe' libarchive "bsdtar";
+  # Recipes try a built program in a bubblewrap sandbox (ADR 0018).
+  env.TULSI_BWRAP = lib.getExe bubblewrap;
 
   postInstall = ''
     install -Dm444 data/dbus/org.tulsi.Manager1.conf -t $out/share/dbus-1/system.d

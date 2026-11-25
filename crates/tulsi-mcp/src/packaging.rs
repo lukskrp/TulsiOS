@@ -14,11 +14,7 @@ use serde_json::{json, Value};
 use tokio::process::Command;
 
 const NIXPKGS: &str = "/etc/tulsi/nixpkgs";
-/// bsdtar from the Nix build (nix/packages/tulsi-tools.nix), else the one on PATH.
-const BSDTAR: &str = match option_env!("TULSI_BSDTAR") {
-    Some(path) => path,
-    None => "bsdtar",
-};
+use tulsi_inspect::BSDTAR;
 const BUILD_TIMEOUT: Duration = Duration::from_secs(45 * 60);
 const RUN_TIMEOUT: Duration = Duration::from_secs(20);
 const LOG_LINES: usize = 60;
@@ -95,39 +91,6 @@ fn nix() -> Command {
     c
 }
 
-/// What kind of file this is, from its first bytes and name.
-fn sniff(path: &Path) -> &'static str {
-    let mut head = [0u8; 16];
-    let n = std::fs::File::open(path)
-        .and_then(|mut f| std::io::Read::read(&mut f, &mut head))
-        .unwrap_or(0);
-    let head = &head[..n];
-    let name = path.to_string_lossy().to_lowercase();
-    if head.starts_with(b"\x7fELF") {
-        if head.len() > 10 && &head[8..11] == b"AI\x02" {
-            "AppImage (use appimageTools.wrapType2)"
-        } else {
-            "ELF executable (prebuilt binary: autoPatchelfHook)"
-        }
-    } else if head.starts_with(b"!<arch>\ndebian") || name.ends_with(".deb") {
-        ".deb package"
-    } else if head.starts_with(&[0xed, 0xab, 0xee, 0xdb]) {
-        ".rpm package (unpack with rpmextract / rpm2cpio)"
-    } else if head.starts_with(b"PK") {
-        "zip archive (fetchzip, or unzip in nativeBuildInputs)"
-    } else if head.starts_with(&[0x1f, 0x8b])
-        || head.starts_with(&[0xfd, b'7', b'z', b'X', b'Z'])
-        || head.starts_with(b"BZh")
-        || head.starts_with(&[0x28, 0xb5, 0x2f, 0xfd])
-    {
-        "compressed tar archive"
-    } else if head.starts_with(b"#!") {
-        "script / self-extracting installer (read it before packaging)"
-    } else {
-        "unknown file type"
-    }
-}
-
 /// `fetch_source`: downloads (or takes from the store) a source and describes it.
 pub async fn fetch_source(args: &Value) -> Result<(String, Value), String> {
     let (path, hash, origin) = if let Some(url) = args["url"].as_str().filter(|u| !u.is_empty()) {
@@ -173,9 +136,10 @@ pub async fn fetch_source(args: &Value) -> Result<(String, Value), String> {
     };
 
     let file = Path::new(&path);
-    let kind = sniff(file);
+    let sniffed = tulsi_inspect::sniff(file);
+    let kind = sniffed.hint();
     let mut listing = Vec::new();
-    if kind.contains("archive") || kind.contains("package") {
+    if sniffed.listable() {
         if let Ok((true, out, _)) = run(
             Command::new(BSDTAR).arg("-tf").arg(&path),
             Duration::from_secs(60),

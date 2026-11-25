@@ -160,6 +160,39 @@ in
         delete them; they are not put back.
       '';
     };
+
+    browser = {
+      package = lib.mkOption {
+        type = lib.types.nullOr lib.types.package;
+        default = pkgs.brave-origin;
+        defaultText = lib.literalExpression "pkgs.brave-origin";
+        description = ''
+          The web browser that comes with the desktop (also on the live USB), set
+          as the default browser and put in the panel's launchers. Brave Origin:
+          Brave without Rewards, Wallet, VPN or AI. null: no browser.
+        '';
+      };
+      desktopFile = lib.mkOption {
+        type = lib.types.str;
+        default = "brave-origin.desktop";
+        description = "The browser's menu entry (.desktop file name).";
+      };
+    };
+
+    panelLaunchers = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [
+        "nemo.desktop"
+      ]
+      ++ lib.optional (cfg.browser.package != null) cfg.browser.desktopFile
+      ++ [ "org.gnome.Terminal.desktop" ];
+      defaultText = lib.literalMD "Files, the browser (`browser.desktopFile`) and Terminal";
+      description = ''
+        Menu entries (.desktop file names) in the panel's launchers, next to the
+        start button, for each user's first session. Users can change them (right
+        click > Configure); a user's own list is never replaced.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -198,6 +231,17 @@ in
           '';
         };
 
+    # The browser: installed, and opening web links.
+    environment.systemPackages = lib.optional (cfg.browser.package != null) cfg.browser.package;
+    xdg.mime.defaultApplications = lib.mkIf (cfg.browser.package != null) (
+      lib.genAttrs [
+        "text/html"
+        "application/xhtml+xml"
+        "x-scheme-handler/http"
+        "x-scheme-handler/https"
+      ] (_: lib.mkDefault cfg.browser.desktopFile)
+    );
+
     # System Settings → Backgrounds lists the Ocimum wallpapers from here.
     environment.pathsToLink = [
       "/share/backgrounds"
@@ -211,6 +255,10 @@ in
       [org.cinnamon]
       app-menu-icon-name='${startIcons.${cfg.startIcon}}'
       enabled-applets=${enabledApplets}
+      # The launchers applet imports this list into its own settings on a user's
+      # first session, then marks it DEPRECATED (Cinnamon's upgrade path from the
+      # old key): a default for new users that never replaces a user's own list.
+      panel-launchers=[${lib.concatMapStringsSep ", " (l: "'${l}'") cfg.panelLaunchers}]
 
       [org.nemo.desktop]
       show-desktop-icons=true

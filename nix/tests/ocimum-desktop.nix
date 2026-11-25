@@ -30,6 +30,8 @@
       # Diagnostics for the wallpaper subtest; Starah's app for its launcher's icon.
       environment.systemPackages = [
         pkgs.xprop
+        pkgs.jq
+        pkgs.xdg-utils
         config.services.starah.session.package
       ];
       virtualisation.memorySize = 2048;
@@ -96,6 +98,8 @@
           applets = default("org.cinnamon", "enabled-applets")
           for uuid in ["menu", "show-desktop", "panel-launchers", "grouped-window-list", "trash", "calendar"]:
               assert f":{uuid}@cinnamon.org'" in applets, (uuid, applets)
+          launchers = default("org.cinnamon", "panel-launchers")
+          assert launchers == "['nemo.desktop', 'brave-origin.desktop', 'org.gnome.Terminal.desktop']", launchers
           for key in ["show-desktop-icons", "computer-icon-visible", "home-icon-visible",
                       "trash-icon-visible", "volumes-visible"]:
               assert default("org.nemo.desktop", key) == "true", key
@@ -139,6 +143,27 @@
           # panel's Show Desktop, launchers and Trash, desktop icons on the left.
           machine.sleep(10)
           machine.screenshot("desktop")
+
+      with subtest("Brave Origin comes with the desktop, in the panel and for web links"):
+          # The launchers applet took the default into the user's own settings and
+          # marked the old key used, so the list is now the user's to change.
+          spices = "/home/alice/.config/cinnamon/spices/panel-launchers@cinnamon.org"
+          machine.wait_until_succeeds(f"jq -e '.launcherList.value | index(\"brave-origin.desktop\")' {spices}/*.json",
+                                      timeout=datetime.timedelta(seconds=60))
+          assert su("gsettings get org.cinnamon panel-launchers").strip() == "['DEPRECATED']"
+          # What the running panel shows, in order.
+          machine.succeed(
+              "cat > /tmp/launchers.js <<'EOF'\n"
+              "imports.ui.appletManager.getRunningInstancesForUuid('panel-launchers@cinnamon.org')[0]"
+              "._launchers.map(l => l.getId()).join(' ')\n"
+              "EOF"
+          )
+          shown = su('gdbus call --session -d org.Cinnamon -o /org/Cinnamon -m org.Cinnamon.Eval "$(cat /tmp/launchers.js)"')
+          machine.log(f"panel launchers: {shown}")
+          assert "nemo.desktop brave-origin.desktop org.gnome.Terminal.desktop" in shown, shown
+          assert su("xdg-mime query default x-scheme-handler/https").strip() == "brave-origin.desktop"
+          version = su("brave-origin --version")
+          assert "Brave" in version, version
 
       with subtest("the display server is XLibre, with XLibre's drivers"):
           version = machine.succeed("X -version 2>&1")

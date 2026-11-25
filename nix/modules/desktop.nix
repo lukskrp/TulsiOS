@@ -1,9 +1,10 @@
 # tulsi.desktop — which desktop a TulsiOS machine runs (ADR 0016).
 #
-# The installer asks for one of two and installs only that one:
+# The installer asks for one and installs only that one:
 #   "ocimum"  Ocimum Desktop (the Cinnamon fork, ocimum.desktop)
+#   "sonic"   SonicDE, a KDE Plasma fork that keeps X11 (sonic.desktop, ADR 0020)
 #   "dwm"     dwm with a system tray (tulsi.dwm), for people who like tiling
-# Both log in through the Ocimum Greeter on XLibre and get Starah and the
+# All log in through the Ocimum Greeter on XLibre and get Starah and the
 # TulsiOS way of installing software. Switching later is one line in
 # configuration.nix: tulsi.desktop.session = "dwm";
 {
@@ -21,12 +22,13 @@ in
       type = lib.types.nullOr (
         lib.types.enum [
           "ocimum"
+          "sonic"
           "dwm"
         ]
       );
       default = null;
       example = "dwm";
-      description = "The desktop of this machine: Ocimum Desktop or dwm (null: set up neither here).";
+      description = "The desktop of this machine: Ocimum Desktop, SonicDE or dwm (null: set up none here).";
     };
 
     autoLoginUser = lib.mkOption {
@@ -39,6 +41,13 @@ in
   config = lib.mkMerge [
     (lib.mkIf (cfg.session == "ocimum") {
       ocimum.desktop = {
+        enable = true;
+        autoLoginUser = lib.mkDefault cfg.autoLoginUser;
+      };
+    })
+
+    (lib.mkIf (cfg.session == "sonic") {
+      sonic.desktop = {
         enable = true;
         autoLoginUser = lib.mkDefault cfg.autoLoginUser;
       };

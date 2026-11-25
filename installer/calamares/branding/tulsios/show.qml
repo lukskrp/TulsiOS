@@ -73,8 +73,9 @@ Presentation
 
     TulsiSlide {
         heading: "Your choice of desktop"
-        body: "Ocimum Desktop for a classic panel and start menu, or dwm for keyboard-driven "
-            + "tiling. Switch later with one line in /etc/nixos/configuration.nix."
+        body: "Ocimum Desktop for a classic panel and start menu, SonicDE for a KDE-style "
+            + "desktop, or dwm for keyboard-driven tiling. Switch later with one line in "
+            + "/etc/nixos/configuration.nix."
     }
 
     function onActivate() { }

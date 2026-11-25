@@ -1,19 +1,24 @@
 """tulsi-adopt: when someone installs software the imperative way, show the TulsiOS way.
 
 Started by:
-- the `apt`, `dnf`, `pacman`, … commands TulsiOS provides (`tulsi-adopt shim apt install vlc`);
-- opening a downloaded .deb/.rpm/.AppImage/.tar.gz/.zip/.run (`tulsi-adopt --file PATH`);
+- the `apt`, `dnf`, `pacman`, … commands TulsiOS provides (`tulsi-adopt shim apt install vlc`),
+  and `pip`, `npm -g`, `cargo`, `gem`, `go`, `flatpak` when they are asked to install;
+- opening a downloaded .deb/.rpm/.AppImage/.tar.gz/.zip/.run/.flatpakref
+  (`tulsi-adopt --file PATH`);
 - running a program built for another distribution, which NixOS cannot start
-  (`tulsi-adopt --binary PATH`, from TulsiOS's ELF-loader stub).
+  (`tulsi-adopt --binary PATH`, from TulsiOS's ELF-loader stub);
+- a link to a browser extension's store page (`tulsi-adopt --url URL`).
 
-It explains that TulsiOS installs software declaratively, offers matching packages
-from the Software Center and, when there is none, asks the Assistant to package the
-software (ADR 0013).
+It explains that TulsiOS installs software declaratively and finds what TulsiOS
+has for it first (tulsid's `Match`: other systems' names, the programs inside a
+download, ADR 0018). Only when nothing fits does it offer to have the Assistant
+package the software (ADR 0013).
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -28,17 +33,31 @@ EXPLANATION = (
     "can be undone, and is the same every time you rebuild."
 )
 
+# Other distributions' package managers: every use opens the TulsiOS way.
 SHIM_COMMANDS = ("apt", "apt-get", "dnf", "yum", "pacman", "zypper", "snap", "brew")
+# Language and app installers: only their install commands come here (nix/modules/adopt.nix
+# passes everything else on to the real tool, when there is one).
+LANGUAGE_COMMANDS = ("pip", "pip3", "pipx", "npm", "cargo", "gem", "go", "flatpak")
 
-_INSTALL = {"install", "reinstall", "in", "add"}
+_INSTALL = {"install", "reinstall", "in", "add", "i"}
 _SEARCH = {"search", "se", "find"}
 _REMOVE = {"remove", "erase", "purge", "uninstall", "rm", "autoremove"}
 
-# Downloaded files tulsi-adopt is the handler for, by suffix.
+# Options whose value is the next argument, so it is not a package name.
+_VALUE_OPTIONS = {
+    "-r", "--requirement", "-c", "--constraint", "-e", "--editable", "-i", "--index-url",
+    "--extra-index-url", "-t", "--target", "--prefix", "--root", "--git", "--path",
+    "--version", "--branch", "--tag", "--rev", "--features", "-F", "--registry",
+    "--install-dir", "--bindir", "--arch",
+}
+
+# Downloaded files tulsi-adopt is the handler for, by suffix (when `tulsi inspect`
+# cannot tell from the content).
 FILE_KINDS = (
     (".deb", "deb"),
     (".rpm", "rpm"),
     (".appimage", "appimage"),
+    (".flatpakref", "flatpakref"),
     (".tar.gz", "archive"),
     (".tgz", "archive"),
     (".tar.xz", "archive"),
@@ -48,6 +67,13 @@ FILE_KINDS = (
     (".run", "installer"),
     (".sh", "installer"),
 )
+
+KIND_WORDS = {
+    "binary": "programs built for other distributions",
+    "deb": ".deb files", "rpm": ".rpm files", "appimage": "AppImages",
+    "archive": "downloaded archives", "installer": "installer scripts",
+    "flatpakref": "Flatpak", "url": "download links",
+}
 
 
 @dataclass
@@ -59,16 +85,42 @@ class Request:
     tool: str = ""
     command: str = ""
     file: str = ""
-    kind: str = ""  # deb, rpm, appimage, archive, installer, binary
+    kind: str = ""  # deb, rpm, appimage, archive, installer, binary, flatpakref
+    url: str = ""
 
 
 def _strip_version(name: str) -> str:
-    """`foo=1.2`, `foo>=1`, `foo@2` -> `foo`."""
-    return re.split(r"[<>=@:]", name, maxsplit=1)[0]
+    """`foo=1.2`, `foo>=1`, `foo@2`, `requests[socks]` -> `foo`; keeps npm's `@scope/x`."""
+    if name.startswith("@"):
+        scope, _, rest = name[1:].partition("/")
+        return "@" + scope + "/" + re.split(r"[<>=@:\[]", rest, maxsplit=1)[0] if rest else name
+    return re.split(r"[<>=@:\[!~;]", name, maxsplit=1)[0]
+
+
+def _words(args: list[str]) -> list[str]:
+    """Arguments that are not options, skipping the values of options that take one."""
+    words: list[str] = []
+    skip = False
+    for a in args:
+        if skip:
+            skip = False
+        elif a.startswith("-"):
+            skip = a in _VALUE_OPTIONS
+        else:
+            words.append(a)
+    return words
+
+
+def _go_name(path: str) -> str:
+    """`github.com/x/tool/cmd/tool@latest` -> tool; `golang.org/x/tools/gopls@v0.1` -> gopls."""
+    parts = [p for p in path.split("@", 1)[0].split("/") if p]
+    while len(parts) > 1 and re.fullmatch(r"v\d+", parts[-1]):
+        parts.pop()
+    return parts[-1] if parts else path
 
 
 def parse_shim(tool: str, args: list[str]) -> Request:
-    """Understands the common forms of other distributions' install commands."""
+    """Understands the common forms of other systems' install commands."""
     command = " ".join([tool, *args])
     if tool == "pacman":
         flags = next((a for a in args if a.startswith("-") and not a.startswith("--")), "")
@@ -80,7 +132,7 @@ def parse_shim(tool: str, args: list[str]) -> Request:
         else:
             action = "other"
         return Request(action, names, tool, command)
-    words = [a for a in args if not a.startswith("-")]
+    words = _words(args)
     if not words:
         return Request("other", [], tool, command)
     sub, rest = words[0], words[1:]
@@ -92,9 +144,22 @@ def parse_shim(tool: str, args: list[str]) -> Request:
         action = "remove"
     else:
         action = "other"
-    names = [_strip_version(n) for n in rest]
+    if tool == "npm" and action == "install" and not ({"-g", "--global"} & set(args)):
+        action = "other"  # installing into a project, not the system
     files = [n for n in rest if file_kind(n)]
-    req = Request(action, [n for n in names if not file_kind(n)], tool, command)
+    rest = [n for n in rest if not file_kind(n)]
+    if tool == "go":
+        names = [_go_name(n) for n in rest]
+    elif tool == "flatpak":
+        # `flatpak install [remote] org.videolan.VLC`: application ids have dots.
+        ids = [n for n in rest if "." in n]
+        names = [i.rsplit(".", 1)[-1].lower() for i in ids]
+    else:
+        names = [_strip_version(n) for n in rest]
+        if tool in LANGUAGE_COMMANDS:
+            # Paths and URLs are not package names.
+            names = [n for n in names if "://" not in n and not n.startswith((".", "/", "~"))]
+    req = Request(action, [n for n in names if n], tool, command)
     if files:
         req.file, req.kind = files[0], file_kind(files[0])
     return req
@@ -128,14 +193,85 @@ def name_from_file(path: str) -> str:
     return name or "software"
 
 
-def terminal_text(req: Request) -> str:
+def inspect_file(path: str) -> dict:
+    """`tulsi inspect PATH`: {kind, name, version, description, homepage, provides,
+    programs}; {} when it cannot be run."""
+    tulsi = shutil.which("tulsi")
+    if not tulsi or not os.path.isfile(path):
+        return {}
+    try:
+        out = subprocess.run([tulsi, "inspect", path], check=True, capture_output=True,
+                             text=True, timeout=120).stdout
+        return json.loads(out)
+    except (OSError, subprocess.SubprocessError, ValueError) as e:
+        print(f"tulsi-adopt: cannot inspect {path}: {e}", file=sys.stderr, flush=True)
+        return {}
+
+
+def match_hint(req: Request, info: dict | None = None) -> dict:
+    """The MatchHint for tulsid's `Match`."""
+    info = info or {}
+    names = list(req.names)
+    if not names and info.get("name"):
+        names.append(info["name"])
+    if not names and req.file:
+        names.append(name_from_file(req.file))
+    programs = list(info.get("programs") or [])
+    if req.kind == "binary" and req.file:
+        programs.insert(0, os.path.basename(req.file))
+    return {
+        "names": names,
+        "programs": programs,
+        "provides": list(info.get("provides") or []),
+        "tool": req.tool,
+    }
+
+
+def lookup(hint: dict, limit: int = 5) -> list[dict] | None:
+    """tulsid's `Match`, synchronously (for terminals); None if it cannot be asked."""
+    try:
+        from gi.repository import Gio, GLib
+
+        session = os.environ.get("TULSI_BUS") == "session"
+        bus = Gio.bus_get_sync(Gio.BusType.SESSION if session else Gio.BusType.SYSTEM, None)
+        reply = bus.call_sync("org.tulsi.Manager1", "/org/tulsi/Manager1",
+                              "org.tulsi.Manager1", "Match",
+                              GLib.Variant("(su)", (json.dumps(hint), limit)),
+                              GLib.VariantType.new("(s)"), Gio.DBusCallFlags.NO_AUTO_START,
+                              5000, None)
+        return json.loads(reply.unpack()[0])
+    except Exception:  # noqa: BLE001 - no bus, no tulsid, no gi: just no matches
+        return None
+
+
+def describe_candidate(c: dict) -> tuple[str, str]:
+    """(the command that installs it, why it matches)."""
+    if c.get("kind") == "service":
+        return f"tulsi service enable {c['name']}", c.get("reason", "")
+    return f"tulsi install {c['attr']}", c.get("reason", "")
+
+
+def terminal_text(req: Request, candidates: list[dict] | None = None,
+                  looked_up: bool = False) -> str:
+    """What a shim prints. `candidates`: tulsid's matches; `looked_up`: whether
+    asking tulsid was attempted (None candidates then means it could not be asked)."""
     tool = req.tool or "that command"
     lines = [EXPLANATION.format(tool=tool), ""]
-    if req.action == "install" and req.names:
+    if req.action == "install" and req.names and candidates:
+        lines.append("TulsiOS has:")
+        width = max(len(describe_candidate(c)[0]) for c in candidates)
+        for c in candidates:
+            cmd, why = describe_candidate(c)
+            lines.append(f"  {cmd:<{width}}   # {why}")
+        lines.append("")
+        lines.append("Or open the Software Center.")
+    elif req.action == "install" and req.names:
         for n in req.names:
             lines.append(f"  tulsi search {n}      # find it")
             lines.append(f"  tulsi install {n}     # install it, if it exists under that name")
         lines.append("")
+        if looked_up and candidates is None:
+            lines.append("(The TulsiOS system service could not be asked for matches.)")
         lines.append("Or open the Software Center. If TulsiOS does not have it yet, the "
                      "Assistant can package it for you.")
     elif req.action == "search" and req.names:
@@ -202,123 +338,16 @@ def _activate(bus_name: str, path: str, launch: list[str], action: str, arg: str
     bus.flush_sync(None)
 
 
+def _software_center(action: str, arg: str) -> None:
+    _activate("org.tulsi.SoftwareCenter", "/org/tulsi/SoftwareCenter",
+              ["ocimum-software-center"], action, arg)
+
+
 def run_gui(req: Request) -> int:
-    import gi
+    """The step-by-step window (wizard.py)."""
+    from .wizard import Wizard
 
-    gi.require_version("Gtk", "3.0")
-    from gi.repository import GLib, Gtk
-
-    from .client import Client
-    from .model import Package
-
-    client = Client()
-    window = Gtk.Window(title="Install the TulsiOS Way")
-    window.set_default_size(560, -1)
-    window.set_position(Gtk.WindowPosition.CENTER)
-    window.set_border_width(18)
-    window.connect("destroy", Gtk.main_quit)
-    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    window.add(box)
-
-    what = req.names[0] if req.names else (name_from_file(req.file) if req.file else "")
-    heading = Gtk.Label(xalign=0)
-    if req.kind == "binary":
-        title = f"“{os.path.basename(req.file)}” was made for another Linux distribution"
-    elif req.file:
-        title = f"Install {os.path.basename(req.file)}"
-    else:
-        title = f"Install {', '.join(req.names) or 'software'}"
-    heading.set_markup(f"<big><b>{GLib.markup_escape_text(title)}</b></big>")
-    heading.set_line_wrap(True)
-    box.pack_start(heading, False, False, 0)
-    explain = Gtk.Label(xalign=0, label=EXPLANATION.format(tool=req.tool or {
-        "binary": "programs built for other distributions",
-        "deb": ".deb files", "rpm": ".rpm files", "appimage": "AppImages",
-        "archive": "downloaded archives", "installer": "installer scripts"}.get(req.kind, "that")))
-    explain.set_line_wrap(True)
-    explain.set_max_width_chars(70)
-    box.pack_start(explain, False, False, 0)
-
-    status = Gtk.Label(xalign=0, label=f"Looking for “{what}” in the Software Center…")
-    status.set_line_wrap(True)
-    box.pack_start(status, False, False, 0)
-    matches = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    box.pack_start(matches, False, False, 0)
-
-    url_row = Gtk.Box(spacing=6)
-    url_entry = Gtk.Entry(placeholder_text="Download page or file URL (optional)")
-    url_entry.set_hexpand(True)
-    url_row.pack_start(url_entry, True, True, 0)
-
-    buttons = Gtk.ButtonBox(layout_style=Gtk.ButtonBoxStyle.END, spacing=8)
-    cancel = Gtk.Button.new_with_mnemonic("_Cancel")
-    cancel.connect("clicked", lambda _b: window.destroy())
-    ask = Gtk.Button.new_with_mnemonic("Ask the Assistant to _Package It")
-    buttons.add(cancel)
-    buttons.add(ask)
-    box.pack_end(buttons, False, False, 0)
-
-    def install(attr: str) -> None:
-        _activate("org.tulsi.SoftwareCenter", "/org/tulsi/SoftwareCenter",
-                  ["ocimum-software-center"], "install", attr)
-        window.destroy()
-
-    def ask_assistant(_button) -> None:
-        store_path = file_hash = ""
-        if req.file and req.kind != "binary" and os.path.isfile(req.file):
-            try:
-                store_path, file_hash = add_file_to_store(req.file)
-            except (OSError, subprocess.SubprocessError) as e:
-                detail = getattr(e, "stderr", "") or ""
-                print(f"tulsi-adopt: could not add {req.file} to the store: {e}\n{detail}",
-                      file=sys.stderr, flush=True)
-                status.set_text(f"Could not hand the file to the Assistant: {e}")
-                return
-        prompt = assistant_prompt(req, url_entry.get_text().strip(), store_path, file_hash)
-        print(f"tulsi-adopt: asking the Assistant: {prompt}", flush=True)
-        _activate("org.tulsi.Assistant", "/org/tulsi/Assistant",
-                  ["ocimum-assistant"], "ask", prompt)
-        window.destroy()
-
-    ask.connect("clicked", ask_assistant)
-
-    def found(results: list) -> None:
-        packages = [Package.from_json(r) for r in results][:5]
-        if not packages:
-            status.set_text(f"The Software Center has nothing called “{what}”. The Assistant "
-                            "can package it for TulsiOS: it writes the package, builds and "
-                            "tests it, and asks you before installing.")
-            box.pack_start(url_row, False, False, 0)
-            box.reorder_child(url_row, 4)
-            ask.get_style_context().add_class("suggested-action")
-            window.show_all()
-            ask.grab_focus()
-            return
-        status.set_text("Found in the Software Center:")
-        for p in packages:
-            row = Gtk.Box(spacing=8)
-            label = Gtk.Label(xalign=0)
-            label.set_markup(f"<b>{GLib.markup_escape_text(p.title)}</b> {GLib.markup_escape_text(p.version)}\n"
-                             f"<small>{GLib.markup_escape_text(p.description)}</small>")
-            label.set_line_wrap(True)
-            row.pack_start(label, True, True, 0)
-            button = Gtk.Button.new_with_mnemonic("_Install" if p is packages[0] else "Install")
-            button.connect("clicked", lambda _b, a=p.attr: install(a))
-            if p is packages[0]:
-                button.get_style_context().add_class("suggested-action")
-            row.pack_end(button, False, False, 0)
-            matches.pack_start(row, False, False, 0)
-        ask.set_label("None of These: Ask the Assistant to _Package It")
-        window.show_all()
-
-    window.show_all()
-    if what:
-        client.search(what, 20, lambda results: found(results),
-                      lambda _e: found([]))
-    else:
-        found([])
-    Gtk.main()
-    return 0
+    return Wizard(req).run()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -330,11 +359,25 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--name", action="append", default=[])
         parser.add_argument("--file")
         parser.add_argument("--binary")
+        parser.add_argument("--url")
         # Set by the shims when they open the window: what the person typed.
         parser.add_argument("--tool", default="")
         parser.add_argument("--command", default="")
         args = parser.parse_args(argv)
-        if args.binary:
+        if args.url:
+            from .links import LinkError, parse_extension_link
+
+            try:
+                parse_extension_link(args.url)
+            except LinkError:
+                path = args.url.split("?", 1)[0].rstrip("/")
+                req = Request("install", args.name or [name_from_file(path)], url=args.url,
+                              kind="url")
+            else:
+                # A browser extension: the Software Center adds it (with confirmation).
+                _software_center("add-extension", args.url)
+                return 0
+        elif args.binary:
             req = Request("install", [name_from_file(args.binary)], file=args.binary, kind="binary")
         elif args.file:
             req = Request("install", [], file=args.file, kind=file_kind(args.file) or "archive")
@@ -343,8 +386,12 @@ def main(argv: list[str] | None = None) -> int:
         req.tool, req.command = args.tool, args.command
     graphical = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
     if argv[:1] == ["shim"]:
-        print(terminal_text(req), file=sys.stderr)
-        if graphical and req.action == "install" and (req.names or req.file):
+        wants_window = graphical and req.action == "install" and (req.names or req.file)
+        if req.action == "install" and req.names:
+            print(terminal_text(req, lookup(match_hint(req)), looked_up=True), file=sys.stderr)
+        else:
+            print(terminal_text(req), file=sys.stderr)
+        if wants_window:
             # The window opens beside the terminal; the command still fails so that
             # scripts notice.
             subprocess.Popen([shutil.which("tulsi-adopt") or sys.argv[0],
@@ -356,7 +403,7 @@ def main(argv: list[str] | None = None) -> int:
                              stderr=subprocess.DEVNULL, env=os.environ.copy())
         return 1
     if not graphical:
-        print(terminal_text(req), file=sys.stderr)
+        print(terminal_text(req, lookup(match_hint(req)), looked_up=True), file=sys.stderr)
         return 1
     return run_gui(req)
 

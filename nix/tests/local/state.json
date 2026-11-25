@@ -1,5 +1,6 @@
 {
   "version": 1,
-  "packages": ["frob"],
-  "localPackages": ["frob"]
+  "packages": ["frob", "kept"],
+  "localPackages": ["frob", "kept"],
+  "keepSources": ["kept"]
 }

@@ -7,6 +7,11 @@
 # references: the reference installs whose closures the installer carries. By
 # default one made for this test (same desktop, QEMU); the ISO's own
 # (nix/hosts/iso/references.nix) in checks.install-iso-references.
+#
+# SonicDE is not on the ISO (ADR 0020): for desktop = "sonic" the installer carries
+# only its build tools, and a `cache` node stands in for the TulsiOS cache, serving
+# the reference install's closure and rebuild inputs with Harmonia (nix-serve needs
+# Nix's Perl bindings, which tulsipkgs' Nix does not build).
 {
   self,
   desktop,
@@ -59,18 +64,39 @@ let
   };
 
   refs = if references == null then [ reference ] else references;
+  online = desktop == "sonic";
+  rebuildInputs = lib.concatMap (import ../lib/offline-rebuild-inputs.nix) refs;
 
   sessionCheck =
-    if desktop == "dwm" then
-      ''target.wait_until_succeeds("pgrep -u alice -x dwm", timeout=300)''
-    else
-      ''target.wait_until_succeeds("pgrep -u alice -f cinnamon-session", timeout=300)'';
-  otherDesktop = if desktop == "dwm" then "-cinnamon-[0-9]" else "-dwm-[0-9]";
+    {
+      dwm = ''target.wait_until_succeeds("pgrep -u alice -x dwm", timeout=300)'';
+      ocimum = ''target.wait_until_succeeds("pgrep -u alice -f cinnamon-session", timeout=300)'';
+      sonic = ''target.wait_until_succeeds("pgrep -u alice -f bin/sonicshell", timeout=300)'';
+    }
+    .${desktop};
+  # A store path only the chosen desktop has, and the other desktops' ones.
+  desktopPaths = {
+    ocimum = "-cinnamon-[0-9]";
+    dwm = "-dwm-[0-9]";
+    sonic = "-silver-[0-9]";
+  };
+  ownDesktop = desktopPaths.${desktop};
+  otherDesktops = lib.concatStringsSep "|" (lib.attrValues (removeAttrs desktopPaths [ desktop ]));
 in
 {
   name = "install-${desktop}" + lib.optionalString (references != null) "-iso-references";
 
-  nodes = {
+  nodes = lib.optionalAttrs online {
+    # The TulsiOS cache: serves the SonicDE install's closure (unsigned, test only).
+    cache =
+      { ... }:
+      {
+        services.harmonia.cache.enable = true;
+        networking.firewall.allowedTCPPorts = [ 5000 ];
+        system.extraDependencies = map (r: r.config.system.build.toplevel) refs ++ rebuildInputs;
+      };
+  }
+  // {
     # The live system that installs (stands in for the ISO).
     installer =
       { modulesPath, pkgs, ... }:
@@ -84,16 +110,18 @@ in
           pkgs.parted
           pkgs.dosfstools
           pkgs.e2fsprogs
+          pkgs.curl
         ];
         tulsi.installer = {
           enable = true;
-          offlineSystems = map (r: r.config.system.build.toplevel) refs;
+          # SonicDE: only the build tools; the system comes from the cache.
+          offlineSystems = lib.optionals (!online) (map (r: r.config.system.build.toplevel) refs);
           buildDependencies =
-            import ../lib/install-closure.nix pkgs
-            ++ lib.concatMap (import ../lib/offline-rebuild-inputs.nix) refs;
+            import ../lib/install-closure.nix pkgs ++ lib.optionals (!online) rebuildInputs;
         };
         nix.settings = {
-          substituters = lib.mkForce [ ];
+          substituters = lib.mkForce (lib.optional online "http://cache:5000");
+          require-sigs = !online;
           hashed-mirrors = null;
           connect-timeout = 1;
         };
@@ -140,9 +168,19 @@ in
             "--hashed-password '${passwordHash}' --timezone Europe/Stockholm --locale en_US.UTF-8 "
             "--keyboard-layout se --boot uefi")
 
+    ${lib.optionalString online ''
+      cache.start()
+      cache.wait_for_unit("harmonia.socket")
+      cache.wait_for_open_port(5000)
+    ''}
     installer.start()
     installer.wait_for_unit("multi-user.target")
     installer.succeed("udevadm settle")
+    ${lib.optionalString online ''
+      with subtest("SonicDE is not on the installer: it comes from the cache"):
+          installer.fail("nix-store -qR /run/current-system | grep -E -- '${ownDesktop}'")
+          installer.succeed("curl -sf --max-time 30 http://cache:5000/nix-cache-info")
+    ''}
 
     with subtest("partition: EFI system partition and an ext4 root"):
         installer.succeed(
@@ -183,7 +221,7 @@ in
             "grep -q test-instrumentation /mnt/etc/nixos/hardware-configuration.nix",
         )
 
-    with subtest("nixos-install, offline"):
+    with subtest("nixos-install, ${if online then "from the cache" else "offline"}"):
         installer.succeed(f"tulsi-install-system {args} --keep-hardware-config >&2", timeout=3600)
         installer.succeed("test -e /mnt/boot/loader/loader.conf")
         installer.succeed("umount -R /mnt")
@@ -198,8 +236,8 @@ in
     with subtest("the installed machine is the one we asked for"):
         assert target.succeed("hostname").strip() == "tulsi-box"
         assert target.succeed("readlink /etc/localtime").strip().endswith("Europe/Stockholm")
-        target.succeed("nix-store -qR /run/current-system | grep -E -- '-${desktop}-[0-9]|-cinnamon-[0-9]'")
-        target.fail("nix-store -qR /run/current-system | grep -E -- '${otherDesktop}'")
+        target.succeed("nix-store -qR /run/current-system | grep -E -- '${ownDesktop}'")
+        target.fail("nix-store -qR /run/current-system | grep -E -- '${otherDesktops}'")
 
     with subtest("tulsid keeps /etc/nixos in git, and the flake rebuilds this very system"):
         target.wait_for_unit("tulsid.service")

@@ -10,6 +10,7 @@ mod config;
 mod git;
 mod index;
 mod localpkg;
+mod matching;
 mod nixfile;
 mod polkit;
 mod service;
@@ -67,7 +68,21 @@ async fn run() -> Result<(), String> {
         },
     };
 
-    let manager = service::Manager::new(cfg, index);
+    let programs = match (&cfg.program_index, &index) {
+        (Some(path), Some(idx)) => match matching::ProgramIndex::load(path, idx) {
+            Ok(p) => {
+                eprintln!("tulsid: program index: {} programs", p.len());
+                p
+            }
+            Err(e) => {
+                eprintln!("tulsid: warning: {e}; matching by program disabled");
+                matching::ProgramIndex::default()
+            }
+        },
+        _ => matching::ProgramIndex::default(),
+    };
+
+    let manager = service::Manager::new(cfg, index, programs);
     let builder = if session {
         zbus::connection::Builder::session()
     } else {

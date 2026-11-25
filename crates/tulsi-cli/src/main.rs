@@ -8,7 +8,9 @@ use std::path::Path;
 use std::process::ExitCode;
 
 use futures_util::StreamExt;
-use tulsi_client::{HistoryEntry, ManagerProxy, PackageInfo, Plan, UndoPlan, UpgradeInfo};
+use tulsi_client::{
+    Candidate, HistoryEntry, ManagerProxy, MatchHint, PackageInfo, Plan, UndoPlan, UpgradeInfo,
+};
 use tulsi_state::{Browser, Op, State};
 
 /// `println!` that exits quietly when stdout is closed early
@@ -32,6 +34,8 @@ change the system (asks for authorization):
   remove PKG...                     remove packages installed with tulsi
   ext add|remove BROWSER ID         browser extension (firefox | chromium) by store id
   service enable|disable NAME       toggle a NixOS service (services.NAME.enable)
+  keep-source NAME on|off           keep the download a package made on this computer is
+                                    built from (on), or let cleanup remove it (off)
   undo [CHANGE]                     revert the most recent change, or the change with
                                     that id from `tulsi history` (alias: rollback)
   upgrade                           move to the newest TulsiOS release (undo goes back)
@@ -40,6 +44,22 @@ change the system (asks for authorization):
 
 inspect:
   search WORDS...                   find packages (installed ones are marked *)
+  match [--tool TOOL] NAME...       what TulsiOS installs for another system's package
+                                    name (e.g. `match --tool apt python3-requests`)
+  inspect FILE                      what a downloaded file is, as JSON (kind, name,
+                                    version, programs inside)
+
+package downloaded software without a model (Recipes, ADR 0018):
+  recipe plan FILE                  which recipe fits, and the suggested answers (JSON)
+  recipe build FILE [--name N] [--version V] [--program P] [--description D]
+               [--free|--unfree] [--menu|--no-menu] [--keep-source|--no-keep-source]
+                                    build and try the package as you; prints the result
+                                    (JSON) for `addLocalPackage`; the build log goes to stderr
+  recipe install RESULT.json        install what `recipe build` printed (asks for authorization)
+  recipe ops RESULT.json            the changes `recipe install` would make, as JSON
+  recipe check FILE                 what TulsiOS refuses in a package.nix (JSON list)
+  recipe build-draft DIR            build and try a draft as edited (DIR holds package.nix
+                                    and recipe.json); prints the result like `recipe build`
   status                            show the managed state
   history [N]                       show the last N changes (default 10)
   validate FILE                     check a state file
@@ -103,6 +123,12 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
                 vec![Op::RemoveExtension { browser, id }]
             }
         }
+        ["keep-source", name, setting @ ("on" | "off")] => {
+            vec![Op::KeepSource {
+                name: name.to_string(),
+                keep: *setting == "on",
+            }]
+        }
         ["service", action @ ("enable" | "disable"), name] => {
             vec![Op::SetService {
                 name: name.to_string(),
@@ -118,6 +144,62 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
         ["undo" | "rollback"] => return undo(opts, None).await,
         ["undo" | "rollback", commit] => return undo(opts, Some(commit)).await,
         ["search", words @ ..] if !words.is_empty() => return search(&words.join(" ")).await,
+        ["match", "--tool", tool, names @ ..] if !names.is_empty() => {
+            return match_names(tool, names).await
+        }
+        ["match", names @ ..] if !names.is_empty() => return match_names("", names).await,
+        ["recipe", "plan", file] => {
+            let plan = recipe_plan(Path::new(file)).await;
+            out!(
+                "{}",
+                serde_json::to_string_pretty(&plan).expect("plan serializes")
+            );
+            return Ok(ExitCode::SUCCESS);
+        }
+        ["recipe", "build", file, flags @ ..] => return recipe_build(Path::new(file), flags).await,
+        ["recipe", "install", result] => recipe_install_ops(Path::new(result))?,
+        ["recipe", "ops", result] => {
+            let ops = recipe_install_ops(Path::new(result))?;
+            out!(
+                "{}",
+                serde_json::to_string_pretty(&ops).expect("ops serialize")
+            );
+            return Ok(ExitCode::SUCCESS);
+        }
+        ["recipe", "check", file] => {
+            let text = std::fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+            let problems = tulsi_state::check_expression(&text);
+            out!(
+                "{}",
+                serde_json::to_string_pretty(&problems).expect("problems serialize")
+            );
+            return Ok(if problems.is_empty() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            });
+        }
+        ["recipe", "build-draft", dir] => {
+            let outcome =
+                tulsi_recipes::build_draft(Path::new(dir), &mut |line| eprintln!("{line}"));
+            out!(
+                "{}",
+                serde_json::to_string_pretty(&outcome).expect("outcome serializes")
+            );
+            return Ok(if outcome.ok {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::FAILURE
+            });
+        }
+        ["inspect", file] => {
+            let found = tulsi_inspect::inspect(Path::new(file));
+            out!(
+                "{}",
+                serde_json::to_string_pretty(&found).expect("inspection serializes")
+            );
+            return Ok(ExitCode::SUCCESS);
+        }
         ["status"] => {
             let state = State::from_json(&proxy().await?.get_state().await.map_err(dbus)?)
                 .map_err(|e| e.to_string())?;
@@ -451,6 +533,130 @@ async fn search(query: &str) -> Result<ExitCode, String> {
             p.version,
             p.description
         );
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+/// The recipe plan for `file`; a suggested name TulsiOS already uses for one of its
+/// own packages gets `-download` added (local packages cannot shadow those).
+async fn recipe_plan(file: &Path) -> tulsi_recipes::Plan {
+    let mut plan = tulsi_recipes::plan(&tulsi_inspect::inspect(file));
+    if let Ok(proxy) = proxy().await {
+        if let Ok(info) = proxy.package_info(&plan.name).await {
+            let taken = serde_json::from_str::<PackageInfo>(&info).is_ok_and(|i| !i.local);
+            if taken {
+                plan.name = format!("{}-download", plan.name);
+            }
+        }
+    }
+    plan
+}
+
+/// The ops that install what `recipe build` printed (saved to `result`): accepting
+/// its licence if it is proprietary, and adding it as a local package.
+fn recipe_install_ops(result: &Path) -> Result<Vec<Op>, String> {
+    let text = std::fs::read_to_string(result)
+        .map_err(|e| format!("cannot read {}: {e}", result.display()))?;
+    let v: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| format!("{}: {e}", result.display()))?;
+    if v["ok"] != serde_json::Value::Bool(true) {
+        return Err(format!(
+            "that build did not succeed: {}",
+            v["error"].as_str().unwrap_or("")
+        ));
+    }
+    let s = |k: &str| v[k].as_str().unwrap_or_default().to_string();
+    let name = s("name");
+    let mut ops = Vec::new();
+    if v["unfree"] == serde_json::Value::Bool(true) {
+        ops.push(Op::AcceptLicense { name: name.clone() });
+    }
+    ops.push(Op::AddLocalPackage {
+        name,
+        expression: s("expression"),
+        version: s("version"),
+        description: s("description"),
+        origin: s("origin"),
+        keep_source: v["keepSource"] != serde_json::Value::Bool(false),
+    });
+    Ok(ops)
+}
+
+async fn recipe_build(file: &Path, flags: &[&str]) -> Result<ExitCode, String> {
+    let plan = recipe_plan(file).await;
+    let mut answers = tulsi_recipes::Answers {
+        name: plan.name.clone(),
+        version: plan.version.clone(),
+        program: plan.program.clone(),
+        unfree: plan.license == "unfree",
+        menu: plan.menu,
+        keep_source: true,
+        ..Default::default()
+    };
+    let mut it = flags.iter();
+    while let Some(flag) = it.next() {
+        let mut value = || {
+            it.next()
+                .map(|v| v.to_string())
+                .ok_or(format!("{flag} needs a value"))
+        };
+        match *flag {
+            "--name" => answers.name = value()?,
+            "--version" => answers.version = value()?,
+            "--program" => answers.program = value()?,
+            "--description" => answers.description = value()?,
+            "--unfree" => answers.unfree = true,
+            "--free" => answers.unfree = false,
+            "--menu" => answers.menu = true,
+            "--no-menu" => answers.menu = false,
+            "--keep-source" => answers.keep_source = true,
+            "--no-keep-source" => answers.keep_source = false,
+            other => return Err(format!("unknown option {other}")),
+        }
+    }
+    let outcome = tulsi_recipes::build(file, &plan, &answers, &mut |line| eprintln!("{line}"));
+    out!(
+        "{}",
+        serde_json::to_string_pretty(&outcome).expect("outcome serializes")
+    );
+    Ok(if outcome.ok {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
+    })
+}
+
+async fn match_names(tool: &str, names: &[&str]) -> Result<ExitCode, String> {
+    let hint = MatchHint {
+        names: names.iter().map(|n| n.to_string()).collect(),
+        tool: tool.to_string(),
+        ..Default::default()
+    };
+    let hint = serde_json::to_string(&hint).expect("hint serializes");
+    let found: Vec<Candidate> =
+        serde_json::from_str(&proxy().await?.match_(&hint, 10).await.map_err(dbus)?)
+            .map_err(|e| format!("bad reply from tulsid: {e}"))?;
+    if found.is_empty() {
+        out!("Nothing in TulsiOS matches {}.", names.join(" "));
+    }
+    for c in found {
+        match c {
+            Candidate::Package { info, reason } => {
+                let mark = if info.installed { '*' } else { ' ' };
+                out!("{mark} {:<32} {reason}", info.attr);
+            }
+            Candidate::Service {
+                name,
+                enabled,
+                reason,
+            } => {
+                let mark = if enabled { '*' } else { ' ' };
+                out!(
+                    "{mark} {:<32} {reason} (tulsi service enable {name})",
+                    format!("service {name}")
+                );
+            }
+        }
     }
     Ok(ExitCode::SUCCESS)
 }

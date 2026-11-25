@@ -117,8 +117,15 @@ them. `tulsi ext add|remove` does the same from a terminal.
 
 ### Install the TulsiOS way, `nix/modules/adopt.nix`, `tulsi-adopt`
 ADR 0013. Package-command shims (`apt`, `dnf`, …), the default handler for downloaded
-packages and archives, and a replaced ELF-loader stub all open `tulsi-adopt`. It
-offers matching Software Center packages or asks the Assistant to package the software.
+packages and archives, and a replaced ELF-loader stub all open `tulsi-adopt`; so do the
+install commands of `pip`, `npm -g`, `cargo`, `gem`, `go` and `flatpak` (ADR 0018). It
+reads the download with `tulsi inspect` (`crates/tulsi-inspect`: kind, a .deb's or .rpm's
+own name, the programs inside) and asks tulsid's `Match` (`crates/tulsid/src/matching.rs`:
+`data/name-map.json`, other distributions' naming rules, the program index
+`nix/packages/program-index.nix`). It offers those packages or services, each with its
+reason. When nothing fits, a Recipe (`crates/tulsi-recipes`, `apps/…/recipe_ui.py`)
+packages the download from tested templates without a model, or the Assistant
+packages it; which one can be remembered.
 Approved results are local packages: `/etc/nixos/tulsi/pkgs/<name>/package.nix` plus
 `meta.json`, listed in state.json `localPackages` and installed by `tulsi.state` with
 `callPackage`. tulsid (`localpkg.rs`) writes them with history and Undo.
@@ -139,6 +146,14 @@ tulsid gained `GetConfig`, `PlanConfig` (syntax check via `nix-instantiate --par
 unified diff) and `ApplyConfig`. Transactions now cover any managed file
 (`tulsi/state.json`, `configuration.nix`), so config edits share history, rollback and
 undo with everything else.
+
+### Nix Editor, `apps/ocimum-nix-editor`, `nix/modules/nix-editor.nix`
+ADR 0019. A GTK 3 editor for Nix files: nixd (wrapped in, evaluating
+`/etc/tulsi/nixpkgs`) for completion, hover and problems; `tulsi recipe check` for the
+local-package rules; a Nix guide (`ocimum_nix_editor/guide/*.md`) on the right that
+follows the cursor. Opened on a failed Recipe's draft (`--draft DIR`, from the install
+window's "Edit It Yourself"), it builds it with `tulsi recipe build-draft` and installs it
+through the Software Center's `apply-ops`.
 
 ### Ocimum Assistant, `apps/ocimum-assistant` (docs/ASSISTANT.md)
 Chat window (Python/GTK 3). It runs `tulsi-mcp` as a subprocess and drives a manual
@@ -161,12 +176,30 @@ Cinnamon 6.8 suite. The fork carries the session name, logo, System Info and pin
 apps, the TulsiOS start button (`tulsi-start`, `tulsi-start-white`) and the Tulsi Leaf
 wallpaper; `ocimum.desktop` adds the TulsiOS defaults (Mint-Y-Dark theme, that wallpaper,
 the start icon chosen by `ocimum.desktop.startIcon`, Super+A for the Assistant) as gsettings/dconf defaults, which users can change.
+It also ships the browser, Brave Origin (`ocimum.desktop.browser`), as the default for web
+links, and seeds the panel's launchers (Files, Brave Origin, Terminal) through Cinnamon's
+old `panel-launchers` key, which the launchers applet imports once per new user.
 `checks.ocimum-desktop` verifies the installed session and these defaults.
 
+### SonicDE, `nix/modules/sonic-desktop.nix` (ADR 0020)
+SonicDE is a fork of KDE Plasma 6 that keeps X11. tulsipkgs builds the whole Sonic stack
+as `sonicPackages` (`pkgs/sonic`: nixpkgs' KDE recipes with Sonic's sources; sonic-win,
+Silver, SonicLogging and SonicIpc of its own). `sonic.desktop` is an X11 counterpart of
+nixpkgs' Wayland-only `plasma6` module: the `sonicde` session on XLibre through the Ocimum
+Greeter; Ecco, Sonic Terminal, System Monitor and Screenies; TulsiOS's apps and Brave
+Origin. `sonic-tulsi-defaults` adds the "TulsiOS (Silver)" look-and-feel: the Tulsi Leaf
+wallpaper, the start button, and the pinned apps. Super+A is `X-KDE-Shortcuts` in the
+Assistant's `.desktop` file. On these machines `kdePackages` is overlaid with
+`sonicPackages`, so KDE apps installed later are Sonic builds. `checks.sonic-desktop`
+verifies the session and these defaults.
+
 ### Desktops and the installer (ADR 0016), `nix/modules/{desktop,dwm,installer}.nix`
-`tulsi.desktop.session` is `"ocimum"` or `"dwm"` (suckless dwm 6.8 with the systray
-patch, plus what a bare window manager lacks: XDG autostart, a polkit agent, dunst, the
-GTK theme). Both log in through the Ocimum Greeter on XLibre.
+`tulsi.desktop.session` is `"ocimum"`, `"sonic"` or `"dwm"` (suckless dwm 6.8 with the
+systray patch, plus what a bare window manager lacks: XDG autostart, a polkit agent,
+dunst, the GTK theme). All three log in through the Ocimum Greeter on XLibre. SonicDE is
+not on the ISO: it installs online from the TulsiOS cache. Calamares' `tulsios-online`
+job refuses it before partitioning when the cache does not answer, and each release
+pushes `packages.sonic-cache` to the cache (`docs/RELEASING.md`).
 
 Installed machines use the host module `nix/hosts/desktop`. `tulsi-install-system`
 (`apps/tulsi-installer`) writes their `/etc/nixos`:

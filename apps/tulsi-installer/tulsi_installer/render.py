@@ -14,7 +14,7 @@ import json
 import re
 from dataclasses import dataclass, field
 
-DESKTOPS = ("ocimum", "dwm")
+DESKTOPS = ("ocimum", "sonic", "dwm")
 BOOT_KINDS = ("uefi", "bios", "none")
 HOST_MODULE = "nix/hosts/desktop"
 DEFAULT_GROUPS = ("networkmanager", "wheel")
@@ -77,7 +77,7 @@ def _check(ok: bool, what: str, value: object) -> None:
 
 def validate(c: Choices) -> None:
     """Raises InvalidChoice for anything that must not reach configuration.nix."""
-    _check(c.desktop in DESKTOPS, "desktop (ocimum or dwm)", c.desktop)
+    _check(c.desktop in DESKTOPS, "desktop (ocimum, sonic or dwm)", c.desktop)
     _check(bool(_HOSTNAME.fullmatch(c.hostname)), "hostname", c.hostname)
     _check(bool(c.users), "users (at least one)", c.users)
     for u in c.users:
@@ -202,7 +202,7 @@ def configuration_nix(c: Choices) -> str:
         "{",
         f"  networking.hostName = {s(c.hostname)};",
         "",
-        '  # The desktop: "ocimum" (Ocimum Desktop) or "dwm" (tiling).',
+        '  # The desktop: "ocimum" (Ocimum Desktop), "sonic" (SonicDE) or "dwm" (tiling).',
         f"  tulsi.desktop.session = {s(c.desktop)};",
         "",
     ]

@@ -8,8 +8,10 @@
     ./tulsid.nix
     ./browser-extensions.nix
     ./software-center.nix
+    ./nix-editor.nix
     ./assistant.nix
     ./ocimum-desktop.nix
+    ./sonic-desktop.nix
     ./ocimum-greeter.nix
     ./desktop.nix
     ./dwm.nix

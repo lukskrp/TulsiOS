@@ -42,8 +42,8 @@ stdenvNoCC.mkDerivation {
     install -m644 config/modules/*.conf $out/etc/calamares/modules/
     substitute config/settings.conf $out/etc/calamares/settings.conf --replace-fail @out@ $out
 
-    cp -r modules/tulsios $out/lib/calamares/modules/
-    python3 -m py_compile modules/tulsios/main.py
+    cp -r modules/tulsios modules/tulsios-online $out/lib/calamares/modules/
+    python3 -m py_compile modules/tulsios/main.py modules/tulsios-online/main.py
 
     cp -r branding/tulsios $out/share/calamares/branding/
     chmod -R u+w $out/share/calamares/branding

@@ -77,6 +77,10 @@
           tulsi.daemon.packageIndex = lib.mkDefault (
             pkgs.callPackage ./nix/packages/package-index.nix { nixpkgsSrc = nixpkgs.outPath; }
           );
+          # Which program comes from which package, for matching (ADR 0018).
+          tulsi.daemon.programIndex = lib.mkDefault (
+            pkgs.callPackage ./nix/packages/program-index.nix { }
+          );
           # GTK3-O comes from tulsipkgs.
           ocimum.gtk3o.package = lib.mkDefault pkgs.gtk3-o;
         };
@@ -86,7 +90,9 @@
           tulsi-tools
           gtk3-o
           tulsi-package-index
+          tulsi-program-index
           ocimum-software-center
+          ocimum-nix-editor
           ocimum-assistant
           ocimum-greeter
           tulsi-installer
@@ -97,6 +103,8 @@
       # The live ISO (hybrid: also the dd image for USB sticks), ADR 0016.
       // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
         iso = self.nixosConfigurations.tulsi-iso.config.system.build.isoImage;
+        # SonicDE installs online: each release pushes this closure to the cache (ADR 0020).
+        sonic-cache = import ./nix/lib/sonic-cache.nix { inherit self pkgs; };
       });
 
       devShells = forAllSystems (pkgs: {
@@ -117,6 +125,8 @@
               ps.anthropic
             ]))
             gtk3
+            gtksourceview4
+            nixd
             libsecret
             xapp
             gobject-introspection
@@ -157,6 +167,7 @@
           inherit (pkgs)
             tulsi-tools
             ocimum-software-center
+            ocimum-nix-editor
             ocimum-assistant
             ocimum-greeter
             tulsi-installer
@@ -174,6 +185,11 @@
           greeter-login = test ./nix/tests/ocimum-greeter.nix;
           starah-setup = test ./nix/tests/starah-setup.nix;
           adopt = test ./nix/tests/adopt.nix;
+          # ADR 0019: the Nix Editor with nixd, offline, and its guide.
+          nix-editor = test ./nix/tests/nix-editor.nix;
+          # ADR 0020: SonicDE, the KDE-style desktop on X11.
+          sonic-desktop = test ./nix/tests/sonic-desktop.nix;
+          nix-guide = pkgs.callPackage ./nix/tests/nix-guide.nix { };
           # ADR 0016: the dwm session, and installing each desktop onto an empty disk.
           dwm-session = test ./nix/tests/dwm-session.nix;
           install-dwm = pkgs.testers.runNixOSTest (
@@ -186,6 +202,13 @@
             import ./nix/tests/install.nix {
               inherit self;
               desktop = "ocimum";
+            }
+          );
+          # SonicDE installs online (ADR 0020): from a cache node, not the installer's store.
+          install-sonic = pkgs.testers.runNixOSTest (
+            import ./nix/tests/install.nix {
+              inherit self;
+              desktop = "sonic";
             }
           );
           # Installing with the ISO's own reference installs, onto QEMU hardware they
@@ -215,9 +238,12 @@
                 ];
               };
               names = map (p: p.pname or "") system.config.environment.systemPackages;
+              kept = map (d: d.name or "") system.config.system.extraDependencies;
             in
             assert builtins.elem "frob" names;
-            pkgs.writeText "local-package-eval" "frob is installed from tulsi/pkgs/frob";
+            # A kept download is part of the system, so cleanup leaves it (ADR 0018).
+            assert builtins.elem "kept-1.0-kept.tar.gz" kept;
+            pkgs.writeText "local-package-eval" "frob and kept are installed from tulsi/pkgs; kept's download is kept";
         };
     };
 }

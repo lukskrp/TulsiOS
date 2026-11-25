@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Nix Editor
+GenericName=Text Editor for Nix
+Comment=Write and fix Nix packages, with suggestions and a Nix guide beside the file
+Exec=ocimum-nix-editor %F
+Icon=org.tulsi.NixEditor
+StartupWMClass=ocimum-nix-editor
+Terminal=false
+Categories=Development;TextEditor;
+MimeType=text/x-nix;
+Keywords=nix;package;editor;nixd;
+StartupNotify=true

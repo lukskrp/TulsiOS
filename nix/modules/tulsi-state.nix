@@ -43,6 +43,17 @@ let
     else
       throw "tulsi.state: unknown package '${name}' in ${toString cfg.file}";
 
+  # Downloads that local packages are built from, kept as part of the system (state.json
+  # `keepSources`, ADR 0018): they can be fetched from nowhere else, and an upgrade may
+  # need to build the package again. Nix's cleanup leaves them while a generation has them.
+  keptSources = lib.concatMap (
+    name:
+    let
+      src = (resolvePackage name).src or null;
+    in
+    lib.optional (src != null && lib.isDerivation src) src
+  ) (lib.intersectLists (state.keepSources or [ ]) localPackages);
+
   # AMO accepts the add-on GUID in its "latest" download URL.
   firefoxExtensionSettings = lib.listToAttrs (
     map (id: {
@@ -72,6 +83,8 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       { environment.systemPackages = map resolvePackage packageNames; }
+
+      (lib.mkIf (keptSources != [ ]) { system.extraDependencies = keptSources; })
 
       # Unfree agent CLIs whose licence was accepted in the Software Center.
       (lib.mkIf (acceptedUnfree != [ ]) {

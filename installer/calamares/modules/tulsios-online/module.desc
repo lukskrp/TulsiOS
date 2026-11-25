@@ -1,0 +1,5 @@
+---
+type:       "job"
+name:       "tulsios-online"
+interface:  "python"
+script:     "main.py"

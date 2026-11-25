@@ -90,6 +90,18 @@ def ops_remove_extension(browser: str, ext_id: str) -> list[dict]:
     return [{"op": "removeExtension", "browser": browser, "id": ext_id}]
 
 
+def ops_add_extension(browser: str, ext_id: str) -> list[dict]:
+    return [{"op": "addExtension", "browser": browser, "id": ext_id}]
+
+
+def ops_keep_source(name: str, keep: bool) -> list[dict]:
+    return [{"op": "keepSource", "name": name, "keep": keep}]
+
+
+def ops_enable_service(name: str) -> list[dict]:
+    return [{"op": "setService", "name": name, "enable": True}]
+
+
 BROWSER_TITLES = {"firefox": "Firefox", "chromium": "Chromium, Chrome and Brave"}
 
 
@@ -101,6 +113,10 @@ def extensions_of(state: dict) -> list[tuple[str, str]]:
 
 _CHANGE_WORDS = {
     ("+", "licence accepted:"): "Accept the licence of",
+    ("+", "local package"): "Add the package made on this computer:",
+    ("-", "local package"): "Remove the package made on this computer:",
+    ("+", "kept download:"): "Keep the downloaded file of",
+    ("-", "kept download:"): "Stop keeping the downloaded file of",
     ("+", "package"): "Install",
     ("-", "package"): "Remove",
     ("+", "firefox extension"): "Add Firefox extension",
@@ -147,7 +163,8 @@ def history_by(by: str) -> str:
 def done_text(label: str) -> str:
     """'Installing vlc' -> 'vlc was installed.'"""
     verb, _, rest = label.partition(" ")
-    past = {"Installing": "installed", "Removing": "removed"}.get(verb)
+    past = {"Installing": "installed", "Removing": "removed", "Adding": "added",
+            "Enabling": "turned on"}.get(verb)
     if past and rest:
         return f"{rest} was {past}."
     if verb == "Undoing":

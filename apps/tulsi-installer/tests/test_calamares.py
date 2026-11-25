@@ -39,6 +39,12 @@ def test_default_desktop_is_ocimum():
     assert c.desktop == "ocimum"
 
 
+def test_sonic_from_the_desktop_page():
+    c = choices_from_globalstorage(gs(packagechooser_packagechooser="sonic"), KBD, "26.05")
+    assert c.desktop == "sonic"
+    render.validate(c)
+
+
 def test_bios_with_encrypted_root_gets_a_grub_key_file():
     parts = [
         {"mountPoint": "/", "fs": "btrfs", "fsName": "luks2", "claimed": True, "device": "/dev/sda2",

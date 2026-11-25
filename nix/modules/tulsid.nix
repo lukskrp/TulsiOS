@@ -22,6 +22,7 @@ let
     initialState = if config.tulsi.state.enable then config.tulsi.state.file else null;
     polkit = true;
     packageIndex = cfg.packageIndex;
+    programIndex = cfg.programIndex;
     allowUnfree = config.nixpkgs.config.allowUnfree or false;
     # Each allow-listed unfree agent with its licence, from the package's own metadata.
     unfreeAgents = lib.genAttrs (lib.filter (n: pkgs ? ${n}) cfg.unfreeAgents) (
@@ -109,6 +110,17 @@ in
         Package search index (JSON, see nix/packages/package-index.nix). Enables
         `Search` and instant rejection of unknown package names. The TulsiOS
         flake sets it to an index of the pinned nixpkgs.
+      '';
+    };
+
+    programIndex = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Which program comes from which package (`program<TAB>attr` lines, see
+        nix/packages/program-index.nix). Lets `Match` find the package for a
+        command someone typed or the programs inside a download (ADR 0018). The
+        TulsiOS flake sets it.
       '';
     };
 

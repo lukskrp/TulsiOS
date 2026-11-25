@@ -1,0 +1,12 @@
+[package]
+name = "tulsi-recipes"
+description = "Package downloaded software from tested templates, without a model (ADR 0018)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tulsi-inspect.workspace = true
+tulsi-state.workspace = true
+serde.workspace = true
+serde_json.workspace = true

@@ -7,6 +7,8 @@ members = [
     "crates/tulsi-cli",
     "crates/tulsi-extwatch",
     "crates/tulsi-mcp",
+    "crates/tulsi-inspect",
+    "crates/tulsi-recipes",
 ]
 
 [workspace.package]
@@ -17,6 +19,8 @@ license = "MIT"
 [workspace.dependencies]
 tulsi-state = { path = "crates/tulsi-state" }
 tulsi-client = { path = "crates/tulsi-client" }
+tulsi-inspect = { path = "crates/tulsi-inspect" }
+tulsi-recipes = { path = "crates/tulsi-recipes" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

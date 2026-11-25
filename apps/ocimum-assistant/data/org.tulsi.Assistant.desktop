@@ -10,3 +10,5 @@ Categories=GTK;System;Settings;
 Keywords=ai;assistant;claude;chat;configure;install;settings;
 StartupNotify=true
 StartupWMClass=org.tulsi.Assistant
+# Super+A on SonicDE (kglobalacceld reads this; Ocimum binds it through gsettings).
+X-KDE-Shortcuts=Meta+A

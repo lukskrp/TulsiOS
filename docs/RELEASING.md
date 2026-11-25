@@ -24,7 +24,18 @@ offered to every installed machine as an upgrade. So `stable` only moves here.
 
    A tree with uncommitted changes builds an ISO whose installs carry an all-zero
    revision: they install fine, but use it only for testing.
-5. **GitHub Release** for the tag: the ISO, its `.sha256`, and release notes (what
+5. **Fill the cache for SonicDE** (ADR 0020), from the same checkout. SonicDE is not on
+   the ISO: installs of it download everything from the TulsiOS cache, so its closure
+   must be there before the ISO is published, or those installs compile Plasma for
+   hours. `sonic-cache` is the SonicDE reference installs (UEFI and BIOS), what
+   rebuilding their per-machine parts needs, and popular KDE apps as Sonic builds
+   (Kate, Okular, Gwenview, Ark, …; the list is in `nix/lib/sonic-cache.nix`).
+
+       nix build .#sonic-cache
+       attic push tulsi ./result
+
+   The first build of a new Sonic release takes hours; later ones reuse the cache.
+6. **GitHub Release** for the tag: the ISO, its `.sha256`, and release notes (what
    changed, known limits). The ISO is about 4 GB, built locally, not in CI.
 
 ## Checks before moving `stable`

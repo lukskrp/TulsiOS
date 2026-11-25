@@ -115,6 +115,20 @@ class Client(GObject.Object):
             "Search", GLib.Variant("(su)", (query, limit)), on_ok, on_error, decode_json=True
         )
 
+    def match(self, hint: dict, limit: int, on_ok: OnOk, on_error: OnError) -> None:
+        """What TulsiOS has for what someone tried to install (ADR 0018).
+
+        `hint`: {names, programs, provides, tool}. on_ok receives candidates, best
+        first: {kind: "package", attr, pname, …, reason} or
+        {kind: "service", name, enabled, reason}."""
+        self._call(
+            "Match",
+            GLib.Variant("(su)", (json.dumps(hint), limit)),
+            on_ok,
+            on_error,
+            decode_json=True,
+        )
+
     def package_info(self, attr: str, on_ok: OnOk, on_error: OnError) -> None:
         self._call("PackageInfo", GLib.Variant("(s)", (attr,)), on_ok, on_error, decode_json=True)
 

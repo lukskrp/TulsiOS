@@ -226,3 +226,8 @@ def test_console_keymap_from_layout():
     assert render.console_keymap_for("de", "nodeadkeys", KBD) == "de-latin1-nodeadkeys"
     assert render.console_keymap_for("us", None, KBD) is None
     assert render.console_keymap_for("xx", None, KBD) is None
+
+
+def test_sonic_is_a_desktop(tmp_path):
+    text = render.configuration_nix(choices(desktop="sonic"))
+    assert 'tulsi.desktop.session = "sonic";' in text

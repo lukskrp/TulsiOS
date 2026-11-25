@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ocimum-nix-editor"
+version = "0.1.0"
+description = "Nix Editor: write and fix Nix packages, with nixd and a Nix guide"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+ocimum-nix-editor = "ocimum_nix_editor.app:main"
+
+[tool.setuptools.packages.find]
+include = ["ocimum_nix_editor*"]
+
+[tool.setuptools.package-data]
+ocimum_nix_editor = ["guide/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

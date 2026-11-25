@@ -44,6 +44,12 @@
       "uniqueItems": true,
       "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" }
     },
+    "keepSources": {
+      "description": "Local packages whose downloaded file is kept as part of the system, so they can always be rebuilt (ADR 0018).",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" }
+    },
     "services": {
       "description": "NixOS service toggles: services.<name>.enable.",
       "type": "object",

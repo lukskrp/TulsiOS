@@ -8,10 +8,13 @@ offer Undo.
 
 from __future__ import annotations
 
+import threading
+
 from gi.repository import GLib, Gtk
 
 from . import dialogs
 from .client import Client, TulsiError
+from .links import LinkError, firefox_extension_id, parse_extension_link
 from .model import (
     BROWSER_TITLES,
     MAX_RESULTS,
@@ -22,7 +25,10 @@ from .model import (
     extensions_of,
     history_title,
     normalize_query,
+    ops_add_extension,
+    ops_enable_service,
     ops_install,
+    ops_keep_source,
     ops_remove,
     ops_remove_extension,
     upgrade_status,
@@ -107,9 +113,13 @@ class Window(Gtk.ApplicationWindow):
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=12)
         self.search_entry = Gtk.SearchEntry(placeholder_text="Search for software to install")
         self.search_entry.connect("search-changed", self._on_search_changed)
-        clamp = Gtk.Box(halign=Gtk.Align.CENTER)
+        clamp = Gtk.Box(halign=Gtk.Align.CENTER, spacing=8)
         self.search_entry.set_size_request(520, -1)
         clamp.pack_start(self.search_entry, False, False, 0)
+        # Downloads and links: the step-by-step "Install the TulsiOS Way" window (ADR 0018).
+        from_file = Gtk.Button.new_with_mnemonic("Install from a _File or Link…")
+        from_file.connect("clicked", lambda _b: self.install_from_file_or_link())
+        clamp.pack_start(from_file, False, False, 0)
         page.pack_start(clamp, False, False, 0)
 
         self.search_stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE)
@@ -154,6 +164,25 @@ class Window(Gtk.ApplicationWindow):
         )
         intro.get_style_context().add_class("dim-label")
         page.pack_start(intro, False, False, 0)
+        # Or add one by its store page's link.
+        link_row = Gtk.Box(spacing=6)
+        self.extension_link = Gtk.Entry(
+            placeholder_text="Link to an extension on addons.mozilla.org or the Chrome Web Store"
+        )
+        self.extension_link.set_hexpand(True)
+        add_button = Gtk.Button.new_with_mnemonic("_Add by Link")
+
+        def add_link(_widget) -> None:
+            url = self.extension_link.get_text().strip()
+            if url:
+                self.add_extension_link(url)
+                self.extension_link.set_text("")
+
+        add_button.connect("clicked", add_link)
+        self.extension_link.connect("activate", add_link)
+        link_row.pack_start(self.extension_link, True, True, 0)
+        link_row.pack_start(add_button, False, False, 0)
+        page.pack_start(link_row, False, False, 0)
         self.extensions_stack = Gtk.Stack()
         self.extensions_stack.add_named(
             placeholder(
@@ -342,11 +371,16 @@ class Window(Gtk.ApplicationWindow):
         else:
             self.request_change(ops_remove(attr), f"Removing {attr}", "Remove")
 
+    def _on_keep_requested(self, _row, attr: str, keep: bool) -> None:
+        verb = "Keeping" if keep else "Releasing"
+        self.request_change(ops_keep_source(attr, keep), f"{verb} the download of {attr}", "Apply")
+
     # ------------------------------------------------------- state & lists
 
     def refresh_state(self) -> None:
         def done(state: dict) -> None:
             self.installed = set(state.get("packages", []))
+            self.kept = set(state.get("keepSources", []))
             self.extensions = extensions_of(state)
             self._sync_rows()
             page = self.stack.get_visible_child_name()
@@ -376,7 +410,14 @@ class Window(Gtk.ApplicationWindow):
         def add(info: dict | None) -> None:
             package = Package.from_json(info) if info else Package(attr=attr)
             package.installed = True
-            self.installed_list.add(self._package_row(package))
+            if (info or {}).get("local"):
+                row = PackageRow(package, kept=attr in getattr(self, "kept", set()))
+                row.set_busy(self.jobs.busy)
+                row.connect("requested", self._on_row_requested)
+                row.connect("keep-requested", self._on_keep_requested)
+                self.installed_list.add(row)
+            else:
+                self.installed_list.add(self._package_row(package))
 
         # Details are optional: fall back to the bare name if lookup fails.
         self.client.package_info(attr, add, lambda _e: add(None))
@@ -415,6 +456,63 @@ class Window(Gtk.ApplicationWindow):
 
         self.client.package_info(attr, with_info, lambda _e: with_info(None))
 
+    def install_from_file_or_link(self) -> None:
+        """Chooses a downloaded file, or takes a link, and opens tulsi-adopt with it."""
+        choice = dialogs.file_or_link(self)
+        if choice is None:
+            return
+        kind, value = choice
+        self.open_adopt(kind, value)
+
+    def open_adopt(self, kind: str, value: str) -> None:
+        """tulsi-adopt --file PATH or --url LINK, in its own process."""
+        import shutil
+        import subprocess
+
+        tulsi_adopt = shutil.which("tulsi-adopt")
+        if not tulsi_adopt:
+            self.show_message("tulsi-adopt is not installed.", error=True)
+            return
+        flag = "--file" if kind == "file" else "--url"
+        subprocess.Popen([tulsi_adopt, flag, value], start_new_session=True,
+                         stdin=subprocess.DEVNULL)
+
+    def enable_service(self, name: str) -> None:
+        """Turns on the NixOS service `name` (services.<name>.enable)."""
+        self.request_change(ops_enable_service(name), f"Enabling {name}", "Turn On")
+
+    def add_extension_link(self, url: str) -> None:
+        """Adds the extension a store link points at (looked up for Firefox)."""
+        try:
+            browser, ref, lookup = parse_extension_link(url)
+        except LinkError as e:
+            self.show_message(str(e), error=True)
+            return
+
+        def add(ext_id: str) -> bool:
+            self.request_change(
+                ops_add_extension(browser, ext_id), f"Adding {ext_id}", "Add"
+            )
+            return GLib.SOURCE_REMOVE
+
+        def failed(message: str) -> bool:
+            self.show_message(message, error=True)
+            return GLib.SOURCE_REMOVE
+
+        if not lookup:
+            add(ref)
+            return
+
+        def resolve() -> None:
+            try:
+                ext_id = firefox_extension_id(ref)
+            except LinkError as e:
+                GLib.idle_add(failed, str(e))
+                return
+            GLib.idle_add(add, ext_id)
+
+        threading.Thread(target=resolve, daemon=True).start()
+
     def request_change(self, ops: list[dict], label: str, apply_label: str) -> None:
         if self.jobs.busy:
             self.show_message("Another change is still being applied.", error=True)
@@ -428,6 +526,9 @@ class Window(Gtk.ApplicationWindow):
             heading = "Apply these changes?" if len(changes) > 1 else f"{changes[0]}?"
             if dialogs.confirm(self, heading, changes, apply_label):
                 self._start(lambda ok, err: self.client.apply(ops, ok, err), label)
+            else:
+                # Controls that started the change (a checkbox) show the state again.
+                self.refresh_state()
 
         self.client.plan(ops, planned, self._on_request_error)
 

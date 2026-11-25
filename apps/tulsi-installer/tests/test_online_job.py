@@ -1,0 +1,65 @@
+"""The Calamares job `tulsios-online` (ADR 0020): SonicDE installs from the TulsiOS
+cache, so without it the job stops before anything is written to the disk."""
+
+import http.server
+import importlib.util
+import pathlib
+import sys
+import threading
+import types
+
+import pytest
+
+JOB = pathlib.Path(__file__).resolve().parents[3] / "installer/calamares/modules/tulsios-online/main.py"
+pytestmark = pytest.mark.skipif(not JOB.exists(), reason="needs the TulsiOS source tree")
+
+
+def load_job(desktop, url):
+    calamares = types.ModuleType("libcalamares")
+    calamares.globalstorage = types.SimpleNamespace(value=lambda key: desktop)
+    calamares.job = types.SimpleNamespace(configuration={"url": url})
+    calamares.utils = types.SimpleNamespace(
+        gettext_path=lambda: None, gettext_languages=lambda: ["en"], debug=lambda message: None
+    )
+    sys.modules["libcalamares"] = calamares
+    spec = importlib.util.spec_from_file_location("tulsios_online", JOB)
+    job = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(job)
+    return job
+
+
+@pytest.fixture
+def cache():
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"StoreDir: /nix/store\n")
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{server.server_port}/nix-cache-info"
+    server.shutdown()
+
+
+# A port nothing listens on: the connection is refused at once.
+UNREACHABLE = "http://127.0.0.1:9/nix-cache-info"
+
+
+def test_sonic_with_the_cache_goes_on(cache):
+    assert load_job("sonic", cache).run() is None
+
+
+def test_sonic_without_the_cache_stops_before_the_disk():
+    title, message = load_job("sonic", UNREACHABLE).run()
+    assert "SonicDE" in title and "internet" in title
+    assert "Nothing has been written to the disk" in message
+    assert UNREACHABLE in message
+
+
+@pytest.mark.parametrize("desktop", ["ocimum", "dwm", None])
+def test_desktops_on_the_iso_need_no_cache(desktop):
+    assert load_job(desktop, UNREACHABLE).run() is None

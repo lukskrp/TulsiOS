@@ -170,9 +170,9 @@ in
         assert "+ package sl" in text(r[3]), r[3]
         assert "hello" in text(r[4]), r[4]
         tools = {t["name"] for t in r[5]["result"]["tools"]}
-        # 10 system tools + 4 packaging tools (ADR 0013).
-        assert len(tools) == 14 and {"fetch_source", "build_package", "try_package",
-                                     "propose_local_package"} <= tools, sorted(tools)
+        # 11 system tools (undo_change: ADR 0015) + 4 packaging tools (ADR 0013).
+        assert len(tools) == 15 and {"fetch_source", "build_package", "try_package",
+                                     "propose_local_package", "undo_change"} <= tools, sorted(tools)
         machine.fail(f"grep -q '\"sl\"' {state}")
 
     with subtest("an approved change is applied, with the plan shown to the approver"):

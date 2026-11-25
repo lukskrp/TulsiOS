@@ -9,9 +9,9 @@
 | 4 | Declarative browser extensions | store install → notice → adopted into policy (Firefox, Chromium, Chrome, Brave) | done |
 | 5 | `tulsi-mcp` (agent interface) | agent request → plan/diff → human approves → applied; config edits | done |
 | 5b | Ocimum Assistant | chat window: plain-language request → tulsi-mcp → approve → applied | done |
-| 6a | tulsipkgs + TulsiOS cache | flake on tulsipkgs; CI builds TulsiOS-owned packages and pushes them to cache.skarptech.org | in progress (cache server pending) |
+| 6a | tulsipkgs + TulsiOS cache | flake on tulsipkgs; CI builds TulsiOS-owned packages and pushes them to cache.skarptech.org | done |
 | 6b | Ocimum Desktop | hard fork of Cinnamon 6.8 built by tulsipkgs; branding, TulsiOS defaults, Tulsi applets | in progress |
-| 7 | Installer ISO + release | Calamares ISO installs TulsiOS (Ocimum or dwm) on Hyper-V / bare metal | in progress |
+| 7 | Installer ISO + release | Calamares ISO installs TulsiOS (Ocimum, SonicDE or dwm) on Hyper-V / bare metal | in progress |
 
 ## Phase 3 (done)
 - [x] Toolkit decision: GTK 3 via GTK3-O, GUI apps in Python + PyGObject (ADR 0005)
@@ -71,13 +71,14 @@ Known limits, picked up later:
 - Conversations are not saved between sessions.
 - Panel applet and global keyboard shortcut come with the Cinnamon fork (Phase 6).
 
-## Phase 6a (in progress): tulsipkgs and the TulsiOS cache (ADR 0008)
+## Phase 6a (done): tulsipkgs and the TulsiOS cache (ADR 0008)
 - [x] tulsipkgs, a hard fork of nixpkgs (branch `tulsi-unstable`), is the flake's `nixpkgs` input
 - [x] `gtk3-o` and `otk` packaged in tulsipkgs (the `gtk3-o` flake input is gone)
 - [x] `tulsi-release.nix` (`built` / `curated`) and `check-upstream.sh`; `tulsi-build` and daily `tulsi-sync` workflows
 - [x] Attic deployment files for cache.skarptech.org (SkarpTech_Website `deploy/attic/`); `tulsi.cache` module
 - [x] Cache server running; CI secrets set; `tulsi.cache.publicKey` filled in
-- [ ] A clean machine downloads Cinnamon from the TulsiOS cache instead of building it
+- [x] A clean machine downloads Cinnamon from the TulsiOS cache instead of building it
+      (an Ocimum Desktop install on a ThinkCentre E72, online)
 
 ## Phase 6b (in progress): Ocimum Desktop
 - [x] `lukskrp/ocimum-desktop` branch `ocimum`: hard fork of Cinnamon 6.8.0 with session name, logo,
@@ -86,6 +87,9 @@ Known limits, picked up later:
 - [x] `ocimum.desktop`: Mint-Y-Dark, Tulsi Leaf wallpaper, TulsiOS start button (colour, or white
       for dark panels), Super+A opens the Assistant; `checks.ocimum-desktop`
 - [ ] Panel applet for the Assistant; TulsiOS default panel layout
+- [x] Brave Origin comes with the desktop (also on the live USB): installed, the default browser,
+      and in the panel's launchers (Files, Brave Origin, Terminal) for new users
+      (`ocimum.desktop.browser`, `ocimum.desktop.panelLaunchers`); `checks.ocimum-desktop`
 - [x] Background daemon on OTK (OTK 1 API: monitor list model, connector, `gtk_disable_portals()`);
       Ocimum is X11-only; `checks.ocimum-desktop` checks the painted wallpaper colour live
 - [x] OSK core (ADR 0009): GTK 4.24's render nodes, `.node` format, textures and Cairo renderer as
@@ -107,6 +111,30 @@ Known limits, picked up later:
       binaries open `tulsi-adopt`; the Assistant packages unpackaged software as a local package
       (`tulsi/pkgs/<name>`), a person approves, Undo removes it; `checks.adopt`, `checks.local-package-eval`
 - [ ] Share local packages back to tulsipkgs (opt-in)
+- [x] Find the package first (ADR 0018, milestone 1): tulsid `Match` (curated names and
+      services, other distributions' naming rules, `pip`/`npm`/… package sets, the program
+      index from nix-index-database), `tulsi-inspect` (`tulsi inspect`: .deb/.rpm metadata,
+      programs inside), `pip`/`npm -g`/`cargo`/`gem`/`go`/`flatpak` install shims, extension
+      store links ("Add by Link", `tulsi-adopt --url`); `checks.adopt`
+- [x] Recipes (ADR 0018, milestone 2): `tulsi-recipes` (`tulsi recipe plan|build|install`)
+      packages AppImages, prebuilt programs (.deb, .rpm, tar, zip) and CMake/Meson/autotools/
+      make/Cargo/Go source without a model, fixing missing libraries, build dependencies and
+      dependency hashes itself, and tries the result in a bubblewrap sandbox; the popup's
+      Recipe-or-Assistant choice, remembered (`~/.config/tulsi/packaging.json`, also in
+      Starah's window); kept downloads (state.json `keepSources`, `tulsi keep-source`);
+      `checks.adopt`, `checks.local-package-eval`
+- [ ] Recipes: fonts, Qt applications (`wrapQtAppsHook`), Python projects
+- [x] Install wizard (ADR 0018, milestone 3): step-by-step `tulsi-adopt` (What it is, In
+      TulsiOS, How to package it, Details, Build and try, Install; opens on the matches when
+      there are any); "Install from a File or Link…" in the Software Center; `checks.adopt`
+      walks it by keyboard to an install
+- [x] Nix Editor (ADR 0019): `ocimum-nix-editor` with nixd (completion, hover, problems,
+      offline against the pinned nixpkgs), TulsiOS's local-package rules, and a Nix guide
+      written for TulsiOS beside the file; "Edit It Yourself" opens a failed Recipe's draft,
+      with Build and Try and Install (`tulsi recipe check|build-draft|ops`);
+      `checks.nix-editor`, `checks.nix-guide`, `checks.adopt`
+- [ ] tulsi-index-database-xx: TulsiOS's own program index (packages' main programs,
+      nix-index-database with a weekly PR, a hand-kept list); shelved for now
 - [x] Reversible changes don't ask (ADR 0014): `org.tulsi.apply` (rollback undoes it) vs
       `org.tulsi.configure` (accounts, boot, scripts, local packages; `configuration.nix` edits
       are checked by `tulsi_state::unreversible_settings`); the Assistant's agent defaults to
@@ -150,6 +178,20 @@ Known limits:
       takeover from the firmware framebuffer and stopped forwarding the console it
       redirects, stalling systemd. The ISO has no boot splash now (boot messages show)
 - [ ] Release v0.1.0: ISO + SHA-256 on GitHub Releases
+
+### SonicDE, the third desktop (ADR 0020)
+- [x] tulsipkgs `sonicPackages` (`pkgs/sonic`): the whole Sonic stack (Frameworks 6.31.0.x,
+      Plasma 6.8.2, apps 26.08.3) on nixpkgs' KDE recipes; sonic-win, Silver, SonicLogging/Ipc
+- [x] `sonic.desktop` module, `tulsi.desktop.session = "sonic"`: XLibre, Ocimum Greeter,
+      Ecco / Sonic Terminal / System Monitor / Screenies, TulsiOS apps, Brave Origin;
+      look-and-feel "TulsiOS (Silver)" (wallpaper, start button, pinned apps), Super+A;
+      `kdePackages` is Sonic's set on SonicDE machines
+- [x] Calamares: third desktop item (online only); `tulsios-online` job refuses before
+      partitioning when the cache does not answer
+- [x] `checks.sonic-desktop`
+- [x] `checks.install-sonic`: install from a cache node (Harmonia); the refusal without one is covered by the installer's unit tests (`test_online_job.py`)
+- [ ] The release pipeline pushes the SonicDE closure and popular Sonic-built KDE apps to the cache
+- [ ] QXLibre (Qt's XLibre platform plugin); the splash screen's D-Bus timeout at login
 
 Known limits:
 - The Calamares GUI is not covered by automated tests; its install job is (`tulsi-install-system`).

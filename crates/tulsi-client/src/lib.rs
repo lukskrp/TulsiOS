@@ -191,6 +191,9 @@ pub trait Manager {
     fn plan_undo(&self, commit: &str) -> zbus::Result<String>;
     fn history(&self, limit: u32) -> zbus::Result<String>;
     fn search(&self, query: &str, limit: u32) -> zbus::Result<String>;
+    /// `hint` is a [`MatchHint`] as JSON; returns [`Candidate`]s as JSON.
+    #[zbus(name = "Match")]
+    fn match_(&self, hint: &str, limit: u32) -> zbus::Result<String>;
     fn package_info(&self, attr: &str) -> zbus::Result<String>;
     fn get_config(&self) -> zbus::Result<String>;
     fn plan_config(&self, contents: &str) -> zbus::Result<String>;
@@ -277,6 +280,37 @@ pub struct PackageInfo {
     pub local: bool,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub origin: String,
+}
+
+/// What someone tried to install, for `Match` (ADR 0018): the names it goes by
+/// (typed, or a package's own name), the programs it contains or that were typed,
+/// what it says it provides, and the tool it was asked of (`apt`, `pip`, `flatpak`…).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct MatchHint {
+    pub names: Vec<String>,
+    pub programs: Vec<String>,
+    pub provides: Vec<String>,
+    pub tool: String,
+}
+
+/// One answer of `Match`: a package to install or a service to turn on, and why.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum Candidate {
+    Package {
+        #[serde(flatten)]
+        info: PackageInfo,
+        /// Why it matches, for people: "provides the program `rg`".
+        reason: String,
+    },
+    Service {
+        /// `services.<name>.enable`.
+        name: String,
+        /// Already on in state.json.
+        enabled: bool,
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

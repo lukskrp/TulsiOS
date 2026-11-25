@@ -38,6 +38,11 @@ pub struct State {
     /// also in `packages` while installed.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub local_packages: Vec<String>,
+    /// Local packages whose downloaded file is kept (ADR 0018): the tulsi.state module
+    /// makes it part of the system, so Nix's cleanup leaves it while a generation
+    /// uses it and the package can always be rebuilt (after an upgrade, say).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keep_sources: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,6 +83,7 @@ impl Default for State {
             services: BTreeMap::new(),
             accepted_licenses: Vec::new(),
             local_packages: Vec::new(),
+            keep_sources: Vec::new(),
         }
     }
 }
@@ -142,6 +148,13 @@ impl State {
         for name in self.services.keys() {
             if !is_valid_identifier(name) || name.contains('\'') {
                 problems.push(format!("invalid service name {name:?}"));
+            }
+        }
+        for name in &self.keep_sources {
+            if !self.local_packages.contains(name) {
+                problems.push(format!(
+                    "the download of {name:?} is kept, but it is not a local package"
+                ));
             }
         }
 

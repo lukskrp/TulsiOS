@@ -1,0 +1,9 @@
+[package]
+name = "tulsi-inspect"
+description = "What a downloaded file is: kind, name, version and the programs inside (ADR 0018)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }

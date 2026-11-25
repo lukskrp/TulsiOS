@@ -13,6 +13,8 @@ struct Row(String, String, String, String, bool);
 pub struct Index {
     entries: Vec<Row>,
     by_attr: HashMap<String, usize>,
+    /// Lower-case pname -> rows, shortest attribute first.
+    by_pname: HashMap<String, Vec<usize>>,
 }
 
 impl Index {
@@ -30,7 +32,30 @@ impl Index {
             .enumerate()
             .map(|(i, row)| (row.0.clone(), i))
             .collect();
-        Ok(Self { entries, by_attr })
+        let mut by_pname: HashMap<String, Vec<usize>> = HashMap::new();
+        for (i, row) in entries.iter().enumerate() {
+            by_pname.entry(row.1.to_lowercase()).or_default().push(i);
+        }
+        for rows in by_pname.values_mut() {
+            rows.sort_by_key(|&i| (entries[i].4, entries[i].0.len(), entries[i].0.clone()));
+        }
+        Ok(Self {
+            entries,
+            by_attr,
+            by_pname,
+        })
+    }
+
+    pub fn contains(&self, attr: &str) -> bool {
+        self.by_attr.contains_key(attr)
+    }
+
+    /// Packages whose pname is `name` (any case), free and top-level first.
+    pub fn by_pname(&self, name: &str) -> Vec<PackageInfo> {
+        self.by_pname
+            .get(&name.to_lowercase())
+            .map(|rows| rows.iter().map(|&i| info(&self.entries[i])).collect())
+            .unwrap_or_default()
     }
 
     pub fn len(&self) -> usize {

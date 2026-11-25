@@ -74,11 +74,25 @@ pub enum Op {
         description: String,
         #[serde(default)]
         origin: String,
+        /// Keep the downloaded file it is built from (`keepSources`); on unless said
+        /// otherwise, so it can always be rebuilt.
+        #[serde(default = "yes", rename = "keepSource")]
+        keep_source: bool,
     },
     /// Uninstalls a local package and deletes its expression.
     RemoveLocalPackage {
         name: String,
     },
+    /// Keeps a local package's downloaded file, or lets Nix's cleanup remove it once
+    /// no system generation needs it.
+    KeepSource {
+        name: String,
+        keep: bool,
+    },
+}
+
+fn yes() -> bool {
+    true
 }
 
 impl Op {
@@ -99,6 +113,10 @@ impl Op {
             Op::AcceptLicense { name } => format!("accept the licence of {name}"),
             Op::AddLocalPackage { name, .. } => format!("add local package {name}"),
             Op::RemoveLocalPackage { name } => format!("remove local package {name}"),
+            Op::KeepSource { name, keep: true } => format!("keep the download of {name}"),
+            Op::KeepSource { name, keep: false } => {
+                format!("stop keeping the download of {name}")
+            }
         }
     }
 }
@@ -138,15 +156,32 @@ impl State {
                         .insert(name.clone(), Service { enable: *enable });
                 }
                 Op::AcceptLicense { name } => add(&mut next.accepted_licenses, name),
-                Op::AddLocalPackage { name, .. } => {
+                Op::AddLocalPackage {
+                    name, keep_source, ..
+                } => {
                     add(&mut next.local_packages, name);
                     add(&mut next.packages, name);
+                    if *keep_source {
+                        add(&mut next.keep_sources, name);
+                    } else {
+                        remove(&mut next.keep_sources, name);
+                    }
                 }
                 Op::RemoveLocalPackage { name } => {
                     if !remove(&mut next.local_packages, name) {
                         problems.push(format!("{name:?} is not a local package"));
                     }
                     remove(&mut next.packages, name);
+                    remove(&mut next.keep_sources, name);
+                }
+                Op::KeepSource { name, keep } => {
+                    if !next.local_packages.contains(name) {
+                        problems.push(format!("{name:?} is not a local package"));
+                    } else if *keep {
+                        add(&mut next.keep_sources, name);
+                    } else {
+                        remove(&mut next.keep_sources, name);
+                    }
                 }
             }
         }
@@ -175,6 +210,12 @@ impl State {
             &other.local_packages,
         );
         list_diff(&mut out, "package", &self.packages, &other.packages);
+        list_diff(
+            &mut out,
+            "kept download:",
+            &self.keep_sources,
+            &other.keep_sources,
+        );
         list_diff(
             &mut out,
             "firefox extension",
@@ -219,6 +260,14 @@ impl State {
             &before.accepted_licenses,
             &after.accepted_licenses,
         );
+        revert_list(
+            &mut next.keep_sources,
+            &before.keep_sources,
+            &after.keep_sources,
+        );
+        // A kept download whose package the revert took away goes with it.
+        let locals = next.local_packages.clone();
+        next.keep_sources.retain(|n| locals.contains(n));
         revert_list(
             &mut next.browser_extensions.firefox,
             &before.browser_extensions.firefox,
@@ -423,7 +472,11 @@ mod tests {
         assert_eq!(next.packages, vec!["frob"]);
         assert_eq!(
             base.diff(&next),
-            vec!["+ local package frob", "+ package frob"]
+            vec![
+                "+ local package frob",
+                "+ package frob",
+                "+ kept download: frob"
+            ]
         );
         let gone = next
             .with_ops(&ops(r#"[{"op":"removeLocalPackage","name":"frob"}]"#))
@@ -439,5 +492,47 @@ mod tests {
     #[test]
     fn rejects_unknown_ops() {
         assert!(serde_json::from_str::<Vec<Op>>(r#"[{"op":"runShell","cmd":"x"}]"#).is_err());
+    }
+
+    #[test]
+    fn downloads_are_kept_by_choice() {
+        let base = State::default();
+        // Kept unless said otherwise.
+        let kept = base
+            .with_ops(&ops(
+                r#"[{"op":"addLocalPackage","name":"frob","expression":"{ }: x"}]"#,
+            ))
+            .unwrap();
+        assert_eq!(kept.keep_sources, vec!["frob"]);
+        assert_eq!(
+            base.diff(&kept),
+            vec![
+                "+ local package frob",
+                "+ package frob",
+                "+ kept download: frob"
+            ]
+        );
+        let not = base
+            .with_ops(&ops(
+                r#"[{"op":"addLocalPackage","name":"frob","expression":"{ }: x","keepSource":false}]"#,
+            ))
+            .unwrap();
+        assert!(not.keep_sources.is_empty());
+        // Changed later, and undone.
+        let off = kept
+            .with_ops(&ops(r#"[{"op":"keepSource","name":"frob","keep":false}]"#))
+            .unwrap();
+        assert!(off.keep_sources.is_empty());
+        assert_eq!(off.reverted(&kept, &off).keep_sources, vec!["frob"]);
+        // Only local packages; removing one stops keeping its download.
+        assert!(base
+            .with_ops(&ops(r#"[{"op":"keepSource","name":"vlc","keep":true}]"#))
+            .is_err());
+        let gone = kept
+            .with_ops(&ops(r#"[{"op":"removeLocalPackage","name":"frob"}]"#))
+            .unwrap();
+        assert!(gone.keep_sources.is_empty());
+        // Undoing the add takes the kept download away with the package.
+        assert!(kept.reverted(&base, &kept).keep_sources.is_empty());
     }
 }

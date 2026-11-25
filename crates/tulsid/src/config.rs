@@ -21,6 +21,10 @@ pub struct Config {
     /// Package search index; enables Search and early rejection of unknown names.
     #[serde(default)]
     pub package_index: Option<PathBuf>,
+    /// Which programs come from which packages (`program<TAB>attr`, see
+    /// nix/packages/program-index.nix); lets `Match` find packages by program.
+    #[serde(default)]
+    pub program_index: Option<PathBuf>,
     /// Mirrors `nixpkgs.config.allowUnfree`; unfree packages are refused otherwise.
     #[serde(default)]
     pub allow_unfree: bool,

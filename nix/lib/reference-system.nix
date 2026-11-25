@@ -3,7 +3,7 @@
 # nix/lib/offline-rebuild-inputs.nix, what rebuilding its per-machine parts needs,
 # so installing needs no network (ADR 0016).
 #
-#   desktop  "ocimum" | "dwm"
+#   desktop  "ocimum" | "dwm" | "sonic" (SonicDE is not on the ISO: nix/lib/sonic-cache.nix)
 #   boot     "uefi" (systemd-boot) | "bios" (GRUB), as tulsi-install-system writes them
 #
 # A real machine's hardware-configuration.nix and Calamares' answers can switch on

@@ -29,7 +29,8 @@ TulsiOS already has the pieces for a better answer:
   by one that still prints the stub's message and exits 127, but also opens the popup with
   the program. This is turned off with `tulsi.adopt.foreignBinaries` when nix-ld is used.
 
-**The popup offers the matching Software Center packages first.** If nothing fits, it
+**The popup offers the matching Software Center packages first** (how they are found:
+ADR 0018). If nothing fits, it
 offers **"Ask the Assistant to Package It"**, which takes these steps:
 - The Assistant runs as the Starah agent `assistant` and uses new tulsi-mcp tools:
   - `fetch_source` downloads a URL, or takes the file already added to the store, and

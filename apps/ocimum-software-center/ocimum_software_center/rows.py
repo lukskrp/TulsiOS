@@ -37,9 +37,11 @@ class PackageRow(Gtk.ListBoxRow):
     __gsignals__ = {
         # (attr, install?)
         "requested": (GObject.SignalFlags.RUN_FIRST, None, (str, bool)),
+        # (attr, keep?): keep the download a package made on this computer is built from
+        "keep-requested": (GObject.SignalFlags.RUN_FIRST, None, (str, bool)),
     }
 
-    def __init__(self, package: Package):
+    def __init__(self, package: Package, kept: bool | None = None):
         super().__init__(activatable=False, selectable=False)
         self.package = package
 
@@ -56,6 +58,14 @@ class PackageRow(Gtk.ListBoxRow):
             text.pack_start(_label(package.subtitle, css="dim-label"), False, False, 0)
         if package.description:
             text.pack_start(_label(package.description, wrap=True), False, False, 0)
+        self.keep = None
+        if kept is not None:
+            # Made on this computer from a download (ADR 0018).
+            self.keep = Gtk.CheckButton(label="Keep its downloaded file, so it can always be rebuilt")
+            self.keep.set_active(kept)
+            self.keep.connect(
+                "toggled", lambda b: self.emit("keep-requested", package.attr, b.get_active()))
+            text.pack_start(self.keep, False, False, 0)
         box.pack_start(text, True, True, 0)
 
         self.button = Gtk.Button(valign=Gtk.Align.CENTER)
@@ -89,6 +99,8 @@ class PackageRow(Gtk.ListBoxRow):
 
     def set_busy(self, busy: bool) -> None:
         self.button.set_sensitive(not busy)
+        if self.keep is not None:
+            self.keep.set_sensitive(not busy)
 
 
 class ExtensionRow(Gtk.ListBoxRow):

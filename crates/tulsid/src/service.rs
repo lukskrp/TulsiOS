@@ -14,8 +14,8 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::{mpsc, Mutex, OwnedMutexGuard};
 use tulsi_client::{
-    config_action, PackageInfo, Plan, UndoPlan, ACTION_APPLY, ACTION_CONFIGURE, ACTION_EXTENSIONS,
-    ACTION_UPGRADE, OBJECT_PATH,
+    config_action, Candidate, MatchHint, PackageInfo, Plan, UndoPlan, ACTION_APPLY,
+    ACTION_CONFIGURE, ACTION_EXTENSIONS, ACTION_UPGRADE, OBJECT_PATH,
 };
 use tulsi_state::{describe_all, Op, State};
 use zbus::message::Header;
@@ -25,7 +25,8 @@ use zbus::{interface, Connection};
 use crate::config::Config;
 use crate::git::FileChange;
 use crate::index::Index;
-use crate::{git, localpkg, nixfile, polkit, upgrade};
+use crate::matching::{NameMap, ProgramIndex};
+use crate::{git, localpkg, matching, nixfile, polkit, upgrade};
 
 /// Upper bound for `Search` results.
 const MAX_SEARCH_RESULTS: u32 = 500;
@@ -57,15 +58,19 @@ type Result<T> = std::result::Result<T, TulsiError>;
 pub struct Manager {
     cfg: Arc<Config>,
     index: Option<Arc<Index>>,
+    programs: ProgramIndex,
+    names: NameMap,
     lock: Arc<Mutex<()>>,
     next_job: AtomicU64,
 }
 
 impl Manager {
-    pub fn new(cfg: Config, index: Option<Index>) -> Self {
+    pub fn new(cfg: Config, index: Option<Index>, programs: ProgramIndex) -> Self {
         Self {
             cfg: Arc::new(cfg),
             index: index.map(Arc::new),
+            programs,
+            names: NameMap::builtin(),
             lock: Arc::new(Mutex::new(())),
             next_job: AtomicU64::new(1),
         }
@@ -217,6 +222,7 @@ impl Manager {
                     version,
                     description,
                     origin,
+                    ..
                 } => changes.extend(localpkg::add_changes(
                     dir,
                     name,
@@ -637,6 +643,46 @@ impl Manager {
         results.extend(self.mark_installed(self.index()?.search(query, limit)));
         results.truncate(limit);
         Ok(serde_json::to_string(&results).expect("results serialize"))
+    }
+
+    /// What someone tried to install (a `MatchHint` as JSON) as TulsiOS packages or
+    /// services, best first, each with a reason (ADR 0018). Local packages named
+    /// like the request come first.
+    #[zbus(name = "Match")]
+    async fn match_(&self, hint: &str, limit: u32) -> Result<String> {
+        let hint: MatchHint = serde_json::from_str(hint)
+            .map_err(|e| TulsiError::Invalid(format!("invalid match hint: {e}")))?;
+        let limit = limit.clamp(1, MAX_SEARCH_RESULTS) as usize;
+        let state = self.current_state().ok();
+        let mut results: Vec<Candidate> = Vec::new();
+        for name in &hint.names {
+            for info in self.local_infos(None) {
+                if info.attr.eq_ignore_ascii_case(name.trim()) {
+                    results.push(Candidate::Package {
+                        reason: format!("made on this computer as `{}`", info.attr),
+                        info,
+                    });
+                }
+            }
+        }
+        for candidate in matching::find(self.index()?, &self.programs, &self.names, &hint, limit) {
+            results.push(match candidate {
+                Candidate::Package { info, reason } => Candidate::Package {
+                    info: self.mark_installed(vec![info]).remove(0),
+                    reason,
+                },
+                Candidate::Service { name, reason, .. } => Candidate::Service {
+                    enabled: state
+                        .as_ref()
+                        .and_then(|s| s.services.get(&name))
+                        .is_some_and(|s| s.enable),
+                    name,
+                    reason,
+                },
+            });
+        }
+        results.truncate(limit);
+        Ok(serde_json::to_string(&results).expect("candidates serialize"))
     }
 
     /// Details of one package attribute, as JSON.

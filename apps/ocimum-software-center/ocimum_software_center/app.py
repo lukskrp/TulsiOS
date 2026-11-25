@@ -3,11 +3,15 @@
 Exposes actions on the session bus (org.gtk.Actions on /org/tulsi/SoftwareCenter)
 so other tools, tests and later the Ocimum Assistant can open the app on a
 specific change. Actions still show the confirmation dialog:
-    install(s)  remove(s)  undo  search(s)  history  upgrade
+    install(s)  remove(s)  service(s)  add-extension(s)  apply-ops(s)  undo  search(s)
+    history  upgrade
+(service: turn on services.<name>; add-extension: a store page's link; apply-ops:
+{"ops": [...], "label": "..."}, e.g. a local package a recipe built.)
 """
 
 from __future__ import annotations
 
+import json
 import sys
 
 import gi
@@ -31,6 +35,11 @@ class Application(Gtk.Application):
         self._action("install", string, lambda attr: self._win().install(attr))
         self._action("remove", string, lambda attr: self._win().request_change(
             ops_remove(attr), f"Removing {attr}", "Remove"))
+        self._action("service", string, lambda name: self._win().enable_service(name))
+        self._action("add-extension", string, self._add_extension)
+        self._action("apply-ops", string, self._apply_ops)
+        # "Install from a file or link": the step-by-step tulsi-adopt window with it.
+        self._action("install-file", string, lambda path: self._win().open_adopt("file", path))
         self._action("search", string, self._search)
         self._action("undo", None, lambda _: self._win().request_undo())
         self._action("history", None, lambda _: self._history())
@@ -61,6 +70,24 @@ class Application(Gtk.Application):
         window = self._win()
         window.stack.set_visible_child_name("search")
         window.search_entry.set_text(text)
+
+    def _apply_ops(self, payload: str) -> None:
+        """{"ops": [...], "label": "Installing frob"}: any change, with the usual
+        confirmation (tulsi-adopt's recipes install local packages this way)."""
+        window = self._win()
+        try:
+            data = json.loads(payload)
+            ops, label = data["ops"], data.get("label") or "Applying changes"
+        except (ValueError, KeyError, TypeError) as e:
+            window.show_message(f"Invalid change request: {e}", error=True)
+            return
+        window.stack.set_visible_child_name("installed")
+        window.request_change(ops, label, "Install")
+
+    def _add_extension(self, url: str) -> None:
+        window = self._win()
+        window.stack.set_visible_child_name("extensions")
+        window.add_extension_link(url)
 
     def _history(self) -> None:
         window = self._win()

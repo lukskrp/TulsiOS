@@ -31,6 +31,60 @@ def confirm(parent: Gtk.Window, heading: str, changes: list[str], apply_label: s
     return response == Gtk.ResponseType.OK
 
 
+FROM_FILE_TITLE = "Install from a File or Link"
+
+
+def file_or_link(parent: Gtk.Window) -> tuple[str, str] | None:
+    """A downloaded file ("file", path) or a link ("url", link); None if cancelled."""
+    dialog = Gtk.Dialog(title=FROM_FILE_TITLE, transient_for=parent, modal=True)
+    dialog.add_button("_Cancel", Gtk.ResponseType.CANCEL)
+    go = dialog.add_button("_Continue", Gtk.ResponseType.OK)
+    go.get_style_context().add_class("suggested-action")
+    dialog.set_default_response(Gtk.ResponseType.OK)
+    area = dialog.get_content_area()
+    area.set_spacing(8)
+    area.set_border_width(12)
+    intro = Gtk.Label(
+        label="A .deb, .rpm, AppImage, archive or program you downloaded, or a link to an "
+        "extension's store page or a download page.",
+        xalign=0,
+        wrap=True,
+        max_width_chars=60,
+    )
+    area.pack_start(intro, False, False, 0)
+    chooser = Gtk.FileChooserButton(title="Choose a Downloaded File")
+    downloads = _downloads_dir()
+    if downloads:
+        chooser.set_current_folder(downloads)
+    area.pack_start(chooser, False, False, 0)
+    link = Gtk.Entry(placeholder_text="…or paste a link", activates_default=True)
+    area.pack_start(link, False, False, 0)
+
+    def update(*_args) -> None:
+        go.set_sensitive(bool(chooser.get_filename() or link.get_text().strip()))
+
+    chooser.connect("file-set", update)
+    link.connect("changed", update)
+    update()
+    dialog.show_all()
+    try:
+        if dialog.run() != Gtk.ResponseType.OK:
+            return None
+        if link.get_text().strip():
+            return "url", link.get_text().strip()
+        if chooser.get_filename():
+            return "file", chooser.get_filename()
+        return None
+    finally:
+        dialog.destroy()
+
+
+def _downloads_dir() -> str:
+    from gi.repository import GLib
+
+    return GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD) or ""
+
+
 LICENSE_TITLE = "Software Licence"
 
 
