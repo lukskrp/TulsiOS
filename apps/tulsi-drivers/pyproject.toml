@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tulsi-drivers"
+version = "0.1.0"
+description = "Drivers: GPU, Wi-Fi and processor drivers for TulsiOS"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+tulsi-drivers = "tulsi_drivers.cli:main"
+tulsi-drivers-app = "tulsi_drivers.app:main"
+
+[tool.setuptools.packages.find]
+include = ["tulsi_drivers*"]
+
+[tool.setuptools.package-data]
+tulsi_drivers = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -43,6 +43,7 @@ Then ask, for example: *"install a lightweight video player and enable printing"
 | `list_themes` | no | The desktop themes (palettes) the person can switch to (ADR 0021) |
 | `set_theme` | the person's own setting, no approval | Switch their desktop's colours and background; only in their own desktop session |
 | `undo_theme` | the person's own setting, no approval | Back to the theme before (or the desktop's own look) |
+| `list_drivers` | no | Graphics cards, Wi-Fi and processor, their drivers and the driver choices (ADR 0029); changes go through `tulsi-drivers set` |
 
 Operations use the `state.json` format, e.g. `{"op":"addPackage","name":"vlc"}`
 (see `crates/tulsi-state/src/ops.rs`).

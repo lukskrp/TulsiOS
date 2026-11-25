@@ -13,6 +13,7 @@
 
 mod approval;
 mod backend;
+mod drivers;
 mod packaging;
 mod server;
 mod themes;

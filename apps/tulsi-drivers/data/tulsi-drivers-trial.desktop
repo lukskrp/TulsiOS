@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Drivers Check
+Comment=After starting with new drivers, asks whether everything works
+Exec=tulsi-drivers-app --trial-prompt
+Icon=org.tulsi.Drivers
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-Delay=3

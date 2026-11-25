@@ -11,6 +11,7 @@ final: prev: {
   ocimum-themes = final.callPackage ../packages/ocimum-themes.nix { };
   ocimum-file-history = final.callPackage ../packages/ocimum-file-history.nix { };
   tulsi-wiki = final.callPackage ../packages/tulsi-wiki.nix { };
+  tulsi-drivers = final.callPackage ../packages/tulsi-drivers.nix { };
   ocimum-assistant = final.callPackage ../packages/ocimum-assistant.nix { };
   ocimum-greeter = final.callPackage ../packages/ocimum-greeter.nix { };
   tulsi-installer = final.callPackage ../packages/tulsi-installer.nix { };

@@ -38,6 +38,11 @@ change the system (asks for authorization):
   config apply FILE --summary TEXT  replace configuration.nix with FILE (any other NixOS
                                     setting: Docker, groups, firewall, drivers…); recorded,
                                     rolled back if the rebuild fails, undone with `undo`
+  config apply FILE --summary TEXT --at-restart
+                                    the same, taking effect at the next restart, on trial:
+                                    if that start fails, the one before comes back (drivers)
+  trial status [--json] | keep | undo
+                                    a change on trial: keep it after restarting, or undo it
   keep-source NAME on|off           keep the download a package made on this computer is
                                     built from (on), or let cleanup remove it (off)
   undo [CHANGE]                     revert the most recent change, or the change with
@@ -181,7 +186,32 @@ async fn run(opts: &Options, args: &[&str]) -> Result<ExitCode, String> {
         }
         ["config", "apply", file, "--summary", summary]
         | ["config", "apply", "--summary", summary, file] => {
-            return config_apply(opts, Path::new(file), summary).await
+            return config_apply(opts, Path::new(file), summary, false).await
+        }
+        ["config", "apply", file, "--summary", summary, "--at-restart"]
+        | ["config", "apply", "--summary", summary, file, "--at-restart"]
+        | ["config", "apply", "--at-restart", file, "--summary", summary] => {
+            return config_apply(opts, Path::new(file), summary, true).await
+        }
+        ["trial", "status"] => return trial_status(false).await,
+        ["trial", "status", "--json"] => return trial_status(true).await,
+        ["trial", "keep"] => {
+            out!("{}", proxy().await?.keep_trial().await.map_err(dbus)?);
+            return Ok(ExitCode::SUCCESS);
+        }
+        ["trial", "undo"] => {
+            let proxy = proxy().await?;
+            let proxy_ref = &proxy;
+            return run_job(
+                opts,
+                proxy_ref,
+                || async move { proxy_ref.undo_trial().await },
+            )
+            .await;
+        }
+        ["trial", "dismiss"] => {
+            proxy().await?.dismiss_trial().await.map_err(dbus)?;
+            return Ok(ExitCode::SUCCESS);
         }
         ["undo" | "rollback"] => return undo(opts, None).await,
         ["undo" | "rollback", commit] => return undo(opts, Some(commit)).await,
@@ -376,6 +406,7 @@ fn changes_system(opts: &Options, args: &[&str]) -> bool {
                 | ["keep-source", _, _]
                 | ["service", "enable" | "disable", _]
                 | ["config", "apply", ..]
+                | ["trial", "undo"]
                 | ["undo" | "rollback", ..]
                 | ["upgrade"]
                 | ["recipe", "install", _]
@@ -392,6 +423,12 @@ fn relay_args(args: &[&str]) -> Result<Relay, String> {
         ["config", "apply", file, "--summary", summary]
         | ["config", "apply", "--summary", summary, file] => (
             own(&["config", "apply", "-", "--summary", summary]),
+            Some(read_input(Path::new(file))?),
+        ),
+        ["config", "apply", file, "--summary", summary, "--at-restart"]
+        | ["config", "apply", "--summary", summary, file, "--at-restart"]
+        | ["config", "apply", "--at-restart", file, "--summary", summary] => (
+            own(&["config", "apply", "-", "--summary", summary, "--at-restart"]),
             Some(read_input(Path::new(file))?),
         ),
         ["recipe", "install", file] => (
@@ -537,7 +574,12 @@ async fn config_plan(file: &Path) -> Result<ConfigEdit, String> {
     })
 }
 
-async fn config_apply(opts: &Options, file: &Path, summary: &str) -> Result<ExitCode, String> {
+async fn config_apply(
+    opts: &Options,
+    file: &Path,
+    summary: &str,
+    at_restart: bool,
+) -> Result<ExitCode, String> {
     if summary.trim().is_empty() {
         return Err("--summary needs a short description of the edit".into());
     }
@@ -557,9 +599,40 @@ async fn config_apply(opts: &Options, file: &Path, summary: &str) -> Result<Exit
     let proxy_ref = &proxy;
     let (new, summary) = (new.as_str(), summary);
     run_job(opts, proxy_ref, || async move {
-        proxy_ref.apply_config(new, summary).await
+        if at_restart {
+            proxy_ref.apply_config_trial(new, summary).await
+        } else {
+            proxy_ref.apply_config(new, summary).await
+        }
     })
     .await
+}
+
+/// `tulsi trial status`: the change on trial (ADR 0029).
+async fn trial_status(json: bool) -> Result<ExitCode, String> {
+    let text = proxy().await?.trial_status().await.map_err(dbus)?;
+    if json {
+        out!("{text}");
+        return Ok(ExitCode::SUCCESS);
+    }
+    let t: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| format!("bad reply from tulsid: {e}"))?;
+    let summary = t["summary"]
+        .as_str()
+        .unwrap_or_default()
+        .trim_start_matches("tulsi: ");
+    match t["state"].as_str().unwrap_or("none") {
+        "pending" => out!("On trial, from the next restart: {summary}"),
+        "testing" => out!(
+            "On trial since this start: {summary}\nKeep it with `tulsi trial keep`, or `tulsi trial undo`."
+        ),
+        "reverted" => out!(
+            "Undone: {summary}\n{}",
+            t["notice"].as_str().unwrap_or_default()
+        ),
+        _ => out!("No change is on trial."),
+    }
+    Ok(ExitCode::SUCCESS)
 }
 
 async fn undo(opts: &Options, commit: Option<&str>) -> Result<ExitCode, String> {

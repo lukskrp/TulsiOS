@@ -40,6 +40,10 @@ class Window(Gtk.ApplicationWindow):
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self.stack.add_titled(self._welcome_page(), "welcome", "Welcome")
         self.stack.add_titled(self._history_page(), "history", "Your Files' History")
+        # Only when a device needs a driver (ADR 0029).
+        self.drivers = welcome.drivers_needed()
+        if self.drivers is not None:
+            self.stack.add_titled(self._drivers_page(self.drivers), "drivers", "Drivers")
         header = Gtk.HeaderBar(show_close_button=True)
         header.set_custom_title(Gtk.StackSwitcher(stack=self.stack))
         self.set_titlebar(header)
@@ -59,6 +63,7 @@ class Window(Gtk.ApplicationWindow):
             ("AI Agents", "coding agents and local models, and what your computer can run",
              ("ocimum-software-center", "--page", "ai")),
             ("Themes", "the desktop's colours and background", ("ocimum-themes",)),
+            ("Drivers", "graphics card, Wi-Fi and other hardware drivers", ("tulsi-drivers-app",)),
             ("Agent Privileges", "what AI agents may do on their own", ("starah-session", "--show")),
             ("TulsiOS Wiki", "help for all of this, on your computer", ("tulsi-wiki",)),
         ):
@@ -117,6 +122,27 @@ class Window(Gtk.ApplicationWindow):
         buttons.pack_start(self.turn_on, False, False, 0)
         page.pack_start(buttons, True, True, 0)
         self._refresh()
+        return page
+
+    def _drivers_page(self, recommended: str) -> Gtk.Widget:
+        page = self._page()
+        page.pack_start(_label("<big><b>Drivers for your hardware</b></big>"), False, False, 0)
+        page.pack_start(_label(
+            "TulsiOS found hardware that works better, or only, with its maker's driver:"), False, False, 0)
+        page.pack_start(_label(f"<b>{GLib.markup_escape_text(recommended)}</b>"), False, False, 0)
+        page.pack_start(_label(
+            "Open <b>Drivers</b> to choose. New drivers take effect when you restart, and "
+            "TulsiOS then asks whether everything works; if the screen stays black, restarting "
+            "again brings the drivers before back by themselves."), False, False, 0)
+        buttons = Gtk.Box(spacing=8, halign=Gtk.Align.END, valign=Gtk.Align.END, vexpand=True)
+        more = Gtk.Button(label="Read: Drivers")
+        more.connect("clicked", lambda _b: _launch("tulsi-wiki", "drivers"))
+        open_ = Gtk.Button(label="Open Drivers")
+        open_.get_style_context().add_class("suggested-action")
+        open_.connect("clicked", lambda _b: _launch("tulsi-drivers-app"))
+        buttons.pack_start(more, False, False, 0)
+        buttons.pack_start(open_, False, False, 0)
+        page.pack_start(buttons, True, True, 0)
         return page
 
     def _refresh(self) -> None:

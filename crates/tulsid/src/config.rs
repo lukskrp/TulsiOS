@@ -32,6 +32,38 @@ pub struct Config {
     /// their licence, with that licence: attr → { name, url }.
     #[serde(default)]
     pub unfree_agents: std::collections::BTreeMap<String, tulsi_client::License>,
+    /// The rebuild command for changes that take effect at the next start
+    /// (ADR 0029); empty: `rebuildCommand` with `switch` replaced by `boot`.
+    #[serde(default)]
+    pub boot_rebuild_command: Vec<String>,
+    /// "systemd-boot", "grub" or "" (none or unknown): how a change on trial
+    /// is started only once.
+    #[serde(default)]
+    pub boot_loader: String,
+    /// The system profile, whose generations the boot entries are.
+    #[serde(default = "system_profile")]
+    pub system_profile: PathBuf,
+    /// The system this boot started with.
+    #[serde(default = "booted_system")]
+    pub booted_system: PathBuf,
+    /// Where a change on trial is recorded.
+    #[serde(default = "crate::trial::default_trial_file")]
+    pub trial_file: PathBuf,
+    /// With GRUB, how long after starting a change on trial is undone unless kept.
+    #[serde(default = "trial_timeout")]
+    pub trial_timeout_secs: u64,
+}
+
+fn system_profile() -> PathBuf {
+    PathBuf::from("/nix/var/nix/profiles/system")
+}
+
+fn booted_system() -> PathBuf {
+    PathBuf::from("/run/booted-system")
+}
+
+fn trial_timeout() -> u64 {
+    600
 }
 
 fn yes() -> bool {

@@ -45,6 +45,10 @@ receipts say happened.
 - Desktop colours and background: list_themes, set_theme, undo_theme. They change only \
 the person's own settings, so they need no approval; if set_theme says you are not in \
 their session, suggest the Themes app instead.
+- Hardware drivers (NVIDIA, Intel/AMD video decoding, Broadcom Wi-Fi): list_drivers shows \
+them. Don't edit hardware.nvidia or videoDrivers yourself; with the person's agreement, run \
+`tulsi-drivers set CHOICE` (unfree ones need --accept-unfree). It takes effect at the next \
+restart and only the person can keep it.
 
 Packaging software that is not in the Software Center (local packages):
 - Only when search_packages finds nothing suitable. Ask for a download URL if you have none.
@@ -239,6 +243,9 @@ impl<B: Backend> Server<B> {
                 .await
                 .map(|(t, v)| ToolOutput::data(t, v)),
             "undo_theme" => crate::themes::undo()
+                .await
+                .map(|(t, v)| ToolOutput::data(t, v)),
+            "list_drivers" => crate::drivers::list()
                 .await
                 .map(|(t, v)| ToolOutput::data(t, v)),
             _ => return None,
@@ -785,7 +792,10 @@ fn tool_list() -> Vec<Value> {
                 "theme": { "type": "string", "description": "slug from list_themes" },
                 "background": { "type": "integer", "minimum": 0, "default": 0, "description": "which of the theme's backgrounds" } } }), false),
         tool("undo_theme", "Undo the theme switch",
-            "Go back to the theme before the last switch (or the desktop's own look).", empty, false),
+            "Go back to the theme before the last switch (or the desktop's own look).", empty.clone(), false),
+        tool("list_drivers", "Hardware drivers",
+            "This computer's graphics cards, Wi-Fi cards and processor, the driver each uses, and the driver choices (ids for `tulsi-drivers set`), with the recommended ones marked.",
+            empty, true),
     ]
 }
 
@@ -937,7 +947,8 @@ mod tests {
             .iter()
             .map(|t| t["name"].as_str().unwrap())
             .collect();
-        assert_eq!(tools.len(), 18);
+        assert_eq!(tools.len(), 19);
+        assert!(tools.contains(&"list_drivers"));
         assert!(tools.contains(&"undo_change"));
         assert!(tools.contains(&"set_theme"));
         assert!(tools.contains(&"propose_local_package"));

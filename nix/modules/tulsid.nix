@@ -19,6 +19,16 @@ let
   daemonConfig = {
     flakeDir = cfg.flakeDir;
     rebuildCommand = cfg.rebuildCommand;
+    bootRebuildCommand = cfg.bootRebuildCommand;
+    trialTimeoutSecs = cfg.trialTimeout;
+    # How a change on trial starts once only (ADR 0029).
+    bootLoader =
+      if config.boot.loader.systemd-boot.enable then
+        "systemd-boot"
+      else if config.boot.loader.grub.enable then
+        "grub"
+      else
+        "";
     initialState = if config.tulsi.state.enable then config.tulsi.state.file else null;
     polkit = true;
     packageIndex = cfg.packageIndex;
@@ -90,6 +100,25 @@ in
       default = config.networking.hostName;
       defaultText = lib.literalExpression "config.networking.hostName";
       description = "Name of the nixosConfigurations entry to rebuild.";
+    };
+
+    bootRebuildCommand = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = map (a: if a == "switch" then "boot" else a) cfg.rebuildCommand;
+      defaultText = lib.literalMD "`rebuildCommand` with `switch` replaced by `boot`";
+      description = ''
+        Command that builds a change for the next start only: changes on trial,
+        such as drivers (ADR 0029), which take effect when the computer restarts.
+      '';
+    };
+
+    trialTimeout = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 600;
+      description = ''
+        With GRUB (which can't start a system once only), seconds after starting
+        with a change on trial before it is undone unless the person keeps it.
+      '';
     };
 
     rebuildCommand = lib.mkOption {
@@ -209,6 +238,8 @@ in
         pkgs.diffutils
         config.nix.package
         config.system.build.nixos-rebuild
+        # bootctl, for changes on trial (ADR 0029).
+        config.systemd.package
       ];
       environment.HOME = "/root";
       preStart = lib.optionalString cfg.bootstrap.enable bootstrapScript;

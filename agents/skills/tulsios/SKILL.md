@@ -120,13 +120,33 @@ that worked.
 | Podman | `virtualisation.podman.enable = true;` |
 | Virtual machines | `virtualisation.libvirtd.enable = true;` `programs.virt-manager.enable = true;` and `"libvirtd"` in `extraGroups` |
 | Open a firewall port | `networking.firewall.allowedTCPPorts = [ 8080 ];` |
-| NVIDIA driver | `services.xserver.videoDrivers = [ "nvidia" ];` `hardware.nvidia.open = true;` `hardware.graphics.enable = true;` `nixpkgs.config.allowUnfree = true;` (restart after) |
+| GPU or Wi-Fi drivers (NVIDIA, Intel/AMD video decoding, Broadcom) | Not by hand: use `tulsi-drivers` (below) |
 | Steam | `programs.steam.enable = true;` `nixpkgs.config.allowUnfree = true;` |
 | Kernel parameter | `boot.kernelParams = [ "quiet" ];` |
 | Serial ports (Arduino…) | `"dialout"` in `extraGroups` |
 
 `tulsi service enable docker` (or podman, libvirtd, steam…) refuses and points
 here: those aren't `services.*` options.
+
+**Drivers** (ADR 0029): `tulsi-drivers` detects the GPUs, Wi-Fi and processor and
+writes its own block of `tulsi.drivers.*` settings in `configuration.nix`. Don't
+write `hardware.nvidia.*` or `videoDrivers` yourself.
+
+```sh
+tulsi-drivers list            # devices, current drivers, choice ids (--json for data)
+tulsi-drivers recommend       # what TulsiOS recommends for this computer
+tulsi-drivers set nvidia      # a choice id from list, or `recommended`; --off EXTRA
+tulsi-drivers status          # what is chosen, and a change waiting on a restart
+```
+
+- A driver change takes effect at the **next restart**, on trial: the person then
+  keeps it (`tulsi-drivers keep`, or the prompt at login). Restarting without
+  keeping it brings the drivers before back. You can't keep it for them: only the
+  person at the screen knows whether it works.
+- While a change is on trial, other system changes wait: tell the person to
+  restart, or `tulsi-drivers undo`.
+- NVIDIA's and Broadcom's drivers are unfree: `set` needs `--accept-unfree`, which
+  also turns on unfree software for the whole system. Ask the person first.
 
 - **Flatpak:** TulsiOS doesn't install Flatpaks; offer the nixpkgs package.
 - **Unfree software:** the AI agents on the Software Center's AI Agents page
@@ -274,6 +294,7 @@ connect it: `claude mcp add tulsi -- tulsi-mcp`; any MCP client can run
 - Downloads: `fetch_source`, `build_package`, `try_package`,
   `propose_local_package`.
 - Themes: `list_themes`, `set_theme`, `undo_theme`.
+- Drivers: `list_drivers` (read only; change them with `tulsi-drivers set`).
 
 Report what each result's receipt says happened.
 

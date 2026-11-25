@@ -1,0 +1,7007 @@
+{
+"source":"99iir125jh03w8770m4sf6lnqh9784jy-NVIDIA-Linux-x86_64-580.196.07.run",
+"gpus":{
+"0020":{
+"name":"RIVA TNT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0028":{
+"name":"RIVA TNT2/TNT2 Pro",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0029":{
+"name":"RIVA TNT2 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"002c":{
+"name":"Vanta/Vanta LT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"002d":{
+"name":"RIVA TNT2 Model 64/Model 64 Pro",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0040":{
+"name":"GeForce 6800 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0041":{
+"name":"GeForce 6800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0042":{
+"name":"GeForce 6800 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0043":{
+"name":"GeForce 6800 XE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0044":{
+"name":"GeForce 6800 XT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0045":{
+"name":"GeForce 6800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0046":{
+"name":"GeForce 6800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0047":{
+"name":"GeForce 6800 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0048":{
+"name":"GeForce 6800 XT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"004e":{
+"name":"Quadro FX 4000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0090":{
+"name":"GeForce 7800 GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0091":{
+"name":"GeForce 7800 GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0092":{
+"name":"GeForce 7800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0093":{
+"name":"GeForce 7800 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0095":{
+"name":"GeForce 7800 SLI",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0098":{
+"name":"GeForce Go 7800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0099":{
+"name":"GeForce Go 7800 GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"009d":{
+"name":"Quadro FX 4500",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00a0":{
+"name":"Aladdin TNT2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00c0":{
+"name":"GeForce 6800 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00c1":{
+"name":"GeForce 6800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00c2":{
+"name":"GeForce 6800 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00c3":{
+"name":"GeForce 6800 XT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00c8":{
+"name":"GeForce Go 6800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00c9":{
+"name":"GeForce Go 6800 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00cc":{
+"name":"Quadro FX Go1400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00cd":{
+"name":"Quadro FX 3450/4000 SDI",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00ce":{
+"name":"Quadro FX 1400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f1":{
+"name":"GeForce 6600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f2":{
+"name":"GeForce 6600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f3":{
+"name":"GeForce 6200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f4":{
+"name":"GeForce 6600 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f5":{
+"name":"GeForce 7800 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f6":{
+"name":"GeForce 6800 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f8":{
+"name":"Quadro FX 3400/Quadro FX 4000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00f9":{
+"name":"GeForce 6800 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00fa":{
+"name":"GeForce PCX 5750",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00fb":{
+"name":"GeForce PCX 5900",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00fc":{
+"name":"Quadro FX 330/GeForce PCX 5300",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00fd":{
+"name":"Quadro FX 330/Quadro NVS 280 PCI-E",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"00fe":{
+"name":"Quadro FX 1300",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0100":{
+"name":"GeForce 256",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0101":{
+"name":"GeForce DDR",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0103":{
+"name":"Quadro",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0110":{
+"name":"GeForce2 MX/MX 400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0111":{
+"name":"GeForce2 MX 100/200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0112":{
+"name":"GeForce2 Go",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0113":{
+"name":"Quadro2 MXR/EX/Go",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0140":{
+"name":"GeForce 6600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0141":{
+"name":"GeForce 6600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0142":{
+"name":"GeForce 6600 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0143":{
+"name":"GeForce 6600 VE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0144":{
+"name":"GeForce Go 6600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0145":{
+"name":"GeForce 6610 XL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0146":{
+"name":"GeForce Go 6600 TE/6200 TE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0147":{
+"name":"GeForce 6700 XL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0148":{
+"name":"GeForce Go 6600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0149":{
+"name":"GeForce Go 6600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"014a":{
+"name":"Quadro NVS 440",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"014c":{
+"name":"Quadro FX 540M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"014d":{
+"name":"Quadro FX 550",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"014e":{
+"name":"Quadro FX 540",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"014f":{
+"name":"GeForce 6200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0150":{
+"name":"GeForce2 GTS/GeForce2 Pro",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0151":{
+"name":"GeForce2 Ti",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0152":{
+"name":"GeForce2 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0153":{
+"name":"Quadro2 Pro",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0160":{
+"name":"GeForce 6500",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0161":{
+"name":"GeForce 6200 TurboCache(TM)",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0162":{
+"name":"GeForce 6200SE TurboCache(TM)",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0163":{
+"name":"GeForce 6200 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0164":{
+"name":"GeForce Go 6200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0165":{
+"name":"Quadro NVS 285",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0166":{
+"name":"GeForce Go 6400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0167":{
+"name":"GeForce Go 6200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0168":{
+"name":"GeForce Go 6400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0169":{
+"name":"GeForce 6250",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"016a":{
+"name":"GeForce 7100 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0170":{
+"name":"GeForce4 MX 460",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0171":{
+"name":"GeForce4 MX 440",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0172":{
+"name":"GeForce4 MX 420",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0173":{
+"name":"GeForce4 MX 440-SE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0174":{
+"name":"GeForce4 440 Go",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0175":{
+"name":"GeForce4 420 Go",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0176":{
+"name":"GeForce4 420 Go 32M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0177":{
+"name":"GeForce4 460 Go",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0178":{
+"name":"Quadro4 550 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0179":{
+"name":"GeForce4 440 Go 64M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"017a":{
+"name":"Quadro NVS 400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"017c":{
+"name":"Quadro4 500 GoGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"017d":{
+"name":"GeForce4 410 Go 16M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0181":{
+"name":"GeForce4 MX 440 with AGP8X",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0182":{
+"name":"GeForce4 MX 440SE with AGP8X",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0183":{
+"name":"GeForce4 MX 420 with AGP8X",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0185":{
+"name":"GeForce4 MX 4000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0188":{
+"name":"Quadro4 580 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"018a":{
+"name":"Quadro NVS 280 SD",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"018b":{
+"name":"Quadro4 380 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"018c":{
+"name":"Quadro NVS 50 PCI",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0191":{
+"name":"GeForce 8800 GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0193":{
+"name":"GeForce 8800 GTS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0194":{
+"name":"GeForce 8800 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0197":{
+"name":"Tesla C870",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"019d":{
+"name":"Quadro FX 5600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"019e":{
+"name":"Quadro FX 4600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01a0":{
+"name":"GeForce2 Integrated GPU",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01d0":{
+"name":"GeForce 7350 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01d1":{
+"name":"GeForce 7300 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01d2":{
+"name":"GeForce 7550 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01d3":{
+"name":"GeForce 7300 SE/7200 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01d6":{
+"name":"GeForce Go 7200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01d7":{
+"name":"GeForce Go 7300",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01d8":{
+"name":"GeForce Go 7400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01da":{
+"name":"Quadro NVS 110M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01db":{
+"name":"Quadro NVS 120M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01dc":{
+"name":"Quadro FX 350M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01dd":{
+"name":"GeForce 7500 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01de":{
+"name":"Quadro FX 350",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01df":{
+"name":"GeForce 7300 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"01f0":{
+"name":"GeForce4 MX Integrated GPU",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0200":{
+"name":"GeForce3",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0201":{
+"name":"GeForce3 Ti 200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0202":{
+"name":"GeForce3 Ti 500",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0203":{
+"name":"Quadro DCC",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0211":{
+"name":"GeForce 6800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0212":{
+"name":"GeForce 6800 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0215":{
+"name":"GeForce 6800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0218":{
+"name":"GeForce 6800 XT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0221":{
+"name":"GeForce 6200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0222":{
+"name":"GeForce 6200 A-LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0240":{
+"name":"GeForce 6150",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0241":{
+"name":"GeForce 6150 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0242":{
+"name":"GeForce 6100",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0244":{
+"name":"GeForce Go 6150",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0245":{
+"name":"Quadro NVS 210S / GeForce 6150LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0247":{
+"name":"GeForce Go 6100",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0250":{
+"name":"GeForce4 Ti 4600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0251":{
+"name":"GeForce4 Ti 4400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0253":{
+"name":"GeForce4 Ti 4200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0258":{
+"name":"Quadro4 900 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0259":{
+"name":"Quadro4 750 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"025b":{
+"name":"Quadro4 700 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0280":{
+"name":"GeForce4 Ti 4800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0281":{
+"name":"GeForce4 Ti 4200 with AGP8X",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0282":{
+"name":"GeForce4 Ti 4800 SE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0286":{
+"name":"GeForce4 4200 Go",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0288":{
+"name":"Quadro4 980 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0289":{
+"name":"Quadro4 780 XGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"028c":{
+"name":"Quadro4 700 GoGL",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0290":{
+"name":"GeForce 7900 GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0291":{
+"name":"GeForce 7900 GT/GTO",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0292":{
+"name":"GeForce 7900 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0293":{
+"name":"GeForce 7950 GX2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0294":{
+"name":"GeForce 7950 GX2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0295":{
+"name":"GeForce 7950 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0297":{
+"name":"GeForce Go 7950 GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0298":{
+"name":"GeForce Go 7900 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0299":{
+"name":"Quadro NVS 510M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"029a":{
+"name":"Quadro FX 2500M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"029b":{
+"name":"Quadro FX 1500M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"029c":{
+"name":"Quadro FX 5500",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"029d":{
+"name":"Quadro FX 3500",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"029e":{
+"name":"Quadro FX 1500",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"029f":{
+"name":"Quadro FX 4500 X2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"02e0":{
+"name":"GeForce 7600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"02e1":{
+"name":"GeForce 7600 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"02e2":{
+"name":"GeForce 7300 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"02e3":{
+"name":"GeForce 7900 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"02e4":{
+"name":"GeForce 7950 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0301":{
+"name":"GeForce FX 5800 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0302":{
+"name":"GeForce FX 5800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0308":{
+"name":"Quadro FX 2000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0309":{
+"name":"Quadro FX 1000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0311":{
+"name":"GeForce FX 5600 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0312":{
+"name":"GeForce FX 5600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0314":{
+"name":"GeForce FX 5600XT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"031a":{
+"name":"GeForce FX Go5600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"031b":{
+"name":"GeForce FX Go5650",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"031c":{
+"name":"Quadro FX Go700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0320":{
+"name":"GeForce FX 5200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0321":{
+"name":"GeForce FX 5200 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0322":{
+"name":"GeForce FX 5200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0323":{
+"name":"GeForce FX 5200LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0324":{
+"name":"GeForce FX Go5200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0325":{
+"name":"GeForce FX Go5250",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0326":{
+"name":"GeForce FX 5500",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0327":{
+"name":"GeForce FX 5100",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0328":{
+"name":"GeForce FX Go5200 32M/64M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"032a":{
+"name":"Quadro NVS 55/280 PCI",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"032b":{
+"name":"Quadro FX 500/FX 600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"032c":{
+"name":"GeForce FX Go53xx",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"032d":{
+"name":"GeForce FX Go5100",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0330":{
+"name":"GeForce FX 5900 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0331":{
+"name":"GeForce FX 5900",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0332":{
+"name":"GeForce FX 5900XT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0333":{
+"name":"GeForce FX 5950 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0334":{
+"name":"GeForce FX 5900ZT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0338":{
+"name":"Quadro FX 3000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"033f":{
+"name":"Quadro FX 700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0341":{
+"name":"GeForce FX 5700 Ultra",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0342":{
+"name":"GeForce FX 5700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0343":{
+"name":"GeForce FX 5700LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0344":{
+"name":"GeForce FX 5700VE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0347":{
+"name":"GeForce FX Go5700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0348":{
+"name":"GeForce FX Go5700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"034c":{
+"name":"Quadro FX Go1000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"034e":{
+"name":"Quadro FX 1100",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"038b":{
+"name":"GeForce 7650 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0390":{
+"name":"GeForce 7650 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0391":{
+"name":"GeForce 7600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0392":{
+"name":"GeForce 7600 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0393":{
+"name":"GeForce 7300 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0394":{
+"name":"GeForce 7600 LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0395":{
+"name":"GeForce 7300 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0397":{
+"name":"GeForce Go 7700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0398":{
+"name":"GeForce Go 7600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0399":{
+"name":"GeForce Go 7600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"039c":{
+"name":"Quadro FX 560M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"039e":{
+"name":"Quadro FX 560",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"03d0":{
+"name":"GeForce 6150SE nForce 430",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"03d1":{
+"name":"GeForce 6100 nForce 405",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"03d2":{
+"name":"GeForce 6100 nForce 400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"03d5":{
+"name":"GeForce 6100 nForce 420",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"03d6":{
+"name":"GeForce 7025 / nForce 630a",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0400":{
+"name":"GeForce 8600 GTS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0401":{
+"name":"GeForce 8600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0402":{
+"name":"GeForce 8600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0403":{
+"name":"GeForce 8600 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0404":{
+"name":"GeForce 8400 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0405":{
+"name":"GeForce 9500M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0406":{
+"name":"GeForce 8300 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0407":{
+"name":"GeForce 8600M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0408":{
+"name":"GeForce 9650M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0409":{
+"name":"GeForce 8700M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"040a":{
+"name":"Quadro FX 370",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"040b":{
+"name":"Quadro NVS 320M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"040c":{
+"name":"Quadro FX 570M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"040d":{
+"name":"Quadro FX 1600M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"040e":{
+"name":"Quadro FX 570",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"040f":{
+"name":"Quadro FX 1700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0410":{
+"name":"GeForce GT 330",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0420":{
+"name":"GeForce 8400 SE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0421":{
+"name":"GeForce 8500 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0422":{
+"name":"GeForce 8400 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0423":{
+"name":"GeForce 8300 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0424":{
+"name":"GeForce 8400 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0425":{
+"name":"GeForce 8600M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0426":{
+"name":"GeForce 8400M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0427":{
+"name":"GeForce 8400M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0428":{
+"name":"GeForce 8400M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0429":{
+"name":"Quadro NVS 140M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"042a":{
+"name":"Quadro NVS 130M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"042b":{
+"name":"Quadro NVS 135M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"042c":{
+"name":"GeForce 9400 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"042d":{
+"name":"Quadro FX 360M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"042e":{
+"name":"GeForce 9300M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"042f":{
+"name":"Quadro NVS 290",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0531":{
+"name":"GeForce 7150M / nForce 630M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0533":{
+"name":"GeForce 7000M / nForce 610M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"053a":{
+"name":"GeForce 7050 PV / nForce 630a",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"053b":{
+"name":"GeForce 7050 PV / nForce 630a",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"053e":{
+"name":"GeForce 7025 / nForce 630a",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05e0":{
+"name":"GeForce GTX 295",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05e1":{
+"name":"GeForce GTX 280",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05e2":{
+"name":"GeForce GTX 260",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05e3":{
+"name":"GeForce GTX 285",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05e6":{
+"name":"GeForce GTX 275",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05e7":{
+"name":"Tesla C1060",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05ea":{
+"name":"GeForce GTX 260",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05eb":{
+"name":"GeForce GTX 295",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05ed":{
+"name":"Quadroplex 2200 D2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05f8":{
+"name":"Quadroplex 2200 S4",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05f9":{
+"name":"Quadro CX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05fd":{
+"name":"Quadro FX 5800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05fe":{
+"name":"Quadro FX 4800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"05ff":{
+"name":"Quadro FX 3800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0600":{
+"name":"GeForce 8800 GTS 512",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0601":{
+"name":"GeForce 9800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0602":{
+"name":"GeForce 8800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0603":{
+"name":"GeForce GT 230",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0604":{
+"name":"GeForce 9800 GX2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0605":{
+"name":"GeForce 9800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0606":{
+"name":"GeForce 8800 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0607":{
+"name":"GeForce GTS 240",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0608":{
+"name":"GeForce 9800M GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0609":{
+"name":"GeForce 8800M GTS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"060a":{
+"name":"GeForce GTX 280M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"060b":{
+"name":"GeForce 9800M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"060c":{
+"name":"GeForce 8800M GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"060d":{
+"name":"GeForce 8800 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"060f":{
+"name":"GeForce GTX 285M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0610":{
+"name":"GeForce 9600 GSO",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0611":{
+"name":"GeForce 8800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0612":{
+"name":"GeForce 9800 GTX/9800 GTX+",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0613":{
+"name":"GeForce 9800 GTX+",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0614":{
+"name":"GeForce 9800 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0615":{
+"name":"GeForce GTS 250",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0617":{
+"name":"GeForce 9800M GTX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0618":{
+"name":"GeForce GTX 260M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0619":{
+"name":"Quadro FX 4700 X2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"061a":{
+"name":"Quadro FX 3700",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"061b":{
+"name":"Quadro VX 200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"061c":{
+"name":"Quadro FX 3600M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"061d":{
+"name":"Quadro FX 2800M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"061e":{
+"name":"Quadro FX 3700M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"061f":{
+"name":"Quadro FX 3800M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0621":{
+"name":"GeForce GT 230",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0622":{
+"name":"GeForce 9600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0623":{
+"name":"GeForce 9600 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0625":{
+"name":"GeForce 9600 GSO 512",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0626":{
+"name":"GeForce GT 130",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0627":{
+"name":"GeForce GT 140",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0628":{
+"name":"GeForce 9800M GTS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"062a":{
+"name":"GeForce 9700M GTS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"062b":{
+"name":"GeForce 9800M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"062c":{
+"name":"GeForce 9800M GTS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"062d":{
+"name":"GeForce 9600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"062e":{
+"name":"GeForce 9600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0630":{
+"name":"GeForce 9700 S",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0631":{
+"name":"GeForce GTS 160M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0632":{
+"name":"GeForce GTS 150M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0635":{
+"name":"GeForce 9600 GSO",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0637":{
+"name":"GeForce 9600 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0638":{
+"name":"Quadro FX 1800",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"063a":{
+"name":"Quadro FX 2700M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0640":{
+"name":"GeForce 9500 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0641":{
+"name":"GeForce 9400 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0643":{
+"name":"GeForce 9500 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0644":{
+"name":"GeForce 9500 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0645":{
+"name":"GeForce 9500 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0646":{
+"name":"GeForce GT 120",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0647":{
+"name":"GeForce 9600M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0648":{
+"name":"GeForce 9600M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0649":{
+"name":"GeForce 9600M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"064a":{
+"name":"GeForce 9700M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"064b":{
+"name":"GeForce 9500M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"064c":{
+"name":"GeForce 9650M GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0651":{
+"name":"GeForce G 110M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0652":{
+"name":"GeForce GT 130M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0653":{
+"name":"GeForce GT 120M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0654":{
+"name":"GeForce GT 220M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0655":{
+"name":"GeForce GT 120",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0656":{
+"name":"GeForce GT 120",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0658":{
+"name":"Quadro FX 380",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0659":{
+"name":"Quadro FX 580",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"065a":{
+"name":"Quadro FX 1700M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"065b":{
+"name":"GeForce 9400 GT",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"065c":{
+"name":"Quadro FX 770M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06c0":{
+"name":"GeForce GTX 480",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06c4":{
+"name":"GeForce GTX 465",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06ca":{
+"name":"GeForce GTX 480M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06cd":{
+"name":"GeForce GTX 470",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06d1":{
+"name":"Tesla C2050 / C2070",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06d2":{
+"name":"Tesla M2070",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06d8":{
+"name":"Quadro 6000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06d9":{
+"name":"Quadro 5000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06da":{
+"name":"Quadro 5000M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06dc":{
+"name":"Quadro 6000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06dd":{
+"name":"Quadro 4000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06de":{
+"name":"Tesla T20 Processor",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06df":{
+"name":"Tesla M2070-Q",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e0":{
+"name":"GeForce 9300 GE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e1":{
+"name":"GeForce 9300 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e2":{
+"name":"GeForce 8400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e3":{
+"name":"GeForce 8400 SE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e4":{
+"name":"GeForce 8400 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e5":{
+"name":"GeForce 9300M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e6":{
+"name":"GeForce G100",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e7":{
+"name":"GeForce 9300 SE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e8":{
+"name":"GeForce 9200M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06e9":{
+"name":"GeForce 9300M GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06ea":{
+"name":"Quadro NVS 150M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06eb":{
+"name":"Quadro NVS 160M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06ec":{
+"name":"GeForce G 105M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06ef":{
+"name":"GeForce G 103M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06f1":{
+"name":"GeForce G105M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06f8":{
+"name":"Quadro NVS 420",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06f9":{
+"name":"Quadro FX 370 LP",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06fa":{
+"name":"Quadro NVS 450",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06fb":{
+"name":"Quadro FX 370M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06fd":{
+"name":"Quadro NVS 295",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"06ff":{
+"name":"HICx16 + Graphics",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"07e0":{
+"name":"GeForce 7150 / nForce 630i",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"07e1":{
+"name":"GeForce 7100 / nForce 630i",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"07e2":{
+"name":"GeForce 7050 / nForce 630i",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"07e3":{
+"name":"GeForce 7050 / nForce 610i",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"07e5":{
+"name":"GeForce 7050 / nForce 620i",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0840":{
+"name":"GeForce 8200M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0844":{
+"name":"GeForce 9100M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0845":{
+"name":"GeForce 8200M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0846":{
+"name":"GeForce 9200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0847":{
+"name":"GeForce 9100",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0848":{
+"name":"GeForce 8300",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0849":{
+"name":"GeForce 8200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"084a":{
+"name":"nForce 730a",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"084b":{
+"name":"GeForce 9200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"084c":{
+"name":"nForce 980a/780a SLI",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"084d":{
+"name":"nForce 750a SLI",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"084f":{
+"name":"GeForce 8100 / nForce 720a",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0860":{
+"name":"GeForce 9400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0861":{
+"name":"GeForce 9400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0862":{
+"name":"GeForce 9400M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0863":{
+"name":"GeForce 9400M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0864":{
+"name":"GeForce 9300",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0865":{
+"name":"ION",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0866":{
+"name":"GeForce 9400M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0867":{
+"name":"GeForce 9400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0868":{
+"name":"nForce 760i SLI",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0869":{
+"name":"GeForce 9400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"086a":{
+"name":"GeForce 9400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"086c":{
+"name":"GeForce 9300 / nForce 730i",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"086d":{
+"name":"GeForce 9200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"086e":{
+"name":"GeForce 9100M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"086f":{
+"name":"GeForce 8200M G",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0870":{
+"name":"GeForce 9400M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0871":{
+"name":"GeForce 9200",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0872":{
+"name":"GeForce G102M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0873":{
+"name":"GeForce G102M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0874":{
+"name":"ION",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0876":{
+"name":"ION",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"087a":{
+"name":"GeForce 9400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"087d":{
+"name":"ION",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"087e":{
+"name":"ION LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"087f":{
+"name":"ION LE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"08a0":{
+"name":"GeForce 320M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"08a2":{
+"name":"GeForce 320M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"08a3":{
+"name":"GeForce 320M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"08a4":{
+"name":"GeForce 320M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"08a5":{
+"name":"GeForce 320M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a20":{
+"name":"GeForce GT 220",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a22":{
+"name":"GeForce 315",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a23":{
+"name":"GeForce 210",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a26":{
+"name":"GeForce 405",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a27":{
+"name":"GeForce 405",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a28":{
+"name":"GeForce GT 230M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a29":{
+"name":"GeForce GT 330M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a2a":{
+"name":"GeForce GT 230M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a2b":{
+"name":"GeForce GT 330M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a2c":{
+"name":"NVS 5100M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a2d":{
+"name":"GeForce GT 320M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a32":{
+"name":"GeForce GT 415",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a34":{
+"name":"GeForce GT 240M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a35":{
+"name":"GeForce GT 325M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a38":{
+"name":"Quadro 400",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a3c":{
+"name":"Quadro FX 880M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a60":{
+"name":"GeForce G210",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a62":{
+"name":"GeForce 205",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a63":{
+"name":"GeForce 310",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a64":{
+"name":"Second Generation ION",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a65":{
+"name":"GeForce 210",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a66":{
+"name":"GeForce 310",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a67":{
+"name":"GeForce 315",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a68":{
+"name":"GeForce G105M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a69":{
+"name":"GeForce G105M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a6a":{
+"name":"NVS 2100M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a6c":{
+"name":"NVS 3100M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a6e":{
+"name":"GeForce 305M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a6f":{
+"name":"Second Generation ION",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a70":{
+"name":"GeForce 310M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a71":{
+"name":"GeForce 305M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a72":{
+"name":"GeForce 310M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a73":{
+"name":"GeForce 305M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a74":{
+"name":"GeForce G210M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a75":{
+"name":"GeForce 310M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a76":{
+"name":"Second Generation ION",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a78":{
+"name":"Quadro FX 380 LP",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a7a":{
+"name":"GeForce 315M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0a7c":{
+"name":"Quadro FX 380M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca0":{
+"name":"GeForce GT 330",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca2":{
+"name":"GeForce GT 320",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca3":{
+"name":"GeForce GT 240",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca4":{
+"name":"GeForce GT 340",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca5":{
+"name":"GeForce GT 220",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca7":{
+"name":"GeForce GT 330",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca8":{
+"name":"GeForce GTS 260M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ca9":{
+"name":"GeForce GTS 250M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0cac":{
+"name":"GeForce GT 220",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0caf":{
+"name":"GeForce GT 335M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0cb0":{
+"name":"GeForce GTS 350M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0cb1":{
+"name":"GeForce GTS 360M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0cbc":{
+"name":"Quadro FX 1800M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dc0":{
+"name":"GeForce GT 440",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dc4":{
+"name":"GeForce GTS 450",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dc5":{
+"name":"GeForce GTS 450",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dc6":{
+"name":"GeForce GTS 450",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dcd":{
+"name":"GeForce GT 555M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dce":{
+"name":"GeForce GT 555M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dd1":{
+"name":"GeForce GTX 460M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dd2":{
+"name":"GeForce GT 445M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dd3":{
+"name":"GeForce GT 435M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dd6":{
+"name":"GeForce GT 550M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dd8":{
+"name":"Quadro 2000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dda":{
+"name":"Quadro 2000M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de0":{
+"name":"GeForce GT 440",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de1":{
+"name":"GeForce GT 430",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de2":{
+"name":"GeForce GT 420",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de3":{
+"name":"GeForce GT 635M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de4":{
+"name":"GeForce GT 520",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de5":{
+"name":"GeForce GT 530",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de7":{
+"name":"GeForce GT 610",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de8":{
+"name":"GeForce GT 620M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0de9":{
+"name":"GeForce GT 630M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dea":{
+"name":"GeForce 610M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0deb":{
+"name":"GeForce GT 555M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dec":{
+"name":"GeForce GT 525M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ded":{
+"name":"GeForce GT 520M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dee":{
+"name":"GeForce GT 415M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0def":{
+"name":"NVS 5400M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df0":{
+"name":"GeForce GT 425M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df1":{
+"name":"GeForce GT 420M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df2":{
+"name":"GeForce GT 435M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df3":{
+"name":"GeForce GT 420M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df4":{
+"name":"GeForce GT 540M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df5":{
+"name":"GeForce GT 525M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df6":{
+"name":"GeForce GT 550M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df7":{
+"name":"GeForce GT 520M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df8":{
+"name":"Quadro 600",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0df9":{
+"name":"Quadro 500M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dfa":{
+"name":"Quadro 1000M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0dfc":{
+"name":"NVS 5200M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0e22":{
+"name":"GeForce GTX 460",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0e23":{
+"name":"GeForce GTX 460 SE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0e24":{
+"name":"GeForce GTX 460",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0e30":{
+"name":"GeForce GTX 470M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0e31":{
+"name":"GeForce GTX 485M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0e3a":{
+"name":"Quadro 3000M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0e3b":{
+"name":"Quadro 4000M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0f00":{
+"name":"GeForce GT 630",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0f01":{
+"name":"GeForce GT 620",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0f02":{
+"name":"GeForce GT 730",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0f03":{
+"name":"GeForce GT 610",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0fc6":{
+"name":"GeForce GTX 650",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fc8":{
+"name":"GeForce GT 740",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fc9":{
+"name":"GeForce GT 730",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fcd":{
+"name":"GeForce GT 755M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fce":{
+"name":"GeForce GT 640M LE",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fd1":{
+"name":"GeForce GT 650M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fd2":{
+"name":"GeForce GT 640M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fd3":{
+"name":"GeForce GT 640M LE",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fd4":{
+"name":"GeForce GTX 660M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fd5":{
+"name":"GeForce GT 650M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fd8":{
+"name":"GeForce GT 640M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fd9":{
+"name":"GeForce GT 645M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fdf":{
+"name":"GeForce GT 740M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fe0":{
+"name":"GeForce GTX 660M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fe1":{
+"name":"GeForce GT 730M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fe2":{
+"name":"GeForce GT 745M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fe3":{
+"name":"GeForce GT 745M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fe4":{
+"name":"GeForce GT 750M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fe9":{
+"name":"GeForce GT 750M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fea":{
+"name":"GeForce GT 755M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fec":{
+"name":"GeForce 710A",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fed":{
+"name":"GeForce 820M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fee":{
+"name":"GeForce 810M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fef":{
+"name":"GRID K340",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ff2":{
+"name":"GRID K1",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"0ff6":{
+"name":"Quadro K1100M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0ff8":{
+"name":"Quadro K500M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0ff9":{
+"name":"Quadro K2000D",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0ffa":{
+"name":"Quadro K600",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0ffb":{
+"name":"Quadro K2000M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0ffc":{
+"name":"Quadro K1000M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0ffd":{
+"name":"NVS 510",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0ffe":{
+"name":"Quadro K2000",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"0fff":{
+"name":"Quadro 410",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1001":{
+"name":"GeForce GTX TITAN Z",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1004":{
+"name":"GeForce GTX 780",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1005":{
+"name":"GeForce GTX TITAN",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1007":{
+"name":"GeForce GTX 780",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1008":{
+"name":"GeForce GTX 780 Ti",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"100a":{
+"name":"GeForce GTX 780 Ti",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"100c":{
+"name":"GeForce GTX TITAN Black",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1021":{
+"name":"Tesla K20Xm",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1022":{
+"name":"Tesla K20c",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1023":{
+"name":"Tesla K40m",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1024":{
+"name":"Tesla K40c",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1026":{
+"name":"Tesla K20s",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1027":{
+"name":"Tesla K40st",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1028":{
+"name":"Tesla K20m",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1029":{
+"name":"Tesla K40s",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"102a":{
+"name":"Tesla K40t",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"102d":{
+"name":"Tesla K80",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"103a":{
+"name":"Quadro K6000",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"103c":{
+"name":"Quadro K5200",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1040":{
+"name":"GeForce GT 520",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1042":{
+"name":"GeForce 510",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1048":{
+"name":"GeForce 605",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1049":{
+"name":"GeForce GT 620",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"104a":{
+"name":"GeForce GT 610",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"104b":{
+"name":"GeForce GT 625 (OEM)",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"104c":{
+"name":"GeForce GT 705",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1050":{
+"name":"GeForce GT 520M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1051":{
+"name":"GeForce GT 520MX",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1052":{
+"name":"GeForce GT 520M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1054":{
+"name":"GeForce 410M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1055":{
+"name":"GeForce 410M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1056":{
+"name":"NVS 4200M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1057":{
+"name":"NVS 4200M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1058":{
+"name":"GeForce 610M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1059":{
+"name":"GeForce 610M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"105a":{
+"name":"GeForce 610M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"105b":{
+"name":"GeForce 705M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"107c":{
+"name":"NVS 315",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"107d":{
+"name":"NVS 310",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1080":{
+"name":"GeForce GTX 580",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1081":{
+"name":"GeForce GTX 570",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1082":{
+"name":"GeForce GTX 560 Ti",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1084":{
+"name":"GeForce GTX 560",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1086":{
+"name":"GeForce GTX 570",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1087":{
+"name":"GeForce GTX 560 Ti",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1088":{
+"name":"GeForce GTX 590",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1089":{
+"name":"GeForce GTX 580",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"108b":{
+"name":"GeForce GTX 580",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1091":{
+"name":"Tesla M2090",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1094":{
+"name":"Tesla M2075",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1096":{
+"name":"Tesla C2075",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"109a":{
+"name":"Quadro 5010M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"109b":{
+"name":"Quadro 7000",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"10c0":{
+"name":"GeForce 9300 GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"10c3":{
+"name":"GeForce 8400GS",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"10c5":{
+"name":"GeForce 405",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"10d8":{
+"name":"NVS 300",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1140":{
+"name":"GeForce 820M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1180":{
+"name":"GeForce GTX 680",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1183":{
+"name":"GeForce GTX 660 Ti",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1184":{
+"name":"GeForce GTX 770",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1185":{
+"name":"GeForce GTX 660",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1187":{
+"name":"GeForce GTX 760",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1188":{
+"name":"GeForce GTX 690",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1189":{
+"name":"GeForce GTX 670",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"118a":{
+"name":"GRID K520",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"118e":{
+"name":"GeForce GTX 760 (192-bit)",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"118f":{
+"name":"Tesla K10",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1193":{
+"name":"GeForce GTX 760 Ti OEM",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1194":{
+"name":"Tesla K8",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1195":{
+"name":"GeForce GTX 660",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1198":{
+"name":"GeForce GTX 880M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1199":{
+"name":"GeForce GTX 870M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"119a":{
+"name":"GeForce GTX 860M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"119d":{
+"name":"GeForce GTX 775M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"119e":{
+"name":"GeForce GTX 780M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"119f":{
+"name":"GeForce GTX 780M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11a0":{
+"name":"GeForce GTX 680M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11a1":{
+"name":"GeForce GTX 670MX",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11a2":{
+"name":"GeForce GTX 675MX",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11a3":{
+"name":"GeForce GTX 680MX",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11a7":{
+"name":"GeForce GTX 675MX",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11b4":{
+"name":"Quadro K4200",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11b6":{
+"name":"Quadro K3100M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11b7":{
+"name":"Quadro K4100M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11b8":{
+"name":"Quadro K5100M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11ba":{
+"name":"Quadro K5000",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11bc":{
+"name":"Quadro K5000M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11bd":{
+"name":"Quadro K4000M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11be":{
+"name":"Quadro K3000M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11bf":{
+"name":"GRID K2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"11c0":{
+"name":"GeForce GTX 660",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11c2":{
+"name":"GeForce GTX 650 Ti BOOST",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11c3":{
+"name":"GeForce GTX 650 Ti",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11c4":{
+"name":"GeForce GTX 645",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11c5":{
+"name":"GeForce GT 740",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11c6":{
+"name":"GeForce GTX 650 Ti",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11c8":{
+"name":"GeForce GTX 650",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11cb":{
+"name":"GeForce GT 740",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11e0":{
+"name":"GeForce GTX 770M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11e1":{
+"name":"GeForce GTX 765M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11e2":{
+"name":"GeForce GTX 765M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11e3":{
+"name":"GeForce GTX 760M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11fa":{
+"name":"Quadro K4000",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"11fc":{
+"name":"Quadro K2100M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1200":{
+"name":"GeForce GTX 560 Ti",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1201":{
+"name":"GeForce GTX 560",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1203":{
+"name":"GeForce GTX 460 SE v2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1205":{
+"name":"GeForce GTX 460 v2",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1206":{
+"name":"GeForce GTX 555",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1207":{
+"name":"GeForce GT 645",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1208":{
+"name":"GeForce GTX 560 SE",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1210":{
+"name":"GeForce GTX 570M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1211":{
+"name":"GeForce GTX 580M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1212":{
+"name":"GeForce GTX 675M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1213":{
+"name":"GeForce GTX 670M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1241":{
+"name":"GeForce GT 545",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1243":{
+"name":"GeForce GT 545",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1244":{
+"name":"GeForce GTX 550 Ti",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1245":{
+"name":"GeForce GTS 450",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1246":{
+"name":"GeForce GT 550M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1247":{
+"name":"GeForce GT 555M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1248":{
+"name":"GeForce GT 555M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1249":{
+"name":"GeForce GTS 450",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"124b":{
+"name":"GeForce GT 640",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"124d":{
+"name":"GeForce GT 555M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1251":{
+"name":"GeForce GTX 560M",
+"branch":"nouveau",
+"open":false,
+"runtimepm":false
+},
+"1280":{
+"name":"GeForce GT 635",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1281":{
+"name":"GeForce GT 710",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1282":{
+"name":"GeForce GT 640",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1284":{
+"name":"GeForce GT 630",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1286":{
+"name":"GeForce GT 720",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1287":{
+"name":"GeForce GT 730",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1288":{
+"name":"GeForce GT 720",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1289":{
+"name":"GeForce GT 710",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"128b":{
+"name":"GeForce GT 710",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1290":{
+"name":"GeForce GT 730M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1291":{
+"name":"GeForce GT 735M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1292":{
+"name":"GeForce GT 740M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1293":{
+"name":"GeForce GT 730M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1295":{
+"name":"GeForce 710M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1296":{
+"name":"GeForce 825M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1298":{
+"name":"GeForce GT 720M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1299":{
+"name":"GeForce 920M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"129a":{
+"name":"GeForce 910M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"12b9":{
+"name":"Quadro K610M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"12ba":{
+"name":"Quadro K510M",
+"branch":"legacy_470",
+"open":false,
+"runtimepm":false
+},
+"1340":{
+"name":"NVIDIA GeForce 830M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1341":{
+"name":"NVIDIA GeForce 840M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1344":{
+"name":"NVIDIA GeForce 845M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1346":{
+"name":"NVIDIA GeForce 930M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1347":{
+"name":"NVIDIA GeForce 940M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1348":{
+"name":"NVIDIA GeForce 945M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1349":{
+"name":"NVIDIA GeForce 930M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"134b":{
+"name":"NVIDIA GeForce 940MX",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"134d":{
+"name":"NVIDIA GeForce 940MX",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"134e":{
+"name":"NVIDIA GeForce 930MX",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"134f":{
+"name":"NVIDIA GeForce 920MX",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"137a":{
+"name":"Quadro K620M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"137b":{
+"name":"Quadro M520",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1380":{
+"name":"NVIDIA GeForce GTX 750 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1381":{
+"name":"NVIDIA GeForce GTX 750",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1382":{
+"name":"NVIDIA GeForce GTX 745",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1390":{
+"name":"NVIDIA GeForce 845M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1391":{
+"name":"NVIDIA GeForce GTX 850M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1392":{
+"name":"NVIDIA GeForce GTX 860M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1393":{
+"name":"NVIDIA GeForce 840M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1398":{
+"name":"NVIDIA GeForce 845M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1399":{
+"name":"NVIDIA GeForce 945M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"139a":{
+"name":"NVIDIA GeForce GTX 950M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"139b":{
+"name":"NVIDIA GeForce GTX 960M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"139c":{
+"name":"NVIDIA GeForce 940M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"139d":{
+"name":"NVIDIA GeForce GTX 750 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13b0":{
+"name":"Quadro M2000M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13b1":{
+"name":"Quadro M1000M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13b2":{
+"name":"Quadro M600M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13b3":{
+"name":"Quadro K2200M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13b4":{
+"name":"Quadro M620",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13b6":{
+"name":"Quadro M1200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13b9":{
+"name":"NVS 810",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13ba":{
+"name":"Quadro K2200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13bb":{
+"name":"Quadro K620",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13bc":{
+"name":"Quadro K1200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13c0":{
+"name":"NVIDIA GeForce GTX 980",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13c2":{
+"name":"NVIDIA GeForce GTX 970",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13d7":{
+"name":"NVIDIA GeForce GTX 980M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13d8":{
+"name":"NVIDIA GeForce GTX 970M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13d9":{
+"name":"NVIDIA GeForce GTX 965M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13da":{
+"name":"NVIDIA GeForce GTX 980",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13f0":{
+"name":"Quadro M5000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13f1":{
+"name":"Quadro M4000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13f2":{
+"name":"Tesla M60",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13f3":{
+"name":"Tesla M6",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13f8":{
+"name":"Quadro M5000M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13f9":{
+"name":"Quadro M4000M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13fa":{
+"name":"Quadro M3000M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"13fb":{
+"name":"Quadro M5500",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1401":{
+"name":"NVIDIA GeForce GTX 960",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1402":{
+"name":"NVIDIA GeForce GTX 950",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1406":{
+"name":"NVIDIA GeForce GTX 960",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1407":{
+"name":"NVIDIA GeForce GTX 750",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1427":{
+"name":"NVIDIA GeForce GTX 965M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1430":{
+"name":"Quadro M2000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1431":{
+"name":"Tesla M4",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1436":{
+"name":"Quadro M2200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"15f0":{
+"name":"Quadro GP100",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"15f7":{
+"name":"Tesla P100-PCIE-12GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"15f8":{
+"name":"Tesla P100-PCIE-16GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"15f9":{
+"name":"Tesla P100-SXM2-16GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1617":{
+"name":"NVIDIA GeForce GTX 980M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1618":{
+"name":"NVIDIA GeForce GTX 970M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1619":{
+"name":"NVIDIA GeForce GTX 965M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"161a":{
+"name":"NVIDIA GeForce GTX 980",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1667":{
+"name":"NVIDIA GeForce GTX 965M",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"174d":{
+"name":"NVIDIA GeForce MX130",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"174e":{
+"name":"NVIDIA GeForce MX110",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"179c":{
+"name":"NVIDIA GeForce 940MX",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"17c2":{
+"name":"NVIDIA GeForce GTX TITAN X",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"17c8":{
+"name":"NVIDIA GeForce GTX 980 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"17f0":{
+"name":"Quadro M6000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"17f1":{
+"name":"Quadro M6000 24GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"17fd":{
+"name":"Tesla M40",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b00":{
+"name":"NVIDIA TITAN X (Pascal)",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b02":{
+"name":"NVIDIA TITAN Xp",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b06":{
+"name":"NVIDIA GeForce GTX 1080 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b30":{
+"name":"Quadro P6000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b38":{
+"name":"Tesla P40",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b80":{
+"name":"NVIDIA GeForce GTX 1080",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b81":{
+"name":"NVIDIA GeForce GTX 1070",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b82":{
+"name":"NVIDIA GeForce GTX 1070 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b83":{
+"name":"NVIDIA GeForce GTX 1060 6GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b84":{
+"name":"NVIDIA GeForce GTX 1060 3GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1b87":{
+"name":"NVIDIA P104-100",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1ba0":{
+"name":"NVIDIA GeForce GTX 1080",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1ba1":{
+"name":"NVIDIA GeForce GTX 1070",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1ba2":{
+"name":"NVIDIA GeForce GTX 1070",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb0":{
+"name":"Quadro P5000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb1":{
+"name":"Quadro P4000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb3":{
+"name":"Tesla P4",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb4":{
+"name":"Tesla P6",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb5":{
+"name":"Quadro P5200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb6":{
+"name":"Quadro P5000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb7":{
+"name":"Quadro P4000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb8":{
+"name":"Quadro P3000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bb9":{
+"name":"Quadro P4200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bbb":{
+"name":"Quadro P3200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1bc7":{
+"name":"NVIDIA P104-101",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1be0":{
+"name":"NVIDIA GeForce GTX 1080",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1be1":{
+"name":"NVIDIA GeForce GTX 1070",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c02":{
+"name":"NVIDIA GeForce GTX 1060 3GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c03":{
+"name":"NVIDIA GeForce GTX 1060 6GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c04":{
+"name":"NVIDIA GeForce GTX 1060 5GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c06":{
+"name":"NVIDIA GeForce GTX 1060 6GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c07":{
+"name":"NVIDIA P106-100",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c09":{
+"name":"NVIDIA P106-090",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c20":{
+"name":"NVIDIA GeForce GTX 1060",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c21":{
+"name":"NVIDIA GeForce GTX 1050 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c22":{
+"name":"NVIDIA GeForce GTX 1050",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c23":{
+"name":"NVIDIA GeForce GTX 1060",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c30":{
+"name":"Quadro P2000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c31":{
+"name":"Quadro P2200",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c60":{
+"name":"NVIDIA GeForce GTX 1060",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c61":{
+"name":"NVIDIA GeForce GTX 1050 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c62":{
+"name":"NVIDIA GeForce GTX 1050",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c81":{
+"name":"NVIDIA GeForce GTX 1050",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c82":{
+"name":"NVIDIA GeForce GTX 1050 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c83":{
+"name":"NVIDIA GeForce GTX 1050",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c8c":{
+"name":"NVIDIA GeForce GTX 1050 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c8d":{
+"name":"NVIDIA GeForce GTX 1050",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c8f":{
+"name":"NVIDIA GeForce GTX 1050 Ti",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c90":{
+"name":"NVIDIA GeForce MX150",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c91":{
+"name":"NVIDIA GeForce GTX 1050",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c92":{
+"name":"NVIDIA GeForce GTX 1050",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c94":{
+"name":"NVIDIA GeForce MX350",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1c96":{
+"name":"NVIDIA GeForce MX350",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cb1":{
+"name":"Quadro P1000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cb2":{
+"name":"Quadro P600",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cb3":{
+"name":"Quadro P400",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cb6":{
+"name":"Quadro P620",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cba":{
+"name":"Quadro P2000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cbb":{
+"name":"Quadro P1000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cbc":{
+"name":"Quadro P600",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cbd":{
+"name":"Quadro P620",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cfa":{
+"name":"Quadro P2000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1cfb":{
+"name":"Quadro P1000",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d01":{
+"name":"NVIDIA GeForce GT 1030",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d02":{
+"name":"NVIDIA GeForce GT 1010",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d10":{
+"name":"NVIDIA GeForce MX150",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d11":{
+"name":"NVIDIA GeForce MX230",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d12":{
+"name":"NVIDIA GeForce MX150",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d13":{
+"name":"NVIDIA GeForce MX250",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d16":{
+"name":"NVIDIA GeForce MX330",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d33":{
+"name":"Quadro P500",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d34":{
+"name":"Quadro P520",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d52":{
+"name":"NVIDIA GeForce MX250",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1d81":{
+"name":"NVIDIA TITAN V",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1db1":{
+"name":"Tesla V100-SXM2-16GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1db3":{
+"name":"Tesla V100-FHHL-16GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1db4":{
+"name":"Tesla V100-PCIE-16GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1db5":{
+"name":"Tesla V100-SXM2-32GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1db6":{
+"name":"Tesla V100-PCIE-32GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1db7":{
+"name":"Tesla V100-DGXS-32GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1db8":{
+"name":"Tesla V100-SXM3-32GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1dba":{
+"name":"Quadro GV100",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1df0":{
+"name":"Tesla PG500-216",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1df2":{
+"name":"Tesla PG503-216",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1df6":{
+"name":"Tesla V100S-PCIE-32GB",
+"branch":"legacy_580",
+"open":false,
+"runtimepm":false
+},
+"1e02":{
+"name":"NVIDIA TITAN RTX",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e04":{
+"name":"NVIDIA GeForce RTX 2080 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e07":{
+"name":"NVIDIA GeForce RTX 2080 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e09":{
+"name":"NVIDIA CMP 50HX",
+"branch":"production",
+"open":true,
+"runtimepm":false
+},
+"1e30":{
+"name":"Quadro RTX 6000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e36":{
+"name":"Quadro RTX 6000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e78":{
+"name":"Quadro RTX 8000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e81":{
+"name":"NVIDIA GeForce RTX 2080 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e82":{
+"name":"NVIDIA GeForce RTX 2080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e84":{
+"name":"NVIDIA GeForce RTX 2070 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e87":{
+"name":"NVIDIA GeForce RTX 2080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e89":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e90":{
+"name":"NVIDIA GeForce RTX 2080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e91":{
+"name":"NVIDIA GeForce RTX 2070 Super",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1e93":{
+"name":"NVIDIA GeForce RTX 2080 Super",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1eb0":{
+"name":"Quadro RTX 5000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1eb1":{
+"name":"Quadro RTX 4000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1eb5":{
+"name":"Quadro RTX 5000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1eb6":{
+"name":"Quadro RTX 4000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1eb8":{
+"name":"Tesla T4",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ec2":{
+"name":"NVIDIA GeForce RTX 2070 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ec7":{
+"name":"NVIDIA GeForce RTX 2070 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ed0":{
+"name":"NVIDIA GeForce RTX 2080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ed1":{
+"name":"NVIDIA GeForce RTX 2070 Super",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ed3":{
+"name":"NVIDIA GeForce RTX 2080 Super",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ef5":{
+"name":"Quadro RTX 5000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f02":{
+"name":"NVIDIA GeForce RTX 2070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f03":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f06":{
+"name":"NVIDIA GeForce RTX 2060 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f07":{
+"name":"NVIDIA GeForce RTX 2070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f08":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f0a":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f0b":{
+"name":"NVIDIA CMP 40HX",
+"branch":"production",
+"open":true,
+"runtimepm":false
+},
+"1f10":{
+"name":"NVIDIA GeForce RTX 2070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f11":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f12":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f14":{
+"name":"NVIDIA GeForce RTX 2070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f15":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f36":{
+"name":"Quadro RTX 3000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f42":{
+"name":"NVIDIA GeForce RTX 2060 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f47":{
+"name":"NVIDIA GeForce RTX 2060 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f50":{
+"name":"NVIDIA GeForce RTX 2070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f51":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f54":{
+"name":"NVIDIA GeForce RTX 2070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f55":{
+"name":"NVIDIA GeForce RTX 2060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f76":{
+"name":"Quadro RTX 3000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f82":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f83":{
+"name":"NVIDIA GeForce GTX 1630",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f91":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f95":{
+"name":"NVIDIA GeForce GTX 1650 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f96":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f97":{
+"name":"NVIDIA GeForce MX450",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f98":{
+"name":"NVIDIA GeForce MX450",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f99":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f9c":{
+"name":"NVIDIA GeForce MX450",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f9d":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1f9f":{
+"name":"NVIDIA GeForce MX550",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fa0":{
+"name":"NVIDIA GeForce MX550",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fb0":{
+"name":"NVIDIA T1000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fb1":{
+"name":"NVIDIA T600",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fb2":{
+"name":"NVIDIA T400",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fb6":{
+"name":"NVIDIA T600 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fb7":{
+"name":"NVIDIA T550 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fb8":{
+"name":"Quadro T2000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fb9":{
+"name":"Quadro T1000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fba":{
+"name":"NVIDIA T600 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fbb":{
+"name":"NVIDIA T500",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fbc":{
+"name":"NVIDIA T1200 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1fdd":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ff0":{
+"name":"NVIDIA T1000 8GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ff2":{
+"name":"NVIDIA T400 4GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"1ff9":{
+"name":"Quadro T1000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20b0":{
+"name":"NVIDIA A100-SXM4-40GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20b2":{
+"name":"NVIDIA A100-SXM4-80GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20b3":{
+"name":"NVIDIA A100-SXM-64GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20b5":{
+"name":"NVIDIA A100 80GB PCIe",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20b6":{
+"name":"NVIDIA PG506-232",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20b7":{
+"name":"NVIDIA A30",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20bd":{
+"name":"NVIDIA A800-SXM4-40GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20f1":{
+"name":"NVIDIA A100-PCIE-40GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20f3":{
+"name":"NVIDIA A800-SXM4-80GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20f5":{
+"name":"NVIDIA A800 80GB PCIe",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20f6":{
+"name":"NVIDIA A800 40GB Active",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"20fd":{
+"name":"NVIDIA AX800",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2182":{
+"name":"NVIDIA GeForce GTX 1660 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2184":{
+"name":"NVIDIA GeForce GTX 1660",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2187":{
+"name":"NVIDIA GeForce GTX 1650 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2188":{
+"name":"NVIDIA GeForce GTX 1650",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2189":{
+"name":"NVIDIA CMP 30HX",
+"branch":"production",
+"open":true,
+"runtimepm":false
+},
+"2191":{
+"name":"NVIDIA GeForce GTX 1660 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2192":{
+"name":"NVIDIA GeForce GTX 1650 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"21c4":{
+"name":"NVIDIA GeForce GTX 1660 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"21d1":{
+"name":"NVIDIA GeForce GTX 1660 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2203":{
+"name":"NVIDIA GeForce RTX 3090 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2204":{
+"name":"NVIDIA GeForce RTX 3090",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2206":{
+"name":"NVIDIA GeForce RTX 3080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2207":{
+"name":"NVIDIA GeForce RTX 3070 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2208":{
+"name":"NVIDIA GeForce RTX 3080 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"220a":{
+"name":"NVIDIA GeForce RTX 3080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"220d":{
+"name":"NVIDIA CMP 90HX",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2216":{
+"name":"NVIDIA GeForce RTX 3080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2230":{
+"name":"NVIDIA RTX A6000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2231":{
+"name":"NVIDIA RTX A5000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2232":{
+"name":"NVIDIA RTX A4500",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2233":{
+"name":"NVIDIA RTX A5500",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2235":{
+"name":"NVIDIA A40",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2236":{
+"name":"NVIDIA A10",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2237":{
+"name":"NVIDIA A10G",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2238":{
+"name":"NVIDIA A10M",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"230e":{
+"name":"NVIDIA H20 NVL16",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2321":{
+"name":"NVIDIA H100 NVL",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2322":{
+"name":"NVIDIA H800 PCIe",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2324":{
+"name":"NVIDIA H800",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2329":{
+"name":"NVIDIA H20",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"232c":{
+"name":"NVIDIA H20-3e",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2330":{
+"name":"NVIDIA H100 80GB HBM3",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2331":{
+"name":"NVIDIA H100 PCIe",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2335":{
+"name":"NVIDIA H200",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2339":{
+"name":"NVIDIA H100",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"233a":{
+"name":"NVIDIA H800 NVL",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"233b":{
+"name":"NVIDIA H200 NVL",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2342":{
+"name":"NVIDIA GH200 120GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2348":{
+"name":"NVIDIA GH200 144G HBM3e",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2414":{
+"name":"NVIDIA GeForce RTX 3060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2420":{
+"name":"NVIDIA GeForce RTX 3080 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2438":{
+"name":"NVIDIA RTX A5500 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2460":{
+"name":"NVIDIA GeForce RTX 3080 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2482":{
+"name":"NVIDIA GeForce RTX 3070 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2484":{
+"name":"NVIDIA GeForce RTX 3070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2486":{
+"name":"NVIDIA GeForce RTX 3060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2487":{
+"name":"NVIDIA GeForce RTX 3060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2488":{
+"name":"NVIDIA GeForce RTX 3070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2489":{
+"name":"NVIDIA GeForce RTX 3060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"248a":{
+"name":"NVIDIA CMP 70HX",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"249c":{
+"name":"NVIDIA GeForce RTX 3080 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"249d":{
+"name":"NVIDIA GeForce RTX 3070 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24a0":{
+"name":"NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24b0":{
+"name":"NVIDIA RTX A4000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24b1":{
+"name":"NVIDIA RTX A4000H",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24b6":{
+"name":"NVIDIA RTX A5000 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24b7":{
+"name":"NVIDIA RTX A4000 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24b8":{
+"name":"NVIDIA RTX A3000 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24b9":{
+"name":"NVIDIA RTX A3000 12GB Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24ba":{
+"name":"NVIDIA RTX A4500 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24bb":{
+"name":"NVIDIA RTX A3000 12GB Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24c7":{
+"name":"NVIDIA GeForce RTX 3060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24c9":{
+"name":"NVIDIA GeForce RTX 3060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24dc":{
+"name":"NVIDIA GeForce RTX 3080 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24dd":{
+"name":"NVIDIA GeForce RTX 3070 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24e0":{
+"name":"NVIDIA GeForce RTX 3070 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"24fa":{
+"name":"NVIDIA RTX A4500 Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2503":{
+"name":"NVIDIA GeForce RTX 3060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2504":{
+"name":"NVIDIA GeForce RTX 3060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2507":{
+"name":"NVIDIA GeForce RTX 3050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2508":{
+"name":"NVIDIA GeForce RTX 3050 OEM",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2520":{
+"name":"NVIDIA GeForce RTX 3060 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2521":{
+"name":"NVIDIA GeForce RTX 3060 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2523":{
+"name":"NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2531":{
+"name":"NVIDIA RTX A2000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2544":{
+"name":"NVIDIA GeForce RTX 3060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2560":{
+"name":"NVIDIA GeForce RTX 3060 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2563":{
+"name":"NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2571":{
+"name":"NVIDIA RTX A2000 12GB",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2582":{
+"name":"NVIDIA GeForce RTX 3050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2584":{
+"name":"NVIDIA GeForce RTX 3050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25a0":{
+"name":"NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25a2":{
+"name":"NVIDIA GeForce RTX 3050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25a5":{
+"name":"NVIDIA GeForce RTX 3050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25a6":{
+"name":"NVIDIA GeForce MX570",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25a7":{
+"name":"NVIDIA GeForce RTX 2050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25a9":{
+"name":"NVIDIA GeForce RTX 2050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25aa":{
+"name":"NVIDIA GeForce MX570 A",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25ab":{
+"name":"NVIDIA GeForce RTX 3050 4GB Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25ac":{
+"name":"NVIDIA GeForce RTX 3050 6GB Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25ad":{
+"name":"NVIDIA GeForce RTX 2050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25b0":{
+"name":"NVIDIA RTX A1000",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25b2":{
+"name":"NVIDIA RTX A400",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25b6":{
+"name":"NVIDIA A16",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25b8":{
+"name":"NVIDIA RTX A2000 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25b9":{
+"name":"NVIDIA RTX A1000 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25ba":{
+"name":"NVIDIA RTX A2000 8GB Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25bb":{
+"name":"NVIDIA RTX A500 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25bc":{
+"name":"NVIDIA RTX A1000 6GB Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25bd":{
+"name":"NVIDIA RTX A500 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25e0":{
+"name":"NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25e2":{
+"name":"NVIDIA GeForce RTX 3050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25e5":{
+"name":"NVIDIA GeForce RTX 3050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25ec":{
+"name":"NVIDIA GeForce RTX 3050 6GB Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25ed":{
+"name":"NVIDIA GeForce RTX 2050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25f9":{
+"name":"NVIDIA RTX A1000 Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25fa":{
+"name":"NVIDIA RTX A2000 Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"25fb":{
+"name":"NVIDIA RTX A500 Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2684":{
+"name":"NVIDIA GeForce RTX 4090",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2685":{
+"name":"NVIDIA GeForce RTX 4090 D",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2689":{
+"name":"NVIDIA GeForce RTX 4070 Ti SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"26b1":{
+"name":"NVIDIA RTX 6000 Ada Generation",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"26b2":{
+"name":"NVIDIA RTX 5000 Ada Generation",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"26b3":{
+"name":"NVIDIA RTX 5880 Ada Generation",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"26b5":{
+"name":"NVIDIA L40",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"26b9":{
+"name":"NVIDIA L40S",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"26ba":{
+"name":"NVIDIA L20",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2702":{
+"name":"NVIDIA GeForce RTX 4080 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2704":{
+"name":"NVIDIA GeForce RTX 4080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2705":{
+"name":"NVIDIA GeForce RTX 4070 Ti SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2709":{
+"name":"NVIDIA GeForce RTX 4070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2717":{
+"name":"NVIDIA GeForce RTX 4090 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2730":{
+"name":"NVIDIA RTX 5000 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2757":{
+"name":"NVIDIA GeForce RTX 4090 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2770":{
+"name":"NVIDIA RTX 5000 Ada Generation Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2782":{
+"name":"NVIDIA GeForce RTX 4070 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2783":{
+"name":"NVIDIA GeForce RTX 4070 SUPER",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2786":{
+"name":"NVIDIA GeForce RTX 4070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2788":{
+"name":"NVIDIA GeForce RTX 4060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27a0":{
+"name":"NVIDIA GeForce RTX 4080 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27b0":{
+"name":"NVIDIA RTX 4000 SFF Ada Generation",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27b1":{
+"name":"NVIDIA RTX 4500 Ada Generation",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27b2":{
+"name":"NVIDIA RTX 4000 Ada Generation",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27b6":{
+"name":"NVIDIA L2",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27b8":{
+"name":"NVIDIA L4",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27ba":{
+"name":"NVIDIA RTX 4000 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27bb":{
+"name":"NVIDIA RTX 3500 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27e0":{
+"name":"NVIDIA GeForce RTX 4080 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"27fb":{
+"name":"NVIDIA RTX 3500 Ada Generation Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2803":{
+"name":"NVIDIA GeForce RTX 4060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2805":{
+"name":"NVIDIA GeForce RTX 4060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2808":{
+"name":"NVIDIA GeForce RTX 4060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2820":{
+"name":"NVIDIA GeForce RTX 4070 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2822":{
+"name":"NVIDIA GeForce RTX 3050 A Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2838":{
+"name":"NVIDIA RTX 3000 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2860":{
+"name":"NVIDIA GeForce RTX 4070 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2882":{
+"name":"NVIDIA GeForce RTX 4060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28a0":{
+"name":"NVIDIA GeForce RTX 4060 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28a1":{
+"name":"NVIDIA GeForce RTX 4050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28a3":{
+"name":"NVIDIA GeForce RTX 3050 A Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28b0":{
+"name":"NVIDIA RTX 2000 Ada Generation",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28b8":{
+"name":"NVIDIA RTX 2000 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28b9":{
+"name":"NVIDIA RTX 1000 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28ba":{
+"name":"NVIDIA RTX 500 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28bb":{
+"name":"NVIDIA RTX 500 Ada Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28e0":{
+"name":"NVIDIA GeForce RTX 4060 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28e1":{
+"name":"NVIDIA GeForce RTX 4050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28e3":{
+"name":"NVIDIA GeForce RTX 3050 A Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"28f8":{
+"name":"NVIDIA RTX 2000 Ada Generation Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2901":{
+"name":"NVIDIA B200",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2941":{
+"name":"NVIDIA GB200",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"29bb":{
+"name":"NVIDIA DRIVE P2021",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2b85":{
+"name":"NVIDIA GeForce RTX 5090",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2b87":{
+"name":"NVIDIA GeForce RTX 5090 D",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2b8c":{
+"name":"NVIDIA GeForce RTX 5090 D v2",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2bb1":{
+"name":"NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2bb3":{
+"name":"NVIDIA RTX PRO 5000 Blackwell",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2bb4":{
+"name":"NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2bb5":{
+"name":"NVIDIA RTX PRO 6000 Blackwell Server Edition",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2bb9":{
+"name":"NVIDIA RTX 6000D",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c02":{
+"name":"NVIDIA GeForce RTX 5080",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c05":{
+"name":"NVIDIA GeForce RTX 5070 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c18":{
+"name":"NVIDIA GeForce RTX 5090 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c19":{
+"name":"NVIDIA GeForce RTX 5080 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c31":{
+"name":"NVIDIA RTX PRO 4500 Blackwell",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c33":{
+"name":"NVIDIA RTX PRO 4000 Blackwell SFF Edition",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c34":{
+"name":"NVIDIA RTX PRO 4000 Blackwell",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c38":{
+"name":"NVIDIA RTX PRO 5000 Blackwell Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c39":{
+"name":"NVIDIA RTX PRO 4000 Blackwell Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c58":{
+"name":"NVIDIA GeForce RTX 5090 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c59":{
+"name":"NVIDIA GeForce RTX 5080 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c77":{
+"name":"NVIDIA RTX PRO 5000 Blackwell Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2c79":{
+"name":"NVIDIA RTX PRO 4000 Blackwell Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d04":{
+"name":"NVIDIA GeForce RTX 5060 Ti",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d05":{
+"name":"NVIDIA GeForce RTX 5060",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d18":{
+"name":"NVIDIA GeForce RTX 5070 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d19":{
+"name":"NVIDIA GeForce RTX 5060 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d30":{
+"name":"NVIDIA RTX PRO 2000 Blackwell",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d39":{
+"name":"NVIDIA RTX PRO 2000 Blackwell Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d58":{
+"name":"NVIDIA GeForce RTX 5070 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d59":{
+"name":"NVIDIA GeForce RTX 5060 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d79":{
+"name":"NVIDIA RTX PRO 2000 Blackwell Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d83":{
+"name":"NVIDIA GeForce RTX 5050",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2d98":{
+"name":"NVIDIA GeForce RTX 5050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2db8":{
+"name":"NVIDIA RTX PRO 1000 Blackwell Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2db9":{
+"name":"NVIDIA RTX PRO 500 Blackwell Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2dd8":{
+"name":"NVIDIA GeForce RTX 5050 Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2df9":{
+"name":"NVIDIA RTX PRO 500 Blackwell Embedded GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2e12":{
+"name":"NVIDIA GB10",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2f04":{
+"name":"NVIDIA GeForce RTX 5070",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2f18":{
+"name":"NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2f38":{
+"name":"NVIDIA RTX PRO 3000 Blackwell Generation Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"2f58":{
+"name":"NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"3182":{
+"name":"NVIDIA B300 SXM6 AC",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"31c2":{
+"name":"NVIDIA GB300",
+"branch":"production",
+"open":true,
+"runtimepm":true
+},
+"31c3":{
+"name":"NVIDIA GB300-252",
+"branch":"production",
+"open":true,
+"runtimepm":true
+}
+}
+}

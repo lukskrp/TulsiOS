@@ -44,6 +44,9 @@ pub const ACTION_CONFIGURE: &str = "org.tulsi.configure";
 /// Moving to a newer TulsiOS release (ADR 0017). Reversible (undo restores the
 /// previous release), but it changes the whole system, so it has its own action.
 pub const ACTION_UPGRADE: &str = "org.tulsi.upgrade";
+/// Keeping or undoing a change on trial (ADR 0029): the person at the computer
+/// confirms or takes back what they already authorized, without a password.
+pub const ACTION_TRIAL: &str = "org.tulsi.trial";
 
 /// Whether a newer TulsiOS release is available (`CheckUpgrade`).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -200,6 +203,13 @@ pub trait Manager {
     fn get_config(&self) -> zbus::Result<String>;
     fn plan_config(&self, contents: &str) -> zbus::Result<String>;
     fn apply_config(&self, contents: &str, summary: &str) -> zbus::Result<u64>;
+    /// Like `apply_config`, taking effect at the next start, on trial (ADR 0029).
+    fn apply_config_trial(&self, contents: &str, summary: &str) -> zbus::Result<u64>;
+    /// The change on trial as JSON, or `{"state": "none"}`.
+    fn trial_status(&self) -> zbus::Result<String>;
+    fn keep_trial(&self) -> zbus::Result<String>;
+    fn undo_trial(&self) -> zbus::Result<u64>;
+    fn dismiss_trial(&self) -> zbus::Result<()>;
     fn check_upgrade(&self) -> zbus::Result<String>;
     fn upgrade(&self) -> zbus::Result<u64>;
 

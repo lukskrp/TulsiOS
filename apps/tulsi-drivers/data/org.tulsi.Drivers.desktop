@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Drivers
+GenericName=Hardware Drivers
+Comment=Choose drivers for the graphics card, Wi-Fi and other hardware (NVIDIA, AMD, Intel, Broadcom)
+Exec=tulsi-drivers-app
+Icon=org.tulsi.Drivers
+StartupWMClass=tulsi-drivers-app
+Terminal=false
+Categories=Settings;HardwareSettings;GTK;
+Keywords=driver;drivers;nvidia;amd;radeon;intel;gpu;graphics;wifi;broadcom;hardware;cuda;
+StartupNotify=true

@@ -26,5 +26,6 @@
     ./cleanup.nix
     ./agent-gating.nix
     ./home-snapshots.nix
+    ./drivers.nix
   ];
 }

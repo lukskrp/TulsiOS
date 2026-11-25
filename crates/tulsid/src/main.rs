@@ -14,6 +14,7 @@ mod matching;
 mod nixfile;
 mod polkit;
 mod service;
+mod trial;
 mod upgrade;
 
 use std::path::PathBuf;
@@ -90,7 +91,7 @@ async fn run() -> Result<(), String> {
     }
     .map_err(|e| format!("D-Bus: {e}"))?;
 
-    let _conn = builder
+    let conn = builder
         .name(BUS_NAME)
         .and_then(|b| b.serve_at(OBJECT_PATH, manager))
         .map_err(|e| format!("D-Bus: {e}"))?
@@ -99,6 +100,14 @@ async fn run() -> Result<(), String> {
         .map_err(|e| format!("D-Bus: {e}"))?;
 
     eprintln!("tulsid {} ready on {BUS_NAME}", env!("CARGO_PKG_VERSION"));
+    // A change on trial (ADR 0029): on test now, or undone.
+    if let Ok(iface) = conn
+        .object_server()
+        .interface::<_, service::Manager>(OBJECT_PATH)
+        .await
+    {
+        iface.get().await.check_trial(&conn).await;
+    }
     std::future::pending::<()>().await;
     Ok(())
 }

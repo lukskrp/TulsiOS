@@ -7,6 +7,8 @@ connection needed.
   OpenCode, …) may see and change, and how to give them more.
 - [Your files' history](file-history.html): getting back deleted or changed files,
   and the trash.
+- [Drivers](drivers.html): drivers for the graphics card and Wi-Fi (NVIDIA, AMD,
+  Intel, Broadcom), and what to do if the screen stays black.
 - [Disk space](disk-space.html): what TulsiOS cleans up on its own, and how to free
   more.
 

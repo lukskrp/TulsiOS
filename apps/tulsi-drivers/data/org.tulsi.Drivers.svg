@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Drivers (ADR 0029): a graphics card on the TulsiOS tile, its fan a tulsi
+     leaf. TulsiOS colours: navy #364b66, leaf #3f8a4f. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Drivers</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#42597a"/>
+      <stop offset="1" stop-color="#2c3e55"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="url(#tile)"/>
+  <!-- the card -->
+  <rect x="22" y="40" width="84" height="44" rx="6" fill="#e8edf3"/>
+  <rect x="22" y="84" width="40" height="8" rx="2" fill="#c9a227"/>
+  <rect x="106" y="44" width="6" height="36" rx="2" fill="#9aa8b8"/>
+  <!-- the fan: a leaf -->
+  <circle cx="54" cy="62" r="16" fill="#364b66"/>
+  <path d="M54 50 C64 54 64 70 54 74 C44 70 44 54 54 50 Z" fill="#3f8a4f"/>
+  <path d="M54 52 L54 72" stroke="#cfe6d4" stroke-width="1.6" fill="none"/>
+  <!-- outputs -->
+  <rect x="80" y="50" width="16" height="7" rx="1.5" fill="#364b66"/>
+  <rect x="80" y="62" width="16" height="7" rx="1.5" fill="#364b66"/>
+</svg>

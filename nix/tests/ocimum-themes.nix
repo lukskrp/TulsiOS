@@ -117,6 +117,24 @@
         machine.screenshot("themes-app")
         su("pkill -f ocimum-themes", check=False)
 
+    with subtest("the Drivers app opens (ADR 0029)"):
+        su(f"{x}tulsi-drivers-app >/tmp/drivers.log 2>&1 &")
+        try:
+            machine.wait_until_succeeds(
+                f"su - alice -c '{ENV} {x}xdotool search --name \"^Drivers$\"'",
+                timeout=datetime.timedelta(seconds=60),
+            )
+        finally:
+            machine.log(machine.execute("cat /tmp/drivers.log; pgrep -af tulsi-drivers")[1])
+        machine.sleep(3)
+        machine.log(machine.execute("cat /tmp/drivers.log")[1])
+        machine.fail("grep -q Traceback /tmp/drivers.log")
+        machine.screenshot("drivers-app")
+        # The virtual graphics card and the processor are listed.
+        listed = su("tulsi-drivers list")
+        assert "processor" in listed, listed
+        su("pkill -f tulsi-drivers-app", check=False)
+
     with subtest("undo goes back, then to Ocimum's own look"):
         su("tulsi-theme set nord")
         value = get("org.cinnamon.theme", "name")

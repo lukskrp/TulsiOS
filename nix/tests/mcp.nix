@@ -171,10 +171,11 @@ in
         assert "hello" in text(r[4]), r[4]
         tools = {t["name"] for t in r[5]["result"]["tools"]}
         # 11 system tools (undo_change: ADR 0015) + 4 packaging tools (ADR 0013)
-        # + 3 theme tools (ADR 0021).
-        assert len(tools) == 18 and {"fetch_source", "build_package", "try_package",
+        # + 3 theme tools (ADR 0021) + list_drivers (ADR 0029).
+        assert len(tools) == 19 and {"fetch_source", "build_package", "try_package",
                                      "propose_local_package", "undo_change",
-                                     "list_themes", "set_theme", "undo_theme"} <= tools, sorted(tools)
+                                     "list_themes", "set_theme", "undo_theme",
+                                     "list_drivers"} <= tools, sorted(tools)
         machine.fail(f"grep -q '\"sl\"' {state}")
 
     with subtest("an approved change is applied, with the plan shown to the approver"):

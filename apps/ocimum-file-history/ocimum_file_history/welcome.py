@@ -102,3 +102,18 @@ def turn_on_snapshots() -> tuple[bool, str]:
     )
     out = (applied.stdout + applied.stderr).strip()
     return applied.returncode == 0, out
+
+
+def drivers_needed() -> str | None:
+    """What the Drivers app recommends when a device needs a driver the system
+    doesn't have yet (an NVIDIA card on Nouveau, a Broadcom card without Wi-Fi),
+    else None (ADR 0029)."""
+    try:
+        check = subprocess.run(["tulsi-drivers", "recommend", "--check"], capture_output=True, timeout=30)
+        if check.returncode != 10:
+            return None
+        rec = subprocess.run(["tulsi-drivers", "recommend"], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    first = rec.stdout.strip().splitlines()[:1]
+    return first[0].removeprefix("Recommended: ") if first else ""

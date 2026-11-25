@@ -15,7 +15,7 @@ use tokio::process::Command;
 use tokio::sync::{mpsc, Mutex, OwnedMutexGuard};
 use tulsi_client::{
     config_action, Candidate, MatchHint, PackageInfo, Plan, UndoPlan, ACTION_APPLY,
-    ACTION_CONFIGURE, ACTION_EXTENSIONS, ACTION_UPGRADE, OBJECT_PATH,
+    ACTION_CONFIGURE, ACTION_EXTENSIONS, ACTION_TRIAL, ACTION_UPGRADE, OBJECT_PATH,
 };
 use tulsi_state::{describe_all, Op, State};
 use zbus::message::Header;
@@ -26,6 +26,7 @@ use crate::config::Config;
 use crate::git::FileChange;
 use crate::index::Index;
 use crate::matching::{NameMap, ProgramIndex};
+use crate::trial::{self, Trial};
 use crate::{git, localpkg, matching, nixfile, polkit, upgrade};
 
 /// Upper bound for `Search` results.
@@ -325,6 +326,20 @@ impl Manager {
     }
 
     fn try_lock(&self) -> Result<OwnedMutexGuard<()>> {
+        if let Some(t) = trial::load(&self.cfg) {
+            if t.state != trial::State::Reverted {
+                return Err(TulsiError::Busy(format!(
+                    "a change waits for a restart to be tried ({}): restart, then keep it or \
+                     undo it first (tulsi-drivers keep | tulsi-drivers undo)",
+                    t.summary
+                )));
+            }
+        }
+        self.try_lock_trial()
+    }
+
+    /// The lock, whatever is on trial (the trial's own keep and undo).
+    fn try_lock_trial(&self) -> Result<OwnedMutexGuard<()>> {
         self.lock
             .clone()
             .try_lock_owned()
@@ -383,12 +398,14 @@ impl Manager {
             format!("tulsi: undo {summary}"),
             action,
             by,
+            JobKind::Normal,
         )
     }
 
     /// Starts the transaction in the background and returns its job id. `action` is
     /// the polkit action the change was authorized with and `by` who asked; the
     /// commit records both.
+    #[allow(clippy::too_many_arguments)]
     fn start_job(
         &self,
         guard: OwnedMutexGuard<()>,
@@ -397,17 +414,52 @@ impl Manager {
         message: String,
         action: &str,
         by: String,
+        kind: JobKind,
     ) -> Result<u64> {
         let job = self.next_job.fetch_add(1, Ordering::Relaxed);
         let emitter = SignalEmitter::new(conn, OBJECT_PATH)?.into_owned();
         let cfg = self.cfg.clone();
         let commit_message = git::commit_message(&message, action, &by);
+        let command = match kind {
+            JobKind::Normal => cfg.rebuild_command.clone(),
+            _ => trial::boot_command(&cfg),
+        };
+        let old_generation = trial::generation(&cfg.system_profile);
         tokio::spawn(async move {
             let _guard = guard;
             eprintln!("tulsid: job {job}: {message}");
-            let result = run_transaction(&cfg, &emitter, job, &changes, &commit_message).await;
+            let result =
+                run_transaction(&cfg, &emitter, job, &changes, &commit_message, &command).await;
             let (success, text) = match result {
-                Ok(commit) => (true, format!("{message} (commit {commit})")),
+                Ok(commit) => {
+                    let done = format!("{message} (commit {commit})");
+                    match kind {
+                        JobKind::Normal => (true, done),
+                        JobKind::StartTrial => (
+                            true,
+                            start_trial(&cfg, &commit, &message, old_generation, done).await,
+                        ),
+                        JobKind::EndTrial { notice } => {
+                            if let Err(e) = trial::disarm(&cfg).await {
+                                eprintln!("tulsid: warning: {e}");
+                            }
+                            match notice {
+                                Some(notice) => {
+                                    if let Some(mut t) = trial::load(&cfg) {
+                                        t.state = trial::State::Reverted;
+                                        t.notice = Some(notice);
+                                        let _ = trial::save(&cfg, &t);
+                                    }
+                                }
+                                None => trial::remove(&cfg),
+                            }
+                            (
+                                true,
+                                format!("{done}. The system before comes back when you restart."),
+                            )
+                        }
+                    }
+                }
                 Err(e) => (false, e),
             };
             eprintln!(
@@ -417,6 +469,158 @@ impl Manager {
             let _ = Manager::finished(&emitter, job, success, &text).await;
         });
         Ok(job)
+    }
+
+    async fn config_job(
+        &self,
+        hdr: &Header<'_>,
+        conn: &Connection,
+        contents: &str,
+        summary: &str,
+        kind: JobKind,
+    ) -> Result<u64> {
+        let hdr = hdr.clone();
+        nixfile::check_syntax(contents)
+            .await
+            .map_err(TulsiError::Invalid)?;
+        let summary = one_line(summary);
+        if summary.is_empty() {
+            return Err(TulsiError::Invalid(
+                "a short summary of the edit is required".into(),
+            ));
+        }
+        let before = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
+        let (action, _) = config_action(
+            &String::from_utf8_lossy(before.as_deref().unwrap_or_default()),
+            contents,
+        );
+        self.authorize(conn, &hdr, action).await?;
+        let guard = self.try_lock()?;
+        let old = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
+        if old != before {
+            // Authorized for the edit against `before`, not against this file.
+            return Err(TulsiError::Busy(
+                "configuration.nix changed meanwhile; try again".into(),
+            ));
+        }
+        if old.as_deref() == Some(contents.as_bytes()) {
+            return Ok(0);
+        }
+        let change = FileChange {
+            rel: Config::CONFIG_REL.to_string(),
+            old,
+            new: Some(contents.as_bytes().to_vec()),
+        };
+        let by = self.caller_name(conn, &hdr).await;
+        self.start_job(
+            guard,
+            conn,
+            vec![change],
+            format!("tulsi: edit configuration.nix: {summary}"),
+            action,
+            by,
+            kind,
+        )
+    }
+
+    /// Undoes the change on trial with a rebuild for the next start. `notice`:
+    /// why, when it happens without the person asking.
+    async fn revert_trial(
+        &self,
+        conn: &Connection,
+        t: &Trial,
+        notice: Option<String>,
+        by: String,
+    ) -> Result<u64> {
+        let guard = if notice.is_some() {
+            // At start-up or on GRUB's time limit: wait for anything running.
+            self.lock.clone().lock_owned().await
+        } else {
+            self.try_lock_trial()?
+        };
+        let (changes, summary) = git::revert_changes(&self.cfg.flake_dir, &t.commit)
+            .await
+            .map_err(TulsiError::Invalid)?;
+        let summary = summary
+            .strip_prefix("tulsi: ")
+            .unwrap_or(&summary)
+            .to_string();
+        self.start_job(
+            guard,
+            conn,
+            changes,
+            format!("tulsi: undo {summary}"),
+            ACTION_CONFIGURE,
+            by,
+            JobKind::EndTrial { notice },
+        )
+    }
+
+    /// At start-up: a change on trial is now on test (started with it), or
+    /// undone (started with something else). With GRUB, also its time limit.
+    pub async fn check_trial(&self, conn: &Connection) {
+        let Some(mut t) = trial::load(&self.cfg) else {
+            return;
+        };
+        let this_boot = trial::boot_id();
+        let booted = trial::booted_system(&self.cfg);
+        match trial::check(&t, booted.as_deref(), &this_boot) {
+            trial::Check::Nothing => {}
+            trial::Check::Testing => {
+                t.state = trial::State::Testing;
+                t.boot_id = this_boot;
+                t.tested_at = Some(trial::now());
+                if let Err(e) = trial::save(&self.cfg, &t) {
+                    eprintln!("tulsid: warning: {e}");
+                }
+                eprintln!("tulsid: started with the change on trial: {}", t.summary);
+            }
+            trial::Check::Revert => {
+                eprintln!(
+                    "tulsid: started without the change on trial; undoing {}",
+                    t.summary
+                );
+                let notice = "You started with the system before the change, so it was undone.";
+                if let Err(e) = self
+                    .revert_trial(conn, &t, Some(notice.into()), "tulsid".into())
+                    .await
+                {
+                    eprintln!("tulsid: could not undo the change on trial: {e:?}");
+                }
+                return;
+            }
+        }
+        if t.state == trial::State::Testing && self.cfg.boot_loader != "systemd-boot" {
+            let left = (t.tested_at.unwrap_or_else(trial::now) + self.cfg.trial_timeout_secs)
+                .saturating_sub(trial::now());
+            let conn = conn.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(left)).await;
+                let Ok(iface) = conn
+                    .object_server()
+                    .interface::<_, Manager>(OBJECT_PATH)
+                    .await
+                else {
+                    return;
+                };
+                let manager = iface.get().await;
+                let Some(t) = trial::load(&manager.cfg) else {
+                    return;
+                };
+                if t.state == trial::State::Testing && t.boot_id == trial::boot_id() {
+                    let notice = format!(
+                        "Nobody kept it within {} of starting, so it was undone.",
+                        trial::duration(manager.cfg.trial_timeout_secs)
+                    );
+                    if let Err(e) = manager
+                        .revert_trial(&conn, &t, Some(notice), "tulsid".into())
+                        .await
+                    {
+                        eprintln!("tulsid: could not undo the change on trial: {e:?}");
+                    }
+                }
+            });
+        }
     }
 }
 
@@ -468,6 +672,7 @@ impl Manager {
             format!("tulsi: {}", describe_all(&ops)),
             required_action(&ops),
             by,
+            JobKind::Normal,
         )
     }
 
@@ -543,46 +748,87 @@ impl Manager {
         contents: &str,
         summary: &str,
     ) -> Result<u64> {
-        nixfile::check_syntax(contents)
+        self.config_job(&hdr, conn, contents, summary, JobKind::Normal)
             .await
-            .map_err(TulsiError::Invalid)?;
-        let summary = one_line(summary);
-        if summary.is_empty() {
-            return Err(TulsiError::Invalid(
-                "a short summary of the edit is required".into(),
-            ));
-        }
-        let before = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
-        let (action, _) = config_action(
-            &String::from_utf8_lossy(before.as_deref().unwrap_or_default()),
-            contents,
-        );
-        self.authorize(conn, &hdr, action).await?;
-        let guard = self.try_lock()?;
-        let old = git::read(&self.cfg.flake_dir, Config::CONFIG_REL);
-        if old != before {
-            // Authorized for the edit against `before`, not against this file.
-            return Err(TulsiError::Busy(
-                "configuration.nix changed meanwhile; try again".into(),
-            ));
-        }
-        if old.as_deref() == Some(contents.as_bytes()) {
-            return Ok(0);
-        }
-        let change = FileChange {
-            rel: Config::CONFIG_REL.to_string(),
-            old,
-            new: Some(contents.as_bytes().to_vec()),
-        };
+    }
+
+    /// Like `ApplyConfig`, but the change takes effect at the next start and is
+    /// on trial until kept (`KeepTrial`); see trial.rs. For drivers (ADR 0029).
+    async fn apply_config_trial(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+        contents: &str,
+        summary: &str,
+    ) -> Result<u64> {
+        self.config_job(&hdr, conn, contents, summary, JobKind::StartTrial)
+            .await
+    }
+
+    /// The change on trial, as JSON `Trial`, or `{"state": "none"}`.
+    async fn trial_status(&self) -> Result<String> {
+        Ok(trial::status_json(&self.cfg))
+    }
+
+    /// Keeps the change on trial: the person started with it and it works. Only
+    /// a person can say so, not an agent account.
+    async fn keep_trial(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+    ) -> Result<String> {
+        self.authorize(conn, &hdr, ACTION_TRIAL).await?;
         let by = self.caller_name(conn, &hdr).await;
-        self.start_job(
-            guard,
-            conn,
-            vec![change],
-            format!("tulsi: edit configuration.nix: {summary}"),
-            action,
-            by,
-        )
+        if by.starts_with("starah-") {
+            return Err(TulsiError::NotAuthorized(
+                "only the person at the computer can say the new driver works".into(),
+            ));
+        }
+        let _guard = self.try_lock_trial()?;
+        let t = trial::load(&self.cfg)
+            .ok_or_else(|| TulsiError::Invalid("no change is on trial".into()))?;
+        match t.state {
+            trial::State::Pending => Err(TulsiError::Invalid(
+                "restart first: the change takes effect at the next start".into(),
+            )),
+            trial::State::Reverted => {
+                Err(TulsiError::Invalid("that change was already undone".into()))
+            }
+            trial::State::Testing => {
+                trial::disarm(&self.cfg).await.map_err(TulsiError::Failed)?;
+                trial::remove(&self.cfg);
+                eprintln!("tulsid: kept on trial: {} (by {by})", t.summary);
+                Ok(format!("Kept: {}", t.summary.trim_start_matches("tulsi: ")))
+            }
+        }
+    }
+
+    /// Undoes the change on trial (before or after restarting); the system
+    /// before comes back at the next start. Returns a job id.
+    async fn undo_trial(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+    ) -> Result<u64> {
+        self.authorize(conn, &hdr, ACTION_TRIAL).await?;
+        let t = trial::load(&self.cfg)
+            .filter(|t| t.state != trial::State::Reverted)
+            .ok_or_else(|| TulsiError::Invalid("no change is on trial".into()))?;
+        let by = self.caller_name(conn, &hdr).await;
+        self.revert_trial(conn, &t, None, by).await
+    }
+
+    /// Clears the notice of a change undone by itself.
+    async fn dismiss_trial(
+        &self,
+        #[zbus(header)] hdr: Header<'_>,
+        #[zbus(connection)] conn: &Connection,
+    ) -> Result<()> {
+        self.authorize(conn, &hdr, ACTION_TRIAL).await?;
+        if trial::load(&self.cfg).is_some_and(|t| t.state == trial::State::Reverted) {
+            trial::remove(&self.cfg);
+        }
+        Ok(())
     }
 
     /// Whether the release branch this machine follows has a newer TulsiOS, as JSON
@@ -715,6 +961,67 @@ impl Manager {
     ) -> zbus::Result<()>;
 }
 
+/// What happens after a job's rebuild and commit.
+enum JobKind {
+    /// Nothing more: the change is live (`nixos-rebuild switch`).
+    Normal,
+    /// Built for the next start and put on trial (ADR 0029).
+    StartTrial,
+    /// The trial's change was undone (built for the next start): back to the
+    /// boot loader's own default. `notice`: why, if the person didn't ask.
+    EndTrial { notice: Option<String> },
+}
+
+/// Records the trial after its change was built for the next start and
+/// committed, and makes the next start (only) use it.
+async fn start_trial(
+    cfg: &Config,
+    commit: &str,
+    message: &str,
+    old_generation: Option<u64>,
+    done: String,
+) -> String {
+    let new_generation = trial::generation(&cfg.system_profile);
+    let (Some(old), Some(new)) = (old_generation, new_generation) else {
+        return format!("{done}. It takes effect when you restart.");
+    };
+    if old == new {
+        return format!("{done}. The system didn't change.");
+    }
+    let t = Trial {
+        state: trial::State::Pending,
+        commit: commit.to_string(),
+        summary: message.to_string(),
+        old_generation: Some(old),
+        new_generation: Some(new),
+        new_system: trial::generation_system(&cfg.system_profile, new),
+        boot_loader: cfg.boot_loader.clone(),
+        boot_id: trial::boot_id(),
+        at: trial::now(),
+        tested_at: None,
+        notice: None,
+    };
+    if let Err(e) = trial::save(cfg, &t) {
+        return format!("{done}. Warning: it could not be put on trial ({e}); it takes effect when you restart.");
+    }
+    let armed = trial::arm(cfg, old, new).await;
+    let back = match (cfg.boot_loader.as_str(), armed) {
+        ("systemd-boot", Ok(())) => {
+            "If the screen stays black, restart again: the system before comes back.".to_string()
+        }
+        ("systemd-boot", Err(e)) => format!(
+            "Warning: the boot menu couldn't be set ({e}); if the new start fails, pick the \
+             entry before it in the boot menu."
+        ),
+        _ => format!(
+            "If nobody keeps it within {} of starting, it is undone; if the screen \
+             stays black, wait, then restart.",
+            trial::duration(cfg.trial_timeout_secs)
+        ),
+    };
+    format!("{done}. It takes effect when you restart; then keep it (tulsi-drivers keep). {back}")
+}
+
 /// Changes that only touch browser extensions use their own polkit action, which
 /// the tulsi.browserExtensions module may allow without a password; adding a local
 /// package uses org.tulsi.configure (see `tulsi_client::ops_action`).
@@ -802,7 +1109,8 @@ async fn run_upgrade(
         new: Some(new),
     };
     let message = git::commit_message(&summary, ACTION_UPGRADE, by);
-    let commit = run_transaction(cfg, emitter, job, &[change], &message).await?;
+    let commit =
+        run_transaction(cfg, emitter, job, &[change], &message, &cfg.rebuild_command).await?;
     Ok(format!(
         "{summary} (commit {commit}). Restart the computer to finish."
     ))
@@ -857,6 +1165,7 @@ async fn run_transaction(
     job: u64,
     changes: &[FileChange],
     message: &str,
+    command: &[String],
 ) -> std::result::Result<String, String> {
     let dir = &cfg.flake_dir;
     let applied = async {
@@ -867,7 +1176,7 @@ async fn run_transaction(
         for (rel, contents) in write_order(&targets) {
             git::put(dir, rel, contents).await?;
         }
-        rebuild(cfg, emitter, job).await
+        rebuild(cfg, emitter, job, command).await
     }
     .await;
 
@@ -903,11 +1212,9 @@ async fn rebuild(
     cfg: &Config,
     emitter: &SignalEmitter<'static>,
     job: u64,
+    command: &[String],
 ) -> std::result::Result<(), String> {
-    let (program, args) = cfg
-        .rebuild_command
-        .split_first()
-        .expect("validated non-empty");
+    let (program, args) = command.split_first().expect("validated non-empty");
     let mut child = Command::new(program)
         .args(args)
         .current_dir(&cfg.flake_dir)

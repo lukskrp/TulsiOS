@@ -97,6 +97,7 @@
           ocimum-themes
           ocimum-file-history
           tulsi-wiki
+          tulsi-drivers
           ocimum-assistant
           ocimum-greeter
           tulsi-installer
@@ -173,6 +174,7 @@
             ocimum-software-center
             ocimum-nix-editor
             ocimum-themes
+            tulsi-drivers
             ocimum-assistant
             ocimum-greeter
             tulsi-installer
@@ -208,6 +210,10 @@
           agent-gating = test ./nix/tests/agent-gating.nix;
           # ADR 0027: home folder snapshots, File History, the Welcome window, the trash.
           home-snapshots = test ./nix/tests/home-snapshots.nix;
+          # ADR 0029: drivers take effect at the next restart, on trial; undone unless kept.
+          drivers-trial = test ./nix/tests/drivers-trial.nix;
+          # ADR 0029: NVIDIA's driver builds for the kernel and XLibre loads it.
+          drivers-nvidia = test ./nix/tests/drivers-nvidia.nix;
           # ADR 0020: SonicDE, the KDE-style desktop on X11.
           sonic-desktop = test ./nix/tests/sonic-desktop.nix;
           nix-guide = pkgs.callPackage ./nix/tests/nix-guide.nix { };
