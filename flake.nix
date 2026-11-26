@@ -219,6 +219,8 @@
           drivers-nvidia = test ./nix/tests/drivers-nvidia.nix;
           # ADR 0031: Fresh is the terminal editor; nano is gone.
           editor = test ./nix/tests/editor.nix;
+          # ADR 0035: codecs for every app, and what opens what.
+          codecs = test ./nix/tests/codecs.nix;
           # Mint parity for printers/scanners: CUPS drivers, Avahi, SANE+AirScan,
           # simple-scan on Ocimum/dwm and skanlite on SonicDE.
           printing-scanning = test ./nix/tests/printing-scanning.nix;

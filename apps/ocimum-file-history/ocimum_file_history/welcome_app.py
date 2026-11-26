@@ -44,6 +44,9 @@ class Window(Gtk.ApplicationWindow):
         self.drivers = welcome.drivers_needed()
         if self.drivers is not None:
             self.stack.add_titled(self._drivers_page(self.drivers), "drivers", "Drivers")
+        # Only when the installer left the codecs off (ADR 0035).
+        if not welcome.codecs_on():
+            self.stack.add_titled(self._media_page(), "media", "Media")
         header = Gtk.HeaderBar(show_close_button=True)
         header.set_custom_title(Gtk.StackSwitcher(stack=self.stack))
         self.set_titlebar(header)
@@ -123,6 +126,50 @@ class Window(Gtk.ApplicationWindow):
         page.pack_start(buttons, True, True, 0)
         self._refresh()
         return page
+
+    def _media_page(self) -> Gtk.Widget:
+        page = self._page()
+        page.pack_start(_label("<big><b>Play all common media?</b></big>"), False, False, 0)
+        page.pack_start(_label(
+            "TulsiOS was installed with patent-free formats only. The video player still "
+            "plays most videos, but other apps may not play MP3, AAC or MP4 files, and "
+            "DVDs and RAR archives don't open."), False, False, 0)
+        page.pack_start(_label(
+            "Turning the common codecs on adds them for every app. Some of these formats "
+            "are covered by software patents in a few countries. It asks for your "
+            "password, and the Software Center's History can undo it."), False, False, 0)
+        self.media_status = _label("", dim=True)
+        page.pack_start(self.media_status, False, False, 0)
+        self.media_spinner = Gtk.Spinner()
+        page.pack_start(self.media_spinner, False, False, 0)
+        buttons = Gtk.Box(spacing=8, halign=Gtk.Align.END, valign=Gtk.Align.END, vexpand=True)
+        self.media_button = Gtk.Button(label="Turn On Codecs")
+        self.media_button.get_style_context().add_class("suggested-action")
+        self.media_button.connect("clicked", lambda _b: self._turn_on_codecs())
+        buttons.pack_start(self.media_button, False, False, 0)
+        page.pack_start(buttons, True, True, 0)
+        return page
+
+    def _turn_on_codecs(self) -> None:
+        self.media_button.set_sensitive(False)
+        self.media_spinner.start()
+        self.media_status.set_markup("Turning on the codecs… (this takes a few minutes)")
+
+        def work() -> None:
+            ok, out = welcome.turn_on_codecs()
+            GLib.idle_add(self._codecs_done, ok, out)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _codecs_done(self, ok: bool, out: str) -> bool:
+        self.media_spinner.stop()
+        if ok:
+            self.media_status.set_markup("The codecs are on. Apps you start from now play them.")
+        else:
+            last = out.strip().splitlines()[-1] if out.strip() else "unknown error"
+            self.media_status.set_markup(f"Could not turn them on: {GLib.markup_escape_text(last)}")
+            self.media_button.set_sensitive(True)
+        return GLib.SOURCE_REMOVE
 
     def _drivers_page(self, recommended: str) -> Gtk.Widget:
         page = self._page()

@@ -29,6 +29,7 @@ _ = gettext.translation(
 KEYS = [
     "packagechooser_packagechooser",
     "packagechooser_extras",
+    "packagechooser_media",
     "hostname",
     "username",
     "fullname",

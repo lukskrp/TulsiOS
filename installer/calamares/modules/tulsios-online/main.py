@@ -26,6 +26,7 @@ ONLINE_EXTRAS = {
     "libreoffice": "LibreOffice",
     "bottles": "Bottles",
     "lutris": "Lutris",
+    "msfonts": "Microsoft fonts",
 }
 
 

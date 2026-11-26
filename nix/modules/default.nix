@@ -30,5 +30,7 @@
     ./editor.nix
     ./printing-scanning.nix
     ./utilities.nix
+    ./codecs.nix
+    ./default-apps.nix
   ];
 }

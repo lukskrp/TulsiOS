@@ -75,3 +75,11 @@ def test_extra_software_ticked_in_the_installer():
         assert c.extras == ["libreoffice"], ticked
         render.validate(c)
     assert choices_from_globalstorage(gs(packagechooser_extras=""), KBD, "26.05").extras == []
+    # The "Media" page: codecs unless the person picked patent-free formats.
+    assert choices_from_globalstorage(gs(), KBD, "26.05").codecs
+    assert choices_from_globalstorage(gs(packagechooser_media="codecs"), KBD, "26.05").codecs
+    assert not choices_from_globalstorage(gs(packagechooser_media="free"), KBD, "26.05").codecs
+    # Several at once (the page is optionalmultiple).
+    c = choices_from_globalstorage(gs(packagechooser_extras="libreoffice,bottles,lutris"), KBD, "26.05")
+    assert c.extras == ["libreoffice", "bottles", "lutris"]
+    render.validate(c)

@@ -290,6 +290,22 @@ def configuration_nix(c: Choices) -> str:
         out.append("  };")
     if c.autologin:
         out.append(f"  tulsi.desktop.autoLoginUser = {s(c.autologin)};")
+
+    # ADR 0035: media codecs (the "Media" page) and Microsoft's fonts (an extra).
+    media = []
+    if c.codecs:
+        media += [
+            "  # MP3, AAC, H.264 and other common formats for every app, DVDs, RAR and 7z.",
+            "  tulsi.codecs.enable = true;",
+        ]
+    if "msfonts" in c.extras:
+        media += [
+            "  # Microsoft's fonts (Arial, Times New Roman, …); they are unfree.",
+            "  tulsi.fonts.microsoft.enable = true;",
+            "  nixpkgs.config.allowUnfree = true;",
+        ]
+    if media:
+        out += [""] + media
     out += [
         "",
         "  # The TulsiOS release this machine was installed with. Keep it as it is:",

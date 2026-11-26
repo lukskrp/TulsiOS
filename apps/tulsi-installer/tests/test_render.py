@@ -233,6 +233,23 @@ def test_sonic_is_a_desktop(tmp_path):
     assert 'tulsi.desktop.session = "sonic";' in text
 
 
+def test_codecs_and_microsoft_fonts_are_settings(tmp_path):
+    text = render.configuration_nix(choices())
+    assert "tulsi.codecs.enable = true;" in text
+    assert "allowUnfree" not in text and "microsoft" not in text
+    text = render.configuration_nix(choices(codecs=False, extras=["msfonts", "libreoffice"]))
+    assert "tulsi.codecs.enable" not in text
+    assert "tulsi.fonts.microsoft.enable = true;" in text
+    assert "nixpkgs.config.allowUnfree = true;" in text
+    nix_parses(text, tmp_path)
+    # The fonts are a setting, not a package.
+    initial = '{"version": 1, "packages": ["firefox"]}'
+    state = json.loads(render.initial_state(initial, ["msfonts", "libreoffice"]))
+    assert state["packages"] == ["firefox", "libreoffice"]
+    # Lutris without its bundled Steam (unfree).
+    assert json.loads(render.initial_state(initial, ["lutris"]))["packages"] == ["firefox", "lutris-free"]
+
+
 def test_extras_are_known_and_go_into_the_initial_state():
     with pytest.raises(InvalidChoice):
         render.validate(choices(extras=["steam"]))

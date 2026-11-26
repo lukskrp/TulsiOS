@@ -82,4 +82,6 @@ def choices_from_globalstorage(gs: dict[str, Any], kbd_model_map: str, state_ver
         },
         root_is_btrfs=root.get("fs") == "btrfs",
         extras=extras,
+        # The "Media" page: "codecs" (the default) or "free".
+        codecs=(gs.get("packagechooser_media") or "codecs") != "free",
     )

@@ -69,11 +69,12 @@ def snapshots_on() -> bool:
     return SNAPPER_CONFIG.exists()
 
 
-def with_setting(config: str, value: bool = True) -> str:
-    """configuration.nix with `tulsi.homeSnapshots.enable = VALUE;`, changing
-    the line if there is one, else adding it before the final `}`."""
-    line = f"{SETTING} = {'true' if value else 'false'};"
-    pattern = re.compile(rf"^(\s*){re.escape(SETTING)}\s*=\s*\w+\s*;", re.M)
+def with_setting(config: str, value: bool = True, setting: str = SETTING,
+                 comment: str = "A history of everyone's files (File History), from the Welcome window.") -> str:
+    """configuration.nix with `SETTING = VALUE;` (tulsi.homeSnapshots.enable by
+    default), changing the line if there is one, else adding it before the final `}`."""
+    line = f"{setting} = {'true' if value else 'false'};"
+    pattern = re.compile(rf"^(\s*){re.escape(setting)}\s*=\s*\w+\s*;", re.M)
     if pattern.search(config):
         return pattern.sub(lambda m: m.group(1) + line, config, count=1)
     if not config.strip():
@@ -82,26 +83,51 @@ def with_setting(config: str, value: bool = True) -> str:
     if end < 0:
         raise ValueError("configuration.nix has no closing brace")
     head = config[:end].rstrip("\n")
-    return (head + "\n\n  # A history of everyone's files (File History), from the Welcome window.\n  "
+    return (head + f"\n\n  # {comment}\n  "
             + line + "\n" + config[end:].rstrip() + "\n")
 
 
-def turn_on_snapshots() -> tuple[bool, str]:
-    """Adds the setting with `tulsi config` (asks for the person's password).
+def _apply_setting(setting: str, comment: str, summary: str) -> tuple[bool, str]:
+    """Turns SETTING on with `tulsi config` (asks for the person's password).
     Returns success and what tulsi said."""
     show = subprocess.run(["tulsi", "config", "show"], capture_output=True, text=True)
     if show.returncode != 0:
         return False, show.stderr.strip() or "tulsi config show failed"
-    new = with_setting(show.stdout)
+    new = with_setting(show.stdout, True, setting, comment)
     path = state_dir() / "configuration.nix"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(new)
     applied = subprocess.run(
-        ["tulsi", "-q", "config", "apply", str(path), "--summary", "Keep a history of home folders"],
+        ["tulsi", "-q", "config", "apply", str(path), "--summary", summary],
         capture_output=True, text=True,
     )
     out = (applied.stdout + applied.stderr).strip()
     return applied.returncode == 0, out
+
+
+def turn_on_snapshots() -> tuple[bool, str]:
+    return _apply_setting(
+        SETTING,
+        "A history of everyone's files (File History), from the Welcome window.",
+        "Keep a history of home folders",
+    )
+
+
+# ADR 0035: the common media codecs, when the installer left them off.
+CODECS_SETTING = "tulsi.codecs.enable"
+CODECS_MARKER = Path("/run/current-system/sw/lib/gstreamer-1.0/libgstlibav.so")
+
+
+def codecs_on(marker: Path = CODECS_MARKER) -> bool:
+    return marker.exists()
+
+
+def turn_on_codecs() -> tuple[bool, str]:
+    return _apply_setting(
+        CODECS_SETTING,
+        "MP3, AAC, H.264 and other common formats for every app, DVDs, RAR and 7z.",
+        "Play all common media formats",
+    )
 
 
 def drivers_needed() -> str | None:

@@ -34,6 +34,9 @@ self.inputs.nixpkgs.lib.nixosSystem {
 
         networking.hostName = "reference";
         tulsi.desktop.session = desktop;
+        # The installer's default (the "Media" page, ADR 0035), so that installing
+        # with codecs needs no network either.
+        tulsi.codecs.enable = true;
 
         hardware.enableAllHardware = true;
         hardware.cpu.intel.updateMicrocode = true;

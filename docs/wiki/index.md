@@ -15,6 +15,8 @@ connection needed.
   and Steam for games, and why they run as you.
 - [Sharing files and networks](sharing.html): LocalSend between your phone and
   computers, Tailscale, and LibreOffice.
+- [Media and files](media-and-files.html): what opens PDFs, pictures, music,
+  video and archives, codecs, Microsoft fonts, right-click actions and web apps.
 - [Printers and scanners](printing-scanning.html): USB and network printers/scanners,
   Document Scanner, and pre-installed drivers.
 - [Disk space](disk-space.html): what TulsiOS cleans up on its own, and how to free

@@ -121,3 +121,16 @@ def test_fs_type(tmp_path):
     assert welcome.fs_type("/home/alice", str(mounts)) == "btrfs"
     assert welcome.fs_type("/etc", str(mounts)) == "ext4"
     assert time.time() > 0
+
+
+def test_codecs_setting_and_detection(tmp_path):
+    from ocimum_file_history import welcome
+
+    base = "{ config, lib, pkgs, ... }:\n{\n  networking.hostName = \"x\";\n}\n"
+    new = welcome.with_setting(base, True, welcome.CODECS_SETTING, "Codecs.")
+    assert "tulsi.codecs.enable = true;" in new and "# Codecs." in new
+    assert new.rstrip().endswith("}")
+    marker = tmp_path / "libgstlibav.so"
+    assert not welcome.codecs_on(marker)
+    marker.write_text("")
+    assert welcome.codecs_on(marker)
