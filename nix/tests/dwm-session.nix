@@ -169,6 +169,9 @@
         machine.fail("grep -q gtk-theme-name /home/alice/.config/gtk-3.0/settings.ini")
         assert machine.succeed("pgrep -u alice -o -x dwm").strip() == dwm_pid
 
+    with subtest("LocalSend is here too"):
+        machine.succeed("command -v localsend_app")
+
     with subtest("no Cinnamon in the system"):
         machine.fail("nix-store -qR /run/current-system | grep -E -- '-cinnamon-[0-9]'")
         machine.fail("systemctl cat lightdm.service")

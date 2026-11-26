@@ -35,6 +35,12 @@ offered to every installed machine as an upgrade. So `stable` only moves here.
        attic push tulsi ./result
 
    The first build of a new Sonic release takes hours; later ones reuse the cache.
+
+   Then the installer's extra software (ADR 0032; LibreOffice), which installs
+   download when it is ticked:
+
+       nix build .#extras-cache
+       attic push tulsi ./result
 6. **GitHub Release** for the tag: the ISO, its `.sha256`, and release notes (what
    changed, known limits). The ISO is about 4 GB, built locally, not in CI.
 

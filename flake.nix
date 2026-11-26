@@ -78,39 +78,42 @@
             pkgs.callPackage ./nix/packages/package-index.nix { nixpkgsSrc = nixpkgs.outPath; }
           );
           # Which program comes from which package, for matching (ADR 0018).
-          tulsi.daemon.programIndex = lib.mkDefault (
-            pkgs.callPackage ./nix/packages/program-index.nix { }
-          );
+          tulsi.daemon.programIndex = lib.mkDefault (pkgs.callPackage ./nix/packages/program-index.nix { });
           # GTK3-O comes from tulsipkgs.
           ocimum.gtk3o.package = lib.mkDefault pkgs.gtk3-o;
         };
 
-      packages = forAllSystems (pkgs: {
-        inherit (pkgs)
-          tulsi-tools
-          gtk3-o
-          tulsi-package-index
-          tulsi-program-index
-          tulsi-terminal
-          ocimum-software-center
-          ocimum-nix-editor
-          ocimum-themes
-          ocimum-file-history
-          tulsi-wiki
-          tulsi-drivers
-          ocimum-assistant
-          ocimum-greeter
-          tulsi-installer
-          calamares-tulsios-extensions
-          ;
-        default = pkgs.tulsi-tools;
-      }
-      # The live ISO (hybrid: also the dd image for USB sticks), ADR 0016.
-      // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
-        iso = self.nixosConfigurations.tulsi-iso.config.system.build.isoImage;
-        # SonicDE installs online: each release pushes this closure to the cache (ADR 0020).
-        sonic-cache = import ./nix/lib/sonic-cache.nix { inherit self pkgs; };
-      });
+      packages = forAllSystems (
+        pkgs:
+        {
+          inherit (pkgs)
+            tulsi-tools
+            gtk3-o
+            tulsi-package-index
+            tulsi-program-index
+            tulsi-terminal
+            ocimum-software-center
+            ocimum-nix-editor
+            ocimum-themes
+            ocimum-file-history
+            tulsi-wiki
+            tulsi-drivers
+            ocimum-assistant
+            ocimum-greeter
+            tulsi-installer
+            calamares-tulsios-extensions
+            ;
+          default = pkgs.tulsi-tools;
+        }
+        # The live ISO (hybrid: also the dd image for USB sticks), ADR 0016.
+        // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
+          iso = self.nixosConfigurations.tulsi-iso.config.system.build.isoImage;
+          # SonicDE installs online: each release pushes this closure to the cache (ADR 0020).
+          sonic-cache = import ./nix/lib/sonic-cache.nix { inherit self pkgs; };
+          # The installer's extra software (LibreOffice), downloaded when ticked (ADR 0032).
+          extras-cache = import ./nix/lib/extras-cache.nix { inherit self pkgs; };
+        }
+      );
 
       devShells = forAllSystems (pkgs: {
         default = pkgs.mkShell {
@@ -214,6 +217,11 @@
           drivers-trial = test ./nix/tests/drivers-trial.nix;
           # ADR 0029: NVIDIA's driver builds for the kernel and XLibre loads it.
           drivers-nvidia = test ./nix/tests/drivers-nvidia.nix;
+          # ADR 0031: Fresh is the terminal editor; nano is gone.
+          editor = test ./nix/tests/editor.nix;
+          # Mint parity for printers/scanners: CUPS drivers, Avahi, SANE+AirScan,
+          # simple-scan on Ocimum/dwm and skanlite on SonicDE.
+          printing-scanning = test ./nix/tests/printing-scanning.nix;
           # ADR 0020: SonicDE, the KDE-style desktop on X11.
           sonic-desktop = test ./nix/tests/sonic-desktop.nix;
           nix-guide = pkgs.callPackage ./nix/tests/nix-guide.nix { };

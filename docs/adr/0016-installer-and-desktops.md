@@ -3,7 +3,8 @@
 Status: accepted (2026-11-18). Amended 2026-11-24: ADR 0020 adds a third desktop,
 SonicDE (`tulsi.desktop.session = "sonic"`). It installs online only, from the TulsiOS
 cache; the ISO still carries only Ocimum and dwm, and the offline install below is
-unchanged for them.
+unchanged for them. Amended 2026-11-26: ADR 0032 adds an "Extra software" page after
+the desktop page (LibreOffice, downloaded when ticked).
 
 ## Context
 

@@ -154,3 +154,14 @@ def test_allow_listed_unfree_agent_needs_its_licence_accepted():
                                   "license": {"name": "Unfree"}})
     assert not accepted.needs_license
     assert not Package.from_json({"attr": "steam", "unfree": True}).needs_license
+
+
+def test_donation_links():
+    from ocimum_software_center.model import Package, donation
+
+    for attr in ("libreoffice", "libreoffice-qt", "libreoffice-stable", "libreoffice-qt-stable",
+                 "libreoffice-unwrapped"):
+        gift = donation(Package(attr=attr))
+        assert gift and gift["url"] == "https://www.libreoffice.org/donate/", attr
+    assert donation(Package(attr="vlc")) is None
+    assert donation(Package(attr="libreoffice-collabora")) is None

@@ -14,9 +14,10 @@ JOB = pathlib.Path(__file__).resolve().parents[3] / "installer/calamares/modules
 pytestmark = pytest.mark.skipif(not JOB.exists(), reason="needs the TulsiOS source tree")
 
 
-def load_job(desktop, url):
+def load_job(desktop, url, extras=""):
     calamares = types.ModuleType("libcalamares")
-    calamares.globalstorage = types.SimpleNamespace(value=lambda key: desktop)
+    answers = {"packagechooser_packagechooser": desktop, "packagechooser_extras": extras}
+    calamares.globalstorage = types.SimpleNamespace(value=answers.get)
     calamares.job = types.SimpleNamespace(configuration={"url": url})
     calamares.utils = types.SimpleNamespace(
         gettext_path=lambda: None, gettext_languages=lambda: ["en"], debug=lambda message: None
@@ -63,3 +64,19 @@ def test_sonic_without_the_cache_stops_before_the_disk():
 @pytest.mark.parametrize("desktop", ["ocimum", "dwm", None])
 def test_desktops_on_the_iso_need_no_cache(desktop):
     assert load_job(desktop, UNREACHABLE).run() is None
+
+
+def test_ocimum_alone_needs_no_connection():
+    assert load_job("ocimum", UNREACHABLE).run() is None
+
+
+def test_libreoffice_needs_the_cache(cache):
+    assert load_job("ocimum", cache, extras="libreoffice").run() is None
+    title, message = load_job("dwm", UNREACHABLE, extras="libreoffice").run()
+    assert "LibreOffice" in title and "internet" in title
+    assert "Nothing has been written to the disk" in message
+
+
+def test_sonic_and_libreoffice_are_named_together():
+    title, _message = load_job("sonic", UNREACHABLE, extras=["libreoffice"]).run()
+    assert "SonicDE" in title and "LibreOffice" in title

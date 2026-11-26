@@ -55,6 +55,13 @@ def choices_from_globalstorage(gs: dict[str, Any], kbd_model_map: str, state_ver
 
     autologin = users[0].name if users and gs.get("autoLoginUser") else None
 
+    # The "Extra software" page (a packagechooser instance "extras"): the ticked
+    # ids, as a string ("libreoffice", "a,b", "") or a list.
+    ticked = gs.get("packagechooser_extras") or []
+    if isinstance(ticked, str):
+        ticked = ticked.split(",")
+    extras = [t.strip() for t in ticked if t and t.strip()]
+
     return Choices(
         desktop=gs.get("packagechooser_packagechooser") or "ocimum",
         hostname=gs.get("hostname") or "tulsios",
@@ -74,4 +81,5 @@ def choices_from_globalstorage(gs: dict[str, Any], kbd_model_map: str, state_ver
             p["luksMapperName"]: p["uuid"] for p in claimed_luks if p.get("fs") == "linuxswap"
         },
         root_is_btrfs=root.get("fs") == "btrfs",
+        extras=extras,
     )

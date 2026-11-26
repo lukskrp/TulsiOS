@@ -231,3 +231,17 @@ def test_console_keymap_from_layout():
 def test_sonic_is_a_desktop(tmp_path):
     text = render.configuration_nix(choices(desktop="sonic"))
     assert 'tulsi.desktop.session = "sonic";' in text
+
+
+def test_extras_are_known_and_go_into_the_initial_state():
+    with pytest.raises(InvalidChoice):
+        render.validate(choices(extras=["steam"]))
+    render.validate(choices(extras=["libreoffice"]))
+    initial = '{"version": 1, "packages": ["firefox"], "services": {}}'
+    state = json.loads(render.initial_state(initial, ["libreoffice"]))
+    assert state["packages"] == ["firefox", "libreoffice"]
+    assert state["services"] == {}
+    # Nothing ticked: the initial state as it is; ticked twice: once.
+    assert json.loads(render.initial_state(initial, []))["packages"] == ["firefox"]
+    assert json.loads(render.initial_state(initial, ["libreoffice", "libreoffice"]))["packages"] == [
+        "firefox", "libreoffice"]

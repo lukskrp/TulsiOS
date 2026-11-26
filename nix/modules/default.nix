@@ -27,5 +27,8 @@
     ./agent-gating.nix
     ./home-snapshots.nix
     ./drivers.nix
+    ./editor.nix
+    ./printing-scanning.nix
+    ./utilities.nix
   ];
 }

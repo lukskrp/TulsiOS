@@ -13,6 +13,37 @@ MAX_RESULTS = 200
 MAX_LOG_LINES = 2000
 
 
+def _donations() -> dict:
+    import json
+    from importlib import resources
+
+    try:
+        data = json.loads(
+            resources.files("ocimum_software_center").joinpath("donations.json").read_text())
+    except (OSError, ValueError):
+        return {}
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
+DONATIONS = _donations()
+# Variants of one project share its donation page.
+_VARIANT_SUFFIXES = ("-unwrapped", "-stable", "-still", "-fresh", "-qt6", "-qt")
+
+
+def donation(package: "Package") -> dict | None:
+    """{url, who} of the project behind a package, if it asks for donations."""
+    for name in (package.pname, package.attr.rsplit(".", 1)[-1]):
+        name = (name or "").lower()
+        while name and name not in DONATIONS:
+            stripped = next((name[: -len(x)] for x in _VARIANT_SUFFIXES if name.endswith(x)), None)
+            if stripped is None:
+                break
+            name = stripped
+        if name in DONATIONS:
+            return DONATIONS[name]
+    return None
+
+
 @dataclass
 class Package:
     attr: str

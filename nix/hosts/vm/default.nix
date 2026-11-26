@@ -58,6 +58,8 @@
     extraGroups = [
       "wheel"
       "networkmanager"
+      "lp"
+      "scanner"
     ];
   };
 

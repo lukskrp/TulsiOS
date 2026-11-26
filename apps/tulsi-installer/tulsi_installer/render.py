@@ -5,7 +5,8 @@
   configuration.nix           this machine's settings: hostname, users, locale,
                               keyboard, boot loader and the desktop
   hardware-configuration.nix  from nixos-generate-config, with fixes
-  tulsi/state.json            the initial software (state/initial.json)
+  tulsi/state.json            the initial software (state/initial.json, plus the
+                              extras ticked in the installer)
 """
 
 from __future__ import annotations
@@ -15,9 +16,13 @@ import re
 from dataclasses import dataclass, field
 
 DESKTOPS = ("ocimum", "sonic", "dwm")
+# Software the person can tick on the installer's "Extra software" page; each is a
+# package downloaded during the installation and kept in tulsi/state.json, so the
+# Software Center can remove it later.
+EXTRAS = ("libreoffice",)
 BOOT_KINDS = ("uefi", "bios", "none")
 HOST_MODULE = "nix/hosts/desktop"
-DEFAULT_GROUPS = ("networkmanager", "wheel")
+DEFAULT_GROUPS = ("networkmanager", "wheel", "lp", "scanner")
 
 
 class InvalidChoice(ValueError):
@@ -56,6 +61,8 @@ class Choices:
     # Encrypted swap, which nixos-generate-config does not see: mapper name -> UUID.
     luks_swap: dict[str, str] = field(default_factory=dict)
     root_is_btrfs: bool = False
+    # Extra software ticked in the installer (EXTRAS).
+    extras: list[str] = field(default_factory=list)
 
 
 _HOSTNAME = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
@@ -78,6 +85,8 @@ def _check(ok: bool, what: str, value: object) -> None:
 def validate(c: Choices) -> None:
     """Raises InvalidChoice for anything that must not reach configuration.nix."""
     _check(c.desktop in DESKTOPS, "desktop (ocimum, sonic or dwm)", c.desktop)
+    for extra in c.extras:
+        _check(extra in EXTRAS, f"extra software ({', '.join(EXTRAS)})", extra)
     _check(bool(_HOSTNAME.fullmatch(c.hostname)), "hostname", c.hostname)
     _check(bool(c.users), "users (at least one)", c.users)
     for u in c.users:
@@ -109,6 +118,16 @@ def validate(c: Choices) -> None:
         _check(bool(_MAPPER.fullmatch(m)) and bool(_UUID.fullmatch(uuid)), "encrypted swap", (m, uuid))
     if c.grub_crypt_mappers:
         _check(c.boot == "bios", "GRUB key file (only with boot = bios)", c.grub_crypt_mappers)
+
+
+def initial_state(text: str, extras: list[str]) -> str:
+    """state/initial.json with the extras added to its packages."""
+    state = json.loads(text)
+    packages = state.setdefault("packages", [])
+    for extra in extras:
+        if extra not in packages:
+            packages.append(extra)
+    return json.dumps(state, indent=2) + "\n"
 
 
 def nix_string(s: str) -> str:

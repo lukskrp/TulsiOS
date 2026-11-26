@@ -54,7 +54,8 @@ self.inputs.nixpkgs.lib.nixosSystem {
           "f2fs"
           "vfat"
         ];
-        boot.initrd.luks.devices.reference.device = "/dev/disk/by-uuid/00000000-0000-0000-0000-000000000000";
+        boot.initrd.luks.devices.reference.device =
+          "/dev/disk/by-uuid/00000000-0000-0000-0000-000000000000";
 
         boot.loader =
           if boot == "uefi" then
@@ -85,6 +86,8 @@ self.inputs.nixpkgs.lib.nixosSystem {
           extraGroups = [
             "networkmanager"
             "wheel"
+            "lp"
+            "scanner"
           ];
         };
         system.stateVersion = lib.trivial.release;

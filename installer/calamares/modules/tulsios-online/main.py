@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Runs first, before anything is written to the disk (ADR 0020). The ISO installs
-# Ocimum Desktop and dwm from itself; SonicDE it downloads from the TulsiOS cache
-# during the installation. Without a connection to that cache, stop here with a
-# clear message, rather than after partitioning or by compiling SonicDE for hours.
+# Runs first, before anything is written to the disk (ADR 0020, 0032). The ISO
+# installs Ocimum Desktop and dwm from itself; SonicDE, and the extra software
+# ticked on the installer's last page (LibreOffice), are downloaded from the TulsiOS
+# cache during the installation. Without a connection to that cache, stop here with
+# a clear message, rather than after partitioning or by compiling for hours.
 
 import gettext
 import urllib.error
@@ -19,8 +20,20 @@ _ = gettext.translation(
     fallback=True,
 ).gettext
 
-# Desktops the ISO does not carry: they come from the cache.
+# What the ISO does not carry: it comes from the cache.
 ONLINE_DESKTOPS = {"sonic": "SonicDE"}
+ONLINE_EXTRAS = {"libreoffice": "LibreOffice"}
+
+
+def online_choices():
+    """The names of the chosen things that need the cache."""
+    desktop = libcalamares.globalstorage.value("packagechooser_packagechooser") or "ocimum"
+    names = [ONLINE_DESKTOPS[desktop]] if desktop in ONLINE_DESKTOPS else []
+    ticked = libcalamares.globalstorage.value("packagechooser_extras") or []
+    if isinstance(ticked, str):
+        ticked = ticked.split(",")
+    names += [ONLINE_EXTRAS[t.strip()] for t in ticked if t and t.strip() in ONLINE_EXTRAS]
+    return names
 
 
 def pretty_name():
@@ -36,10 +49,10 @@ def reachable(url, timeout=15):
 
 
 def run():
-    desktop = libcalamares.globalstorage.value("packagechooser_packagechooser") or "ocimum"
-    name = ONLINE_DESKTOPS.get(desktop)
-    if name is None:
+    names = online_choices()
+    if not names:
         return None
+    name = _(" and ").join(names)
     url = libcalamares.job.configuration.get("url", "https://cache.skarptech.org/tulsi/nix-cache-info")
     if reachable(url):
         libcalamares.utils.debug("tulsios-online: {} answers".format(url))
@@ -48,6 +61,7 @@ def run():
         _("{} needs an internet connection").format(name),
         _("{} is downloaded from the TulsiOS package cache during the installation, and "
           "the cache cannot be reached ({}). Nothing has been written to the disk. Connect "
-          "to the internet and start the installation again, or choose Ocimum Desktop or "
-          "dwm, which install from this USB stick.").format(name, url),
+          "to the internet and start the installation again, or go back and choose what "
+          "installs from this USB stick: Ocimum Desktop or dwm, without extra "
+          "software.").format(name, url),
     )

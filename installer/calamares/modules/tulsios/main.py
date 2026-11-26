@@ -28,6 +28,7 @@ _ = gettext.translation(
 # The global storage keys tulsi-install-system reads (tulsi_installer/calamares.py).
 KEYS = [
     "packagechooser_packagechooser",
+    "packagechooser_extras",
     "hostname",
     "username",
     "fullname",

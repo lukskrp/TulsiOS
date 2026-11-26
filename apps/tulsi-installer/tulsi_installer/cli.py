@@ -172,7 +172,7 @@ def install(a: argparse.Namespace) -> int:
         write(hardware, hardware_configuration(a.root, a.source, choices.root_is_btrfs))
     state = etc / "tulsi/state.json"
     if not state.exists():
-        write(state, Path(a.initial_state).read_text())
+        write(state, render.initial_state(Path(a.initial_state).read_text(), choices.extras))
     print(f"tulsi-install-system: wrote {etc} ({choices.desktop}, host {choices.hostname})", file=sys.stderr)
     if a.write_only:
         return 0

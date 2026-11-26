@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from gi.repository import GLib, GObject, Gtk, Pango
 
-from .model import Package, history_by, history_title, relative_time
+from .model import Package, donation, history_by, history_title, relative_time
 
 FALLBACK_ICON = "package-x-generic"
 
@@ -72,6 +72,12 @@ class PackageRow(Gtk.ListBoxRow):
         self.button.set_size_request(96, -1)
         self.button.connect("clicked", self._on_clicked)
         box.pack_end(self.button, False, False, 0)
+        # Projects that live on donations say so (ADR 0032).
+        gift = donation(package)
+        if gift:
+            link = Gtk.LinkButton(uri=gift["url"], label="Donate", valign=Gtk.Align.CENTER)
+            link.set_tooltip_text(f"Support {gift['who']}: {gift['url']}")
+            box.pack_end(link, False, False, 0)
         self._update_button()
 
         self.add(box)

@@ -118,6 +118,16 @@
           machine.sleep(5)
           machine.screenshot("sonic-desktop")
 
+      with subtest("LocalSend is here too"):
+          machine.succeed("command -v localsend_app")
+
+      with subtest("printers and scanners are here too (Mint parity)"):
+          machine.succeed("systemctl is-active cups.service")
+          machine.succeed("systemctl is-active ipp-usb.service")
+          machine.succeed("systemctl is-active avahi-daemon.service")
+          machine.succeed("test -f /etc/sane.d/airscan.conf")
+          machine.succeed("command -v skanlite || command -v skanlite-wrapped")
+
       with subtest("Super+A opens the Assistant"):
           # The shortcut is X-KDE-Shortcuts in the Assistant's .desktop file.
           machine.wait_until_succeeds("su - alice -c 'DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus qdbus org.kde.kglobalaccel' | grep -q org_tulsi_Assistant",

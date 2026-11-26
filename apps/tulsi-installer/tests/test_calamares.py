@@ -66,3 +66,12 @@ def test_autologin_and_explicit_console_keymap():
     c = choices_from_globalstorage(gs(autoLoginUser="alice", keyboardVConsoleKeymap=" dvorak "), KBD, "26.05")
     assert c.autologin == "alice"
     assert c.console_keymap == "dvorak"
+
+
+def test_extra_software_ticked_in_the_installer():
+    assert choices_from_globalstorage(gs(), KBD, "26.05").extras == []
+    for ticked in ("libreoffice", ["libreoffice"], "libreoffice,"):
+        c = choices_from_globalstorage(gs(packagechooser_extras=ticked), KBD, "26.05")
+        assert c.extras == ["libreoffice"], ticked
+        render.validate(c)
+    assert choices_from_globalstorage(gs(packagechooser_extras=""), KBD, "26.05").extras == []

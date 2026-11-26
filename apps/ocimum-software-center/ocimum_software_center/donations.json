@@ -1,0 +1,7 @@
+{
+  "_comment": "Projects whose donation page the Software Center links next to Install/Remove: package name (pname, or the attribute's last part, ignoring -stable/-qt/-fresh/-still/-unwrapped) -> { url, who }. ADR 0032.",
+  "libreoffice": {
+    "url": "https://www.libreoffice.org/donate/",
+    "who": "The Document Foundation and the LibreOffice volunteers"
+  }
+}

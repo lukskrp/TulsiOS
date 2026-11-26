@@ -55,6 +55,8 @@ let
             extraGroups = [
               "networkmanager"
               "wheel"
+              "lp"
+              "scanner"
             ];
           };
           system.stateVersion = lib.trivial.release;
@@ -86,80 +88,80 @@ in
 {
   name = "install-${desktop}" + lib.optionalString (references != null) "-iso-references";
 
-  nodes = lib.optionalAttrs online {
-    # The TulsiOS cache: serves the SonicDE install's closure (unsigned, test only).
-    cache =
-      { ... }:
-      {
-        services.harmonia.cache.enable = true;
-        networking.firewall.allowedTCPPorts = [ 5000 ];
-        system.extraDependencies = map (r: r.config.system.build.toplevel) refs ++ rebuildInputs;
-      };
-  }
-  // {
-    # The live system that installs (stands in for the ISO).
-    installer =
-      { modulesPath, pkgs, ... }:
-      {
-        imports = [
-          self.nixosModules.default
-        ];
-        # Not nixpkgs' installation-device/base profiles: they set nixpkgs.overlays
-        # (test nodes share one read-only pkgs) and ZFS, which TulsiOS's 7.3 kernel lacks.
-        environment.systemPackages = [
-          pkgs.parted
-          pkgs.dosfstools
-          pkgs.e2fsprogs
-          pkgs.curl
-        ];
-        tulsi.installer = {
-          enable = true;
-          # SonicDE: only the build tools; the system comes from the cache.
-          offlineSystems = lib.optionals (!online) (map (r: r.config.system.build.toplevel) refs);
-          buildDependencies =
-            import ../lib/install-closure.nix pkgs ++ lib.optionals (!online) rebuildInputs;
+  nodes =
+    lib.optionalAttrs online {
+      # The TulsiOS cache: serves the SonicDE install's closure (unsigned, test only).
+      cache =
+        { ... }:
+        {
+          services.harmonia.cache.enable = true;
+          networking.firewall.allowedTCPPorts = [ 5000 ];
+          system.extraDependencies = map (r: r.config.system.build.toplevel) refs ++ rebuildInputs;
         };
-        nix.settings = {
-          substituters = lib.mkForce (lib.optional online "http://cache:5000");
-          require-sigs = !online;
-          hashed-mirrors = null;
-          connect-timeout = 1;
-        };
-        hardware.enableAllFirmware = lib.mkForce false;
+    }
+    // {
+      # The live system that installs (stands in for the ISO).
+      installer =
+        { modulesPath, pkgs, ... }:
+        {
+          imports = [
+            self.nixosModules.default
+          ];
+          # Not nixpkgs' installation-device/base profiles: they set nixpkgs.overlays
+          # (test nodes share one read-only pkgs) and ZFS, which TulsiOS's 7.3 kernel lacks.
+          environment.systemPackages = [
+            pkgs.parted
+            pkgs.dosfstools
+            pkgs.e2fsprogs
+            pkgs.curl
+          ];
+          tulsi.installer = {
+            enable = true;
+            # SonicDE: only the build tools; the system comes from the cache.
+            offlineSystems = lib.optionals (!online) (map (r: r.config.system.build.toplevel) refs);
+            buildDependencies = import ../lib/install-closure.nix pkgs ++ lib.optionals (!online) rebuildInputs;
+          };
+          nix.settings = {
+            substituters = lib.mkForce (lib.optional online "http://cache:5000");
+            require-sigs = !online;
+            hashed-mirrors = null;
+            connect-timeout = 1;
+          };
+          hardware.enableAllFirmware = lib.mkForce false;
 
-        # Boots from a small /dev/vdb; /dev/vda is the target disk, shared with `target`.
-        virtualisation.emptyDiskImages = [ 1024 ];
-        virtualisation.rootDevice = "/dev/vdb";
-        virtualisation.fileSystems."/".autoFormat = true;
-        virtualisation.diskImage = "./target.qcow2";
-        virtualisation.diskSize = 24 * 1024;
-        virtualisation.memorySize = 4096;
-        virtualisation.cores = 4;
-        virtualisation.useEFIBoot = true;
-        # OVMFFull needs SMM (q35,smm=on), which nested KVM under Hyper-V/WSL2
-        # cannot enter ("KVM: entry failed"); plain OVMF has no secure boot and no SMM.
-        virtualisation.efi.OVMF = pkgs.OVMF;
-      };
-
-    # The installed disk, booted through its own boot loader.
-    target =
-      { pkgs, ... }:
-      {
-        virtualisation.useBootLoader = true;
-        virtualisation.useEFIBoot = true;
-        virtualisation.efi.OVMF = pkgs.OVMF;
-        virtualisation.useDefaultFilesystems = false;
-        virtualisation.efi.keepVariables = false;
-        virtualisation.fileSystems."/" = {
-          device = "/dev/disk/by-label/this-is-not-real-and-will-never-be-used";
-          fsType = "ext4";
+          # Boots from a small /dev/vdb; /dev/vda is the target disk, shared with `target`.
+          virtualisation.emptyDiskImages = [ 1024 ];
+          virtualisation.rootDevice = "/dev/vdb";
+          virtualisation.fileSystems."/".autoFormat = true;
+          virtualisation.diskImage = "./target.qcow2";
+          virtualisation.diskSize = 24 * 1024;
+          virtualisation.memorySize = 4096;
+          virtualisation.cores = 4;
+          virtualisation.useEFIBoot = true;
+          # OVMFFull needs SMM (q35,smm=on), which nested KVM under Hyper-V/WSL2
+          # cannot enter ("KVM: entry failed"); plain OVMF has no secure boot and no SMM.
+          virtualisation.efi.OVMF = pkgs.OVMF;
         };
-        virtualisation.diskImage = "./target.qcow2";
-        virtualisation.diskSize = 24 * 1024;
-        virtualisation.memorySize = 4096;
-        virtualisation.cores = 4;
-      };
-  };
+
+      # The installed disk, booted through its own boot loader.
+      target =
+        { pkgs, ... }:
+        {
+          virtualisation.useBootLoader = true;
+          virtualisation.useEFIBoot = true;
+          virtualisation.efi.OVMF = pkgs.OVMF;
+          virtualisation.useDefaultFilesystems = false;
+          virtualisation.efi.keepVariables = false;
+          virtualisation.fileSystems."/" = {
+            device = "/dev/disk/by-label/this-is-not-real-and-will-never-be-used";
+            fsType = "ext4";
+          };
+          virtualisation.diskImage = "./target.qcow2";
+          virtualisation.diskSize = 24 * 1024;
+          virtualisation.memorySize = 4096;
+          virtualisation.cores = 4;
+        };
+    };
 
   testScript = ''
     import json
