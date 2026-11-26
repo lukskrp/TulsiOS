@@ -165,7 +165,81 @@ class Window(Gtk.ApplicationWindow):
             frame.add(listbox)
             sections.pack_start(frame, False, False, 0)
             self.featured_lists.append(listbox)
+        sections.pack_start(self._build_webapps_section(), False, False, 0)
         return _scrolled(sections)
+
+    def _build_webapps_section(self) -> Gtk.Widget:
+        """Suggested web apps (webapps.json, ADR 0036): a site in its own window,
+        added to the menu only on click. Web App Manager adds any other site."""
+        from . import webapps
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        heading = Gtk.Label(xalign=0, margin_top=6)
+        heading.set_markup("<b>Web apps</b>")
+        box.pack_start(heading, False, False, 0)
+        note = Gtk.Label(
+            label="Websites as apps in the menu, each in its own window with its own "
+            "logins. Web App Manager (in the menu) adds any other site.",
+            xalign=0, wrap=True)
+        note.get_style_context().add_class("dim-label")
+        box.pack_start(note, False, False, 0)
+        listbox = _listbox()
+        for suggestion in webapps.suggestions():
+            listbox.add(self._webapp_row(suggestion))
+        frame = Gtk.Frame()
+        frame.add(listbox)
+        box.pack_start(frame, False, False, 0)
+        return box
+
+    def _webapp_row(self, suggestion) -> Gtk.ListBoxRow:
+        from . import webapps
+
+        row = Gtk.ListBoxRow(activatable=False)
+        hbox = Gtk.Box(spacing=12, margin=8)
+        icon = Gtk.Image.new_from_icon_name("webapp-manager", Gtk.IconSize.DND)
+        hbox.pack_start(icon, False, False, 0)
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        title = Gtk.Label(xalign=0)
+        title.set_markup(f"<b>{GLib.markup_escape_text(suggestion.name)}</b>")
+        text.pack_start(title, False, False, 0)
+        blurb = Gtk.Label(label=suggestion.blurb, xalign=0, wrap=True)
+        blurb.get_style_context().add_class("dim-label")
+        text.pack_start(blurb, False, False, 0)
+        hbox.pack_start(text, True, True, 0)
+        button = Gtk.Button(valign=Gtk.Align.CENTER)
+
+        def refresh() -> None:
+            added = webapps.find(suggestion.url) is not None
+            button.set_label("Remove" if added else "Add to Menu")
+            button.set_sensitive(True)
+
+        def done(error: str | None) -> bool:
+            refresh()
+            if error:
+                dialogs.show_error(self, f"Could not change the {suggestion.name} web app", error)
+            return GLib.SOURCE_REMOVE
+
+        def clicked(_button) -> None:
+            button.set_sensitive(False)
+            existing = webapps.find(suggestion.url)
+
+            def work() -> None:
+                try:
+                    if existing:
+                        webapps.remove(existing)
+                    else:
+                        webapps.add(suggestion.name, suggestion.url, suggestion.category)
+                    GLib.idle_add(done, None)
+                except Exception as e:  # shown to the person
+                    GLib.idle_add(done, str(e))
+
+            threading.Thread(target=work, daemon=True).start()
+
+        button.connect("clicked", clicked)
+        refresh()
+        hbox.pack_start(button, False, False, 0)
+        row.add(hbox)
+        return row
 
     def _build_ai_page(self) -> Gtk.Widget:
         """Agent CLIs and local model runners, picked out of the package index

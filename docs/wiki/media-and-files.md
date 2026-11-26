@@ -52,3 +52,17 @@ nixpkgs.config.allowUnfree = true;
 These fonts are not free software, so they need unfree software turned on (the
 second line).
 
+## Web apps
+
+Websites can be apps in the menu, each in its own window with its own logins.
+The Software Center's **Featured** page suggests some (Claude, ChatGPT, Gemini,
+Proton Mail, YouTube Music, Google Docs): click **Add to Menu**. For any other
+site, open **Web Apps** from the menu, or in a terminal:
+
+```sh
+tulsi-webapp add "My Bank" https://bank.example
+tulsi-webapp list
+tulsi-webapp remove "My Bank"
+```
+
+Removing a web app also removes its cookies and logins.

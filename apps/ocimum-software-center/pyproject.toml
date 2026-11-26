@@ -15,6 +15,7 @@ ocimum-software-center = "ocimum_software_center.app:main"
 ocimum-approve = "ocimum_software_center.approve:main"
 tulsi-adopt = "ocimum_software_center.adopt:main"
 tulsi-ai-check = "ocimum_software_center.ai_check:main"
+tulsi-webapp = "ocimum_software_center.webapps:main"
 
 [tool.setuptools.packages.find]
 include = ["ocimum_software_center*"]

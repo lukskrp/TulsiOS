@@ -1,0 +1,11 @@
+{
+  "_comment": "Suggested web apps on the Software Center's Featured page (ADR 0036). Each is added to the menu only when the person clicks Add to Menu.",
+  "apps": [
+    {"name": "Claude", "url": "https://claude.ai", "blurb": "Anthropic's AI assistant, in its own window.", "category": "WebApps"},
+    {"name": "ChatGPT", "url": "https://chatgpt.com", "blurb": "OpenAI's AI assistant, in its own window.", "category": "WebApps"},
+    {"name": "Gemini", "url": "https://gemini.google.com", "blurb": "Google's AI assistant, in its own window.", "category": "WebApps"},
+    {"name": "Proton Mail", "url": "https://mail.proton.me", "blurb": "Encrypted email from Switzerland.", "category": "Network"},
+    {"name": "YouTube Music", "url": "https://music.youtube.com", "blurb": "Music and podcasts, without browser tabs.", "category": "AudioVideo"},
+    {"name": "Google Docs", "url": "https://docs.google.com", "blurb": "Documents, spreadsheets and slides in the browser.", "category": "Office"}
+  ]
+}

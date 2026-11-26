@@ -221,6 +221,8 @@
           editor = test ./nix/tests/editor.nix;
           # ADR 0035: codecs for every app, and what opens what.
           codecs = test ./nix/tests/codecs.nix;
+          # ADR 0036: web apps (Web App Manager, tulsi-webapp).
+          webapps = test ./nix/tests/webapps.nix;
           # Mint parity for printers/scanners: CUPS drivers, Avahi, SANE+AirScan,
           # simple-scan on Ocimum/dwm and skanlite on SonicDE.
           printing-scanning = test ./nix/tests/printing-scanning.nix;
