@@ -20,6 +20,7 @@ connection needed.
 - [Printers and scanners](printing-scanning.html): USB and network printers/scanners,
   Document Scanner, and pre-installed drivers.
 - [Updating](updating.html): releases, older versions, and home snapshots.
+- [Backing up](backup.html): your files and software list, to a USB drive and back.
 - [Disk space](disk-space.html): what TulsiOS cleans up on its own, and how to free
   more.
 

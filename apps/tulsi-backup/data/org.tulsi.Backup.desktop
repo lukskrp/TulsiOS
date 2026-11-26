@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Backup
+GenericName=File Backup
+Comment=Back up your files and software list to a USB drive, and restore them
+Exec=tulsi-backup-app
+Icon=org.tulsi.Backup
+StartupWMClass=tulsi-backup-app
+Terminal=false
+Categories=Settings;System;GTK;
+Keywords=backup;restore;usb;timeshift;files;
+StartupNotify=true

@@ -99,6 +99,7 @@
             tulsi-wiki
             tulsi-drivers
             tulsi-update-manager
+            tulsi-backup
             ocimum-assistant
             tulsi-file-tools
             ocimum-greeter
@@ -181,6 +182,7 @@
             ocimum-themes
             tulsi-drivers
             tulsi-update-manager
+            tulsi-backup
             ocimum-assistant
             tulsi-file-tools
             ocimum-greeter
@@ -235,6 +237,8 @@
           # Update Manager + Timeshift, Tulsi-style: release checks, older
           # versions, and /home snapshots in one window.
           updater = test ./nix/tests/updater.nix;
+          # Backup for people: files plus the software list, to USB and back.
+          backup = test ./nix/tests/backup.nix;
           # ADR 0020: SonicDE, the KDE-style desktop on X11.
           sonic-desktop = test ./nix/tests/sonic-desktop.nix;
           nix-guide = pkgs.callPackage ./nix/tests/nix-guide.nix { };

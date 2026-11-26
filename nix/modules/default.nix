@@ -30,6 +30,7 @@
     ./editor.nix
     ./printing-scanning.nix
     ./updater.nix
+    ./backup.nix
     ./utilities.nix
     ./codecs.nix
     ./default-apps.nix

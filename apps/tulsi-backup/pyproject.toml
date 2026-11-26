@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tulsi-backup"
+version = "0.1.0"
+description = "Backup: your files and your software list, to a USB drive and back"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+tulsi-backup = "tulsi_backup.cli:main"
+tulsi-backup-app = "tulsi_backup.app:main"
+
+[tool.setuptools.packages.find]
+include = ["tulsi_backup*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
