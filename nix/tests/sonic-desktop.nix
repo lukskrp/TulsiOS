@@ -123,9 +123,12 @@
 
       with subtest("printers and scanners are here too (Mint parity)"):
           machine.succeed("systemctl is-active cups.service")
-          machine.succeed("systemctl is-active ipp-usb.service")
+          # ipp-usb is on-demand (udev starts it with a USB printer), so
+          # present but inactive in a VM without one.
+          machine.succeed("systemctl cat ipp-usb.service")
+          machine.succeed("command -v ipp-usb")
           machine.succeed("systemctl is-active avahi-daemon.service")
-          machine.succeed("test -f /etc/sane.d/airscan.conf")
+          machine.succeed("test -f /etc/sane-config/airscan.conf")
           machine.succeed("command -v skanlite || command -v skanlite-wrapped")
 
       with subtest("Super+A opens the Assistant"):

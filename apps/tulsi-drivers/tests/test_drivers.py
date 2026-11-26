@@ -287,3 +287,20 @@ def test_without_tulsi_nothing_crashes(monkeypatch, tmp_path):
     assert system.trial("keep")[0] is False
     with pytest.raises(RuntimeError):
         system.current_settings()
+
+
+def test_printer_drivers_are_an_opt_in_extra_that_needs_unfree(tmp_path, ids):
+    hw = hw_of(tmp_path, ids, DESKTOP_RTX)
+    rows = catalogue.rows(hw, Settings(), SYSTEM)
+    printers = next(r for r in rows if r.kind == "printers")
+    extra = printers.extras[0]
+    assert not extra.on and not extra.recommended
+    # Never chosen for the person.
+    assert not catalogue.recommend(hw, Settings(), SYSTEM).printers
+    on = extra.settings_on
+    assert on.printers and on.needs_unfree
+    text = config.with_settings("{ config, lib, pkgs, ... }:\n{\n}\n", on)
+    assert "tulsi.printingScanning.unfreeDrivers = true;" in text
+    assert "nixpkgs.config.allowUnfree = true;" in text
+    assert config.parse(text).printers
+    assert not config.parse(config.with_settings(text, Settings())).printers

@@ -167,6 +167,11 @@ class Window(Gtk.ApplicationWindow):
                 f'NVIDIA\'s driver comes under <a href="{NVIDIA_LICENSE}">NVIDIA\'s licence</a>, '
                 "which you accept by continuing."
             )
+        if self.chosen.printers:
+            parts.append(
+                "The printer drivers from Canon, Samsung and HP come under their makers' "
+                "licences, which you accept by continuing."
+            )
         if self.chosen.broadcom:
             parts.append(
                 "Broadcom's STA driver is unmaintained and has known security problems. Use it "

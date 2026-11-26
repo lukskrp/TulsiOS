@@ -19,7 +19,7 @@ TulsiOS printed but didn't scan, and printing needed setup Mint does by default.
 TulsiOS desktop (Ocimum, SonicDE, dwm), off on the live installer.
 
 - **CUPS:** `services.printing` + `browsed` (network printers), drivers
-  `gutenprint, gutenprintBin, hplip, splix, brlaser, cnijfilter2`.
+  `gutenprint, gutenprintBin, hplip, splix, brlaser` (all free software).
 - **Driverless:** `services.ipp-usb` (USB IPP/AirPrint/WSD as network devices)
   + `services.avahi` with `nssmdns4` and firewall open (mDNS discovery).
 - **Scanning:** `hardware.sane` + `sane-airscan` backend, firewall open for
@@ -27,10 +27,14 @@ TulsiOS desktop (Ocimum, SonicDE, dwm), off on the live installer.
 - **Apps:** `simple-scan` + `system-config-printer` on Ocimum/dwm (Mint Cinnamon
   parity); `skanlite` + `system-config-printer` on SonicDE (`print-manager`
   stays as Sonic's frontend).
-- **Unfree pre-accepted (Mint parity):** `nixpkgs.config.allowUnfree = mkDefault true`
-  when the module is on. Covers `cnijfilter2`, `samsung-unified-linux-driver`,
-  `hplipWithPlugin`, foomatic non-free DB. A person can harden again with
-  `allowUnfree = mkForce false` + their own predicate.
+- **The manufacturers' unfree drivers are opt-in:**
+  `tulsi.printingScanning.unfreeDrivers` adds `cnijfilter2` (Canon),
+  `samsung-unified-linux-driver`, `hplipWithPlugin` and the foomatic non-free PPDs.
+  It needs `nixpkgs.config.allowUnfree = true` (an assertion says so), and the
+  Drivers app's "Printer drivers" choice writes both through `tulsi config`.
+  Amended 2026-11-26: the first version set `allowUnfree = mkDefault true` for
+  every desktop, which turned unfree software on system-wide against TulsiOS's
+  free-by-default rule, and broke NixOS tests that share read-only pkgs.
 - **Users:** installer `DEFAULT_GROUPS` + reference/VM users gain `lp, scanner`
   (USB scanner ACLs, CUPS admin).
 
@@ -40,19 +44,20 @@ TulsiOS desktop (Ocimum, SonicDE, dwm), off on the live installer.
   not downloaded on tick like LibreOffice).
 - New network surface (Avahi/mDNS, cups-browsed, saned/AirScan): firewall opens
   5353/UDP + saned ports; CUPS stays localhost-only by NixOS default.
-- Unfree, once pre-accepted, stays on for the whole system (like Drivers' NVIDIA
-  path). Explicit, auditable, reversible via `tulsi config`.
+- The system stays free software unless the person turns the unfree drivers on
+  (like the Drivers app's NVIDIA path); then unfree software is on for the whole
+  system, explicit and reversible via `tulsi config`.
 - Agents: printing/scanning remain human-initiated; Starah rules can gate agent
   access later (no silent print-to-exfiltrate/scan-to-upload).
 
 ## Verification
 
 - `checks.printing-scanning` (Ocimum + Sonic nodes): cupsd/browsed/ipp-usb/avahi
-  active, drivers in closure, `/etc/sane.d/airscan.conf` + `scanimage -V`,
+  active, drivers in closure, `/etc/sane-config/airscan.conf` + `scanimage -V`,
   mDNS in nsswitch, 5353 open, `simple-scan`/`system-config-printer` on Ocimum,
   `skanlite` on Sonic.
 - `checks.ocimum-desktop`: cupsd/browsed/ipp-usb/avahi active, AirScan conf,
-  both apps, `cnijfilter2` in closure (pre-accept proof).
+  both apps, and no `cnijfilter2` by default.
 - `checks.sonic-desktop`: cupsd/ipp-usb/avahi active, AirScan conf, skanlite.
 - Installer `configuration.nix` carries `lp, scanner` groups; reference systems
   match.

@@ -44,11 +44,12 @@ class Settings:
     intel_compute: bool = False
     games32: bool = False
     broadcom: bool = False
+    printers: bool = False  # the manufacturers' unfree printer drivers (ADR 0033)
     unfree: bool = False  # the block allows unfree software
 
     @property
     def needs_unfree(self) -> bool:
-        return self.nvidia is not None or self.broadcom
+        return self.nvidia is not None or self.broadcom or self.printers
 
     def to_json(self) -> dict:
         out = {k: getattr(self, k) for k in self.__dataclass_fields__ if k != "nvidia"}
@@ -90,6 +91,8 @@ def render(settings: Settings, unfree_elsewhere: bool = False) -> list[str]:
         lines.append("tulsi.drivers.games32Bit = true;")
     if settings.broadcom:
         lines.append("tulsi.drivers.broadcomWifi.enable = true;")
+    if settings.printers:
+        lines.append("tulsi.printingScanning.unfreeDrivers = true;")
     # Unfree software stays allowed once allowed: by then the Software Center may
     # have installed unfree apps that would stop building without it.
     if (settings.unfree or settings.needs_unfree) and not unfree_elsewhere:
@@ -139,6 +142,7 @@ def parse(config: str) -> Settings:
         intel_compute=on("intel.compute"),
         games32=on("games32Bit"),
         broadcom=on("broadcomWifi.enable"),
+        printers=re.search(r"tulsi\.printingScanning\.unfreeDrivers\s*=\s*true\s*;", body) is not None,
         unfree=_UNFREE.search(body) is not None and _UNFREE.search(body).group(2) == "true",
     )
 

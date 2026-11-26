@@ -57,6 +57,7 @@ def summary(old: config.Settings, new: config.Settings) -> str:
         ("amd_compute", "AMD compute"),
         ("amd_legacy", "amdgpu for older AMD cards"),
         ("games32", "32-bit graphics libraries"),
+        ("printers", "the manufacturers' printer drivers"),
     ):
         if getattr(old, field) != getattr(new, field):
             parts.append(("" if getattr(new, field) else "no ") + label)

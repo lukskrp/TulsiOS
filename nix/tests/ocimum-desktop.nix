@@ -162,12 +162,16 @@
     with subtest("printers and scanners come with the desktop (Mint parity)"):
         machine.succeed("systemctl is-active cups.service")
         machine.succeed("systemctl is-active cups-browsed.service")
-        machine.succeed("systemctl is-active ipp-usb.service")
+        # ipp-usb is on-demand (udev starts it with a USB printer), so present
+        # but inactive in a VM without one.
+        machine.succeed("systemctl cat ipp-usb.service")
+        machine.succeed("command -v ipp-usb")
         machine.succeed("systemctl is-active avahi-daemon.service")
-        machine.succeed("test -f /etc/sane.d/airscan.conf")
+        machine.succeed("test -f /etc/sane-config/airscan.conf")
         machine.succeed("command -v simple-scan")
         machine.succeed("command -v system-config-printer")
-        machine.succeed("nix-store -qR /run/current-system | grep -q -- '-cnijfilter2-'")
+        # Only free drivers by default: the manufacturers' are opt-in (ADR 0033).
+        machine.fail("nix-store -qR /run/current-system | grep -q -- '-cnijfilter2-'")
 
     with subtest("Brave Origin comes with the desktop, in the panel and for web links"):
         # The launchers applet took the default into the user's own settings and

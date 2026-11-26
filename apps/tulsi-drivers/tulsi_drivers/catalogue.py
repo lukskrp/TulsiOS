@@ -418,6 +418,30 @@ def rows(hw: Hardware, current: Settings, system: dict | None = None) -> list[Ro
         )
     for card in hw.wifi:
         out.append(_wifi_row(card, current, system))
+    # Printers aren't detected here (USB and network ones come and go): the
+    # manufacturers' drivers are one choice for all of them (ADR 0033).
+    out.append(
+        Row(
+            id="printers",
+            kind="printers",
+            title="Printers",
+            subtitle="Canon, Samsung and HP printers the free drivers don't run",
+            status="Free drivers (most printers need nothing else)"
+            if not current.printers
+            else "The manufacturers' drivers are installed",
+            extras=[
+                _extra(
+                    "printers",
+                    "Printer drivers from Canon, Samsung and HP (not free software)",
+                    "Only if your printer doesn't print with the free drivers: many Canon "
+                    "PIXMA/MAXIFY, older Samsung lasers, some HP models.",
+                    current,
+                    "printers",
+                    True,
+                )
+            ],
+        )
+    )
     if hw.cpu:
         out.append(_cpu_row(hw.cpu, system))
     return out
