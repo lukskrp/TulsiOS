@@ -262,6 +262,12 @@ pub fn plan(insp: &Inspection) -> Plan {
             why_not = "TulsiOS installs Nix packages, not Flatpaks.".into();
             None
         }
+        Kind::Windows => {
+            why_not = "This is a Windows program: run it with Bottles rather than \
+                       packaging it."
+                .into();
+            None
+        }
         Kind::Unknown => {
             why_not = "TulsiOS does not recognise this kind of file.".into();
             None

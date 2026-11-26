@@ -36,11 +36,13 @@ offered to every installed machine as an upgrade. So `stable` only moves here.
 
    The first build of a new Sonic release takes hours; later ones reuse the cache.
 
-   Then the installer's extra software (ADR 0032; LibreOffice), which installs
-   download when it is ticked:
+   Then the installer's extra software (ADR 0032, 0034: LibreOffice, Bottles,
+   Lutris), which installs download when it is ticked. `--ignore-upstream-cache-filter`
+   stores what cache.nixos.org also has: without it attic skips those paths, and
+   the installer's check (which asks the TulsiOS cache) would be wrong.
 
        nix build .#extras-cache
-       attic push tulsi ./result
+       attic push --ignore-upstream-cache-filter tulsi ./result
 6. **GitHub Release** for the tag: the ISO, its `.sha256`, and release notes (what
    changed, known limits). The ISO is about 4 GB, built locally, not in CI.
 

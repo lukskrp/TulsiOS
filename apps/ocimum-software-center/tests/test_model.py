@@ -165,3 +165,13 @@ def test_donation_links():
         assert gift and gift["url"] == "https://www.libreoffice.org/donate/", attr
     assert donation(Package(attr="vlc")) is None
     assert donation(Package(attr="libreoffice-collabora")) is None
+
+
+def test_featured_page_list():
+    from ocimum_software_center import featured
+
+    sections = featured.load()
+    attrs = featured.attrs(sections)
+    assert {"libreoffice", "bottles", "lutris-free"} <= set(attrs)
+    assert len(attrs) == len(set(attrs))
+    assert all(app.name and app.blurb for s in sections for app in s.apps)

@@ -11,6 +11,8 @@ connection needed.
   changing system files with `sudoedit`.
 - [Drivers](drivers.html): drivers for the graphics card and Wi-Fi (NVIDIA, AMD,
   Intel, Broadcom), and what to do if the screen stays black.
+- [Windows programs](windows-programs.html): Bottles for Windows programs, Lutris
+  and Steam for games, and why they run as you.
 - [Sharing files and networks](sharing.html): LocalSend between your phone and
   computers, Tailscale, and LibreOffice.
 - [Printers and scanners](printing-scanning.html): USB and network printers/scanners,

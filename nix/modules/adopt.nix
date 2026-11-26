@@ -183,6 +183,11 @@ in
         "application/zip"
         "application/x-shellscript"
         "application/vnd.flatpak.ref"
+        # Windows programs: the window offers Bottles (ADR 0034).
+        "application/x-ms-dos-executable"
+        "application/x-msdownload"
+        "application/x-msi"
+        "application/x-ms-installer"
       ];
       description = "Downloaded file types opened with tulsi-adopt by default.";
     };

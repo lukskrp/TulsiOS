@@ -19,7 +19,11 @@ DESKTOPS = ("ocimum", "sonic", "dwm")
 # Software the person can tick on the installer's "Extra software" page; each is a
 # package downloaded during the installation and kept in tulsi/state.json, so the
 # Software Center can remove it later.
-EXTRAS = ("libreoffice",)
+EXTRAS = ("libreoffice", "bottles", "lutris", "msfonts")
+# The extras that are packages (state.json); the others are settings in
+# configuration.nix (ADR 0035).
+# Each as its package: Lutris without its bundled Steam, which is unfree.
+PACKAGE_EXTRAS = {"libreoffice": "libreoffice", "bottles": "bottles", "lutris": "lutris-free"}
 BOOT_KINDS = ("uefi", "bios", "none")
 HOST_MODULE = "nix/hosts/desktop"
 DEFAULT_GROUPS = ("networkmanager", "wheel", "lp", "scanner")
@@ -63,6 +67,8 @@ class Choices:
     root_is_btrfs: bool = False
     # Extra software ticked in the installer (EXTRAS).
     extras: list[str] = field(default_factory=list)
+    # The common media codecs (the installer's "Media" page; ticked by default).
+    codecs: bool = True
 
 
 _HOSTNAME = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
@@ -121,12 +127,13 @@ def validate(c: Choices) -> None:
 
 
 def initial_state(text: str, extras: list[str]) -> str:
-    """state/initial.json with the extras added to its packages."""
+    """state/initial.json with the extras that are packages added to its packages."""
     state = json.loads(text)
     packages = state.setdefault("packages", [])
     for extra in extras:
-        if extra not in packages:
-            packages.append(extra)
+        package = PACKAGE_EXTRAS.get(extra)
+        if package and package not in packages:
+            packages.append(package)
     return json.dumps(state, indent=2) + "\n"
 
 

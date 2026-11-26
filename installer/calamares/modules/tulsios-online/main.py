@@ -22,7 +22,11 @@ _ = gettext.translation(
 
 # What the ISO does not carry: it comes from the cache.
 ONLINE_DESKTOPS = {"sonic": "SonicDE"}
-ONLINE_EXTRAS = {"libreoffice": "LibreOffice"}
+ONLINE_EXTRAS = {
+    "libreoffice": "LibreOffice",
+    "bottles": "Bottles",
+    "lutris": "Lutris",
+}
 
 
 def online_choices():

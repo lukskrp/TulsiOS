@@ -77,6 +77,16 @@ def test_libreoffice_needs_the_cache(cache):
     assert "Nothing has been written to the disk" in message
 
 
+def test_microsoft_fonts_need_the_cache():
+    title, _message = load_job("ocimum", UNREACHABLE, extras="msfonts").run()
+    assert "Microsoft fonts" in title
+
+
+def test_bottles_and_lutris_need_the_cache_too():
+    title, _message = load_job("ocimum", UNREACHABLE, extras="bottles,lutris").run()
+    assert "Bottles" in title and "Lutris" in title
+
+
 def test_sonic_and_libreoffice_are_named_together():
     title, _message = load_job("sonic", UNREACHABLE, extras=["libreoffice"]).run()
     assert "SonicDE" in title and "LibreOffice" in title

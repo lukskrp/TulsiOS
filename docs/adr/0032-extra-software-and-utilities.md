@@ -1,7 +1,8 @@
 # ADR 0032: LocalSend by default, and LibreOffice as an installer option
 
 Status: accepted (2026-11-26). Amends ADR 0016 (the installer's pages) and ADR 0020
-(what installs online).
+(what installs online). Amended the same day by ADR 0034: the "Extra software" page
+also offers Bottles and Lutris, and allows several ticks (`optionalmultiple`).
 
 ## Context
 

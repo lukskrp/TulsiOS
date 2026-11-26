@@ -66,13 +66,16 @@ FILE_KINDS = (
     (".zip", "archive"),
     (".run", "installer"),
     (".sh", "installer"),
+    # Windows programs: run with Bottles, not packaged (ADR 0034).
+    (".exe", "windows"),
+    (".msi", "windows"),
 )
 
 KIND_WORDS = {
     "binary": "programs built for other distributions",
     "deb": ".deb files", "rpm": ".rpm files", "appimage": "AppImages",
     "archive": "downloaded archives", "installer": "installer scripts",
-    "flatpakref": "Flatpak", "url": "download links",
+    "flatpakref": "Flatpak", "url": "download links", "windows": "Windows programs",
 }
 
 
@@ -85,7 +88,7 @@ class Request:
     tool: str = ""
     command: str = ""
     file: str = ""
-    kind: str = ""  # deb, rpm, appimage, archive, installer, binary, flatpakref
+    kind: str = ""  # deb, rpm, appimage, archive, installer, binary, flatpakref, windows
     url: str = ""
 
 
@@ -163,6 +166,23 @@ def parse_shim(tool: str, args: list[str]) -> Request:
     if files:
         req.file, req.kind = files[0], file_kind(files[0])
     return req
+
+
+def bottles_program() -> str | None:
+    """Bottles, if it is installed (the session's PATH may lack the system's programs)."""
+    found = shutil.which("bottles")
+    if found:
+        return found
+    system = "/run/current-system/sw/bin/bottles"
+    return system if os.path.exists(system) else None
+
+
+def windows_action(path: str, bottles: str | None) -> tuple[str, object]:
+    """What to do with a Windows program: ("open", argv) with Bottles, whose bottle
+    picker then asks which bottle runs it; ("install", "bottles") without it."""
+    if bottles:
+        return "open", [bottles, path]
+    return "install", "bottles"
 
 
 def file_kind(path: str) -> str:

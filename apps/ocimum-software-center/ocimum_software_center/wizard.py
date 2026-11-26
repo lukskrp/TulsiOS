@@ -30,8 +30,10 @@ from .adopt import (
     _software_center,
     add_file_to_store,
     assistant_prompt,
+    bottles_program,
     inspect_file,
     match_hint,
+    windows_action,
 )
 
 STEPS = (
@@ -52,7 +54,18 @@ KIND_TITLES = {
     "installer": "Installer script",
     "flatpakref": "Flatpak reference",
     "url": "Link",
+    "windows": "Windows program",
 }
+
+WINDOWS_TEXT = (
+    "TulsiOS runs Windows programs with Bottles. Each program gets a bottle: its own "
+    "Windows folders, the right version of Wine or Proton, and the Windows parts it "
+    "needs. Bottles asks which bottle to run it in, or makes a new one."
+)
+WINDOWS_WARNING = (
+    "Windows programs run as you, with access to your files. Run only programs you "
+    "trust, from where their makers publish them."
+)
 
 
 def log(text: str) -> None:
@@ -211,6 +224,9 @@ class Wizard:
     def _build_about(self) -> None:
         req, info = self.req, self.info
         page = self.page("about")
+        if req.kind == "windows":
+            self._build_windows(page)
+            return
         if req.kind == "binary":
             title = f"“{os.path.basename(req.file)}” was made for another Linux distribution"
         elif req.file:
@@ -241,7 +257,38 @@ class Wizard:
             grid.attach(self.label(v), 1, i, 1, 1)
         page.pack_start(grid, False, False, 0)
 
+    def _build_windows(self, page) -> None:
+        """A Windows program (ADR 0034): open it with Bottles, or install Bottles."""
+        name = os.path.basename(self.req.file)
+        page.pack_start(self.heading(f"“{name}” is a Windows program"), False, False, 0)
+        page.pack_start(self.label(WINDOWS_TEXT), False, False, 0)
+        action, arg = windows_action(self.req.file, bottles_program())
+        if action == "install":
+            page.pack_start(self.label(
+                "Bottles isn't installed yet. Install it, then open this file again."),
+                False, False, 0)
+        page.pack_start(self.label(WINDOWS_WARNING, dim=True), False, False, 0)
+        button = self.Gtk.Button.new_with_mnemonic(
+            "_Open with Bottles" if action == "open" else "_Install Bottles to Run This")
+        button.get_style_context().add_class("suggested-action")
+        button.set_halign(self.Gtk.Align.END)
+        button.connect("clicked", lambda _b: self._windows_go(action, arg))
+        page.pack_start(button, False, False, 0)
+        self.windows_button = button
+
+    def _windows_go(self, action: str, arg) -> None:
+        if action == "open":
+            log(f"opening with Bottles: {arg}")
+            subprocess.Popen(arg, start_new_session=True)
+            self.window.destroy()
+        else:
+            self.finish("install", arg)
+
     def _enter_about(self) -> None:
+        if self.req.kind == "windows":
+            self.set_next(None)
+            self.windows_button.grab_focus()
+            return
         self.set_next("_Next")
 
     def _next_about(self) -> None:
@@ -552,6 +599,8 @@ class Wizard:
 
     def run(self) -> int:
         self.go("about", remember=False)
-        self.start_lookup()
+        # A Windows program isn't packaged: nothing to look up.
+        if self.req.kind != "windows":
+            self.start_lookup()
         self.Gtk.main()
         return 0

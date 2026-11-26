@@ -76,6 +76,9 @@ class Window(Gtk.ApplicationWindow):
         client.connect("finished", self._on_finished)
 
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE)
+        # Featured first: what to start with (ADR 0034).
+        self.featured_lists: list[Gtk.ListBox] = []
+        self.stack.add_titled(self._build_featured_page(), "featured", "Featured")
         self.stack.add_titled(self._build_search_page(), "search", "Search")
         self.stack.add_titled(self._build_ai_page(), "ai", "AI Agents")
         self.stack.add_titled(self._build_installed_page(), "installed", "Installed")
@@ -139,6 +142,30 @@ class Window(Gtk.ApplicationWindow):
         self.search_stack.add_named(_scrolled(self.search_list), "results")
         page.pack_start(self.search_stack, True, True, 0)
         return page
+
+    def _build_featured_page(self) -> Gtk.Widget:
+        """Good software to start with, by what people want to do (featured.json)."""
+        from . import featured
+
+        sections = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin=12)
+        for section in featured.load():
+            heading = Gtk.Label(xalign=0, margin_top=6)
+            heading.set_markup(f"<b>{GLib.markup_escape_text(section.title)}</b>")
+            sections.pack_start(heading, False, False, 0)
+            if section.intro:
+                note = Gtk.Label(label=section.intro, xalign=0, wrap=True)
+                note.get_style_context().add_class("dim-label")
+                sections.pack_start(note, False, False, 0)
+            listbox = _listbox()
+            for app in section.apps:
+                package = Package(attr=app.attr, pname=app.name, description=app.blurb)
+                package.installed = app.attr in self.installed
+                listbox.add(self._package_row(package))
+            frame = Gtk.Frame()
+            frame.add(listbox)
+            sections.pack_start(frame, False, False, 0)
+            self.featured_lists.append(listbox)
+        return _scrolled(sections)
 
     def _build_ai_page(self) -> Gtk.Widget:
         """Agent CLIs and local model runners, picked out of the package index
@@ -477,7 +504,8 @@ class Window(Gtk.ApplicationWindow):
         self.client.get_state(done, lambda e: self.show_message(e.message, error=True))
 
     def _sync_rows(self) -> None:
-        for row in [r for box in (self.search_list, *self.ai_lists) for r in box.get_children()]:
+        for row in [r for box in (self.search_list, *self.ai_lists, *self.featured_lists)
+                    for r in box.get_children()]:
             if isinstance(row, PackageRow):
                 row.set_installed(row.package.attr in self.installed)
                 row.set_busy(self.jobs.busy)
@@ -705,7 +733,8 @@ class Window(Gtk.ApplicationWindow):
 
     def _set_busy(self) -> None:
         busy = self.jobs.busy
-        for listbox in (self.search_list, self.installed_list, self.extensions_list, *self.ai_lists):
+        for listbox in (self.search_list, self.installed_list, self.extensions_list,
+                        *self.ai_lists, *self.featured_lists):
             for row in listbox.get_children():
                 if isinstance(row, (PackageRow, ExtensionRow)):
                     row.set_busy(busy)

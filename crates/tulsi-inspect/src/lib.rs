@@ -35,6 +35,9 @@ pub enum Kind {
     Installer,
     /// A Flatpak application reference (.flatpakref).
     FlatpakRef,
+    /// A Windows program (.exe) or installer (.msi): run with Bottles (ADR 0034),
+    /// not packaged.
+    Windows,
     Unknown,
 }
 
@@ -51,6 +54,7 @@ impl Kind {
             }
             Kind::Installer => "script / self-extracting installer (read it before packaging)",
             Kind::FlatpakRef => "Flatpak reference (TulsiOS installs Nix packages, not Flatpaks)",
+            Kind::Windows => "Windows program (run it with Bottles; don't package it)",
             Kind::Unknown => "unknown file type",
         }
     }
@@ -126,6 +130,13 @@ fn kind_of(head: &[u8], lower_name: &str) -> Kind {
         Kind::FlatpakRef
     } else if head.starts_with(b"#!") {
         Kind::Installer
+    } else if head.starts_with(b"MZ")
+        || (head.starts_with(&[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])
+            && lower_name.ends_with(".msi"))
+    {
+        // A PE executable (.exe), or an OLE compound file named .msi (Office
+        // documents are OLE files too, hence the name).
+        Kind::Windows
     } else {
         Kind::Unknown
     }
@@ -170,7 +181,7 @@ pub fn inspect(path: &Path) -> Inspection {
                 out.description = title;
             }
         }
-        Kind::AppImage | Kind::Installer | Kind::Unknown => {}
+        Kind::AppImage | Kind::Installer | Kind::Windows | Kind::Unknown => {}
     }
     if out.name.is_empty() {
         out.name = name_from_file(&path.to_string_lossy());
@@ -435,6 +446,8 @@ const SUFFIXES: &[&str] = &[
     ".rpm",
     ".zip",
     ".run",
+    ".exe",
+    ".msi",
     ".bin",
     ".sh",
 ];
@@ -554,6 +567,11 @@ mod tests {
         assert_eq!(kind_of(b"[Flatpak Ref]\nName=x", "x"), Kind::FlatpakRef);
         assert_eq!(kind_of(b"#!/bin/sh\n", "x"), Kind::Installer);
         assert_eq!(kind_of(b"hello", "x"), Kind::Unknown);
+        assert_eq!(kind_of(b"MZ\x90\x00\x03", "setup.exe"), Kind::Windows);
+        let ole = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0];
+        assert_eq!(kind_of(&ole, "/tmp/tool.msi"), Kind::Windows);
+        // An old Word document is an OLE file too, but not a Windows program.
+        assert_eq!(kind_of(&ole, "/tmp/letter.doc"), Kind::Unknown);
     }
 
     #[test]
@@ -566,6 +584,8 @@ mod tests {
         assert_eq!(name_from_file("Some App.run"), "some-app");
         assert_eq!(name_from_file("1.0.tar.gz"), "1");
         assert_eq!(name_from_file(".zip"), "software");
+        assert_eq!(name_from_file("Notepad++-8.7-Installer.x64.exe"), "notepad");
+        assert_eq!(name_from_file("7z2408-x64.msi"), "7z2408");
     }
 
     #[test]

@@ -1,0 +1,33 @@
+{
+  "_comment": "The Software Center's Featured page (ADR 0034): good software to start with, by what people want to do. Every attr must be in the package index (checks.featured-index).",
+  "sections": [
+    {
+      "title": "Office",
+      "intro": "Documents, spreadsheets and presentations that open and save Microsoft Office files.",
+      "apps": [
+        {"attr": "libreoffice", "name": "LibreOffice", "blurb": "Writer, Calc, Impress, Draw and more: the free office suite."}
+      ]
+    },
+    {
+      "title": "Windows programs and games",
+      "intro": "Windows programs run as you, with access to your files: install only programs you trust.",
+      "apps": [
+        {"attr": "bottles", "name": "Bottles", "blurb": "Runs Windows programs, each in its own bottle with the right Wine or Proton. Opening a .exe offers it."},
+        {"attr": "lutris-free", "name": "Lutris", "blurb": "One library for games from GOG, Epic, Steam, Humble and emulators."}
+      ]
+    },
+    {
+      "title": "Everyday",
+      "intro": "",
+      "apps": [
+        {"attr": "vlc", "name": "VLC", "blurb": "Plays almost any video, music, DVD and stream."},
+        {"attr": "rhythmbox", "name": "Rhythmbox", "blurb": "Your music library: albums, playlists, podcasts and internet radio."},
+        {"attr": "thunderbird", "name": "Thunderbird", "blurb": "Email, calendars and contacts."},
+        {"attr": "gimp", "name": "GIMP", "blurb": "Edits photos and images."},
+        {"attr": "inkscape", "name": "Inkscape", "blurb": "Draws vector graphics: logos, diagrams, illustrations."},
+        {"attr": "krita", "name": "Krita", "blurb": "Digital painting and drawing."},
+        {"attr": "obs-studio", "name": "OBS Studio", "blurb": "Records and streams your screen and camera."}
+      ]
+    }
+  ]
+}
