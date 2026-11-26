@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Update Manager
+GenericName=System Updates
+Comment=Update TulsiOS, go back to older versions, and manage home snapshots
+Exec=tulsi-update-manager
+Icon=org.tulsi.UpdateManager
+StartupWMClass=tulsi-update-manager
+Terminal=false
+Categories=Settings;System;GTK;
+Keywords=update;upgrade;snapshot;rollback;generation;timeshift;release;
+StartupNotify=true

@@ -98,6 +98,7 @@
             ocimum-file-history
             tulsi-wiki
             tulsi-drivers
+            tulsi-update-manager
             ocimum-assistant
             tulsi-file-tools
             ocimum-greeter
@@ -179,6 +180,7 @@
             ocimum-nix-editor
             ocimum-themes
             tulsi-drivers
+            tulsi-update-manager
             ocimum-assistant
             tulsi-file-tools
             ocimum-greeter
@@ -230,6 +232,9 @@
           # Mint parity for printers/scanners: CUPS drivers, Avahi, SANE+AirScan,
           # simple-scan on Ocimum/dwm and skanlite on SonicDE.
           printing-scanning = test ./nix/tests/printing-scanning.nix;
+          # Update Manager + Timeshift, Tulsi-style: release checks, older
+          # versions, and /home snapshots in one window.
+          updater = test ./nix/tests/updater.nix;
           # ADR 0020: SonicDE, the KDE-style desktop on X11.
           sonic-desktop = test ./nix/tests/sonic-desktop.nix;
           nix-guide = pkgs.callPackage ./nix/tests/nix-guide.nix { };

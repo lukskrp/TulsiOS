@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tulsi-update-manager"
+version = "0.1.0"
+description = "Update Manager: TulsiOS releases, older versions, and home snapshots"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+tulsi-update-manager = "tulsi_update_manager.app:main"
+
+[tool.setuptools.packages.find]
+include = ["tulsi_update_manager*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -29,6 +29,7 @@
     ./drivers.nix
     ./editor.nix
     ./printing-scanning.nix
+    ./updater.nix
     ./utilities.nix
     ./codecs.nix
     ./default-apps.nix

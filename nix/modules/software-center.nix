@@ -22,11 +22,13 @@ in
 
     upgradeCheck.enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      # The Update Manager (ADR 0038) has its own daily check when it is on.
+      default = !config.tulsi.updater.enable;
+      defaultText = lib.literalExpression "!config.tulsi.updater.enable";
       description = ''
         Look for a newer TulsiOS release once a day and announce it as a desktop
         notification with an Upgrade button (ADR 0017). Nothing is upgraded without
-        the user.
+        the user. Off when the Update Manager (tulsi.updater) does the check.
       '';
     };
   };
