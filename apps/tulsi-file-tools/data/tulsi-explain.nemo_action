@@ -1,0 +1,9 @@
+[Nemo Action]
+Name=Explain with Assistant
+Comment=Ask the Assistant what %N is; it gets the text, not the file
+Exec=ocimum-assistant --explain %F
+Icon-Name=ocimum-assistant
+Selection=s
+Mimetypes=text/*;application/pdf;application/json;application/xml;application/x-shellscript;application/vnd.oasis.opendocument.text;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/msword;application/rtf;application/vnd.oasis.opendocument.spreadsheet;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;
+Quote=double
+Dependencies=ocimum-assistant;

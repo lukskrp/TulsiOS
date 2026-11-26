@@ -32,5 +32,6 @@
     ./utilities.nix
     ./codecs.nix
     ./default-apps.nix
+    ./file-actions.nix
   ];
 }

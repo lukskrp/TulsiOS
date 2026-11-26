@@ -1,0 +1,8 @@
+[Nemo Action]
+Name=Convert to JPG
+Comment=Convert to JPG
+Exec=tulsi-file-tools to-jpg %F
+Icon-Name=image-x-generic
+Selection=notnone
+Mimetypes=image/*;
+Quote=double

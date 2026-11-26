@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Service
+MimeType=audio/*;video/*;
+Actions=toMp3;
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+X-KDE-Submenu=Convert
+
+[Desktop Action toMp3]
+Name=Convert to MP3
+Icon=audio-x-generic
+Exec=tulsi-file-tools to-mp3 %F

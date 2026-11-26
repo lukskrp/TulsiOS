@@ -1,0 +1,9 @@
+[Nemo Action]
+Name=Convert to PDF
+Comment=Convert to PDF
+Exec=tulsi-file-tools doc-to-pdf %F
+Icon-Name=application-pdf
+Selection=notnone
+Mimetypes=application/vnd.oasis.opendocument.text;application/vnd.oasis.opendocument.spreadsheet;application/vnd.oasis.opendocument.presentation;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/msword;application/vnd.ms-excel;application/vnd.ms-powerpoint;application/rtf;
+Quote=double
+Dependencies=soffice;

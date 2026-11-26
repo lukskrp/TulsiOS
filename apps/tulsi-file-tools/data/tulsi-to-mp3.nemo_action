@@ -1,0 +1,8 @@
+[Nemo Action]
+Name=Convert to MP3
+Comment=Convert to MP3
+Exec=tulsi-file-tools to-mp3 %F
+Icon-Name=audio-x-generic
+Selection=notnone
+Mimetypes=audio/*;video/*;
+Quote=double

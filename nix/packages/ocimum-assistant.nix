@@ -6,6 +6,7 @@
   gobject-introspection,
   gtk3,
   libsecret,
+  poppler-utils,
 }:
 
 let
@@ -45,6 +46,8 @@ python3Packages.buildPythonApplication {
   dontWrapGApps = true;
   preFixup = ''
     makeWrapperArgs+=("''${gappsWrapperArgs[@]}")
+    # pdftotext, for "Explain with Assistant" on PDFs (ADR 0037).
+    makeWrapperArgs+=(--suffix PATH : "${lib.makeBinPath [ poppler-utils ]}")
   '';
 
   postInstall = ''

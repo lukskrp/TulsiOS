@@ -1,0 +1,8 @@
+[Nemo Action]
+Name=Combine into a PDF
+Comment=Combine into a PDF
+Exec=tulsi-file-tools images-to-pdf %F
+Icon-Name=application-pdf
+Selection=notnone
+Mimetypes=image/*;
+Quote=double

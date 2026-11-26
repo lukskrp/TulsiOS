@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tulsi-file-tools"
+version = "0.1.0"
+description = "Quick file conversions for the file manager's right-click menu"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["PyGObject"]
+
+[project.scripts]
+tulsi-file-tools = "tulsi_file_tools.app:main"
+
+[tool.setuptools.packages.find]
+include = ["tulsi_file_tools*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

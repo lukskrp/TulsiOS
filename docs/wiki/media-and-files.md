@@ -52,6 +52,24 @@ nixpkgs.config.allowUnfree = true;
 These fonts are not free software, so they need unfree software turned on (the
 second line).
 
+## Right-click actions
+
+In the file manager (Nemo on Ocimum Desktop, Ecco on SonicDE), right-click files
+for:
+
+- **Explain with Assistant:** the Assistant reads a text file, PDF or document and
+  explains it. It gets the file's text in its question, which you can see in the
+  chat, not the file itself.
+- **Send via LocalSend:** send the files to a phone or computer nearby.
+- **Resize Images…**, **Convert to JPG**, **Convert to PNG**, **Combine into a
+  PDF**: for pictures.
+- **Convert to MP3:** for music and videos.
+- **Convert to PDF:** for documents, when LibreOffice is installed.
+
+Conversions always make a new file next to the original, such as
+`photo (resized).jpg`; the original stays as it is. In a terminal (also on dwm):
+`tulsi-file-tools resize --width 1024 --no-window photo.jpg`.
+
 ## Web apps
 
 Websites can be apps in the menu, each in its own window with its own logins.

@@ -1,0 +1,9 @@
+[Nemo Action]
+Name=Send via LocalSend
+Comment=Send to a phone or computer nearby
+Exec=localsend_app %F
+Icon-Name=localsend
+Selection=notnone
+Mimetypes=all/all;
+Quote=double
+Dependencies=localsend_app;

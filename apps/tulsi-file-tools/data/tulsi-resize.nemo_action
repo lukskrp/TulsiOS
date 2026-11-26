@@ -1,0 +1,8 @@
+[Nemo Action]
+Name=Resize Images…
+Comment=Resize Images…
+Exec=tulsi-file-tools resize %F
+Icon-Name=image-x-generic
+Selection=notnone
+Mimetypes=image/*;
+Quote=double

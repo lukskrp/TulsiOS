@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Service
+MimeType=text/plain;text/markdown;application/pdf;application/json;application/xml;application/x-shellscript;application/vnd.oasis.opendocument.text;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/msword;application/rtf;
+Actions=explain;
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+X-KDE-RequiredNumberOfUrls=1
+
+[Desktop Action explain]
+Name=Explain with Assistant
+Icon=ocimum-assistant
+Exec=ocimum-assistant --explain %f

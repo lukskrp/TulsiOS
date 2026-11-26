@@ -47,10 +47,36 @@ class Application(Gtk.Application):
         self.window.present()
 
 
+def _explain(path: str) -> int:
+    """--explain FILE: ask about the file's text (explain.py, ADR 0037), in the
+    running Assistant if there is one."""
+    from pathlib import Path
+
+    from . import explain
+
+    try:
+        question = explain.question_for(Path(path))
+    except explain.CannotExplain as e:
+        dialog = Gtk.MessageDialog(message_type=Gtk.MessageType.INFO,
+                                   buttons=Gtk.ButtonsType.CLOSE, text="Can't explain this file")
+        dialog.format_secondary_text(str(e))
+        dialog.run()
+        return 1
+    app = Application()
+    app.register(None)
+    app.activate_action("ask", GLib.Variant("s", question))
+    if app.get_is_remote():
+        app.get_dbus_connection().flush_sync(None)
+        return 0
+    return app.run([sys.argv[0]])
+
+
 def main() -> int:
     if "--version" in sys.argv:
         print(f"ocimum-assistant {__version__}")
         return 0
     GLib.set_application_name("Assistant")
     GLib.set_prgname(APP_ID)
+    if len(sys.argv) == 3 and sys.argv[1] == "--explain":
+        return _explain(sys.argv[2])
     return Application().run(sys.argv)

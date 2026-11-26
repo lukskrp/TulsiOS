@@ -13,6 +13,7 @@ final: prev: {
   tulsi-wiki = final.callPackage ../packages/tulsi-wiki.nix { };
   tulsi-drivers = final.callPackage ../packages/tulsi-drivers.nix { };
   ocimum-assistant = final.callPackage ../packages/ocimum-assistant.nix { };
+  tulsi-file-tools = final.callPackage ../packages/tulsi-file-tools.nix { };
   ocimum-greeter = final.callPackage ../packages/ocimum-greeter.nix { };
   tulsi-installer = final.callPackage ../packages/tulsi-installer.nix { };
   calamares-tulsios-extensions = final.callPackage ../packages/calamares-tulsios-extensions.nix { };
