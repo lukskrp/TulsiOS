@@ -31,6 +31,7 @@
     ./printing-scanning.nix
     ./updater.nix
     ./backup.nix
+    ./usb-stick.nix
     ./utilities.nix
     ./codecs.nix
     ./default-apps.nix

@@ -21,6 +21,7 @@ connection needed.
   Document Scanner, and pre-installed drivers.
 - [Updating](updating.html): releases, older versions, and home snapshots.
 - [Backing up](backup.html): your files and software list, to a USB drive and back.
+- [USB sticks](usb-sticks.html): write ISOs with verification, and format sticks.
 - [Disk space](disk-space.html): what TulsiOS cleans up on its own, and how to free
   more.
 

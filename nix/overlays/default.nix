@@ -14,6 +14,7 @@ final: prev: {
   tulsi-drivers = final.callPackage ../packages/tulsi-drivers.nix { };
   tulsi-update-manager = final.callPackage ../packages/tulsi-update-manager.nix { };
   tulsi-backup = final.callPackage ../packages/tulsi-backup.nix { };
+  tulsi-stick = final.callPackage ../packages/tulsi-stick.nix { };
   ocimum-assistant = final.callPackage ../packages/ocimum-assistant.nix { };
   tulsi-file-tools = final.callPackage ../packages/tulsi-file-tools.nix { };
   ocimum-greeter = final.callPackage ../packages/ocimum-greeter.nix { };
