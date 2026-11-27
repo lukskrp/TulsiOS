@@ -51,6 +51,56 @@ projects. Its changes to the system still follow its level. Turn it off at any t
 it applies from the agent's next start. In a terminal: `starah home claude on`
 (or `off`).
 
+## Your own rules
+
+The levels are the same for everyone. If you want something more precise, such as
+"Codex may install packages on its own, but nothing else" or "no agent changes the
+system at night", write your own **rules**. They are a short script in
+[Rhai](https://rhai.rs), a simple scripting language.
+
+- **Open them:** Agent Privileges › **Edit Rules…**, or `starah rules edit` in a
+  terminal. Your rules open in your editor (Fresh).
+- **Save and close:** Starah checks them first. If something is wrong, it says which
+  line and lets you fix it. Nothing broken is ever used. Then it asks for the
+  administrator password, and your rules apply to the next thing an agent does. No
+  restart is needed.
+- **The file:** it is `/etc/starah/rules.rhai`, so you can also edit it with
+  `sudoedit /etc/starah/rules.rhai`. If the edited file has an error, the rules before
+  it stay in use and Agent Privileges says so.
+- **Undo:** `starah rules undo`.
+- **Test without risk:** `starah rules test claude org.tulsi.apply --change "+ package vlc"`
+  shows what would be decided.
+
+An example:
+
+```rhai
+fn decide(req) {
+    // Codex may install packages on its own, but nothing else without asking.
+    if req.agent == "codex" && req.action == "org.tulsi.apply"
+        && req.changes.len() > 0
+        && req.changes.all(|c| c.starts_with("+ package")) {
+        return "allow";
+    }
+    // No system administration by any agent at night.
+    if req.class == "admin" && (req.hour >= 22 || req.hour < 7) {
+        return "deny";
+    }
+    "default"   // otherwise the agent's level decides
+}
+```
+
+`decide` answers `"allow"`, `"ask"` (you approve, as usual), `"deny"` or `"default"`.
+
+`req` tells it:
+- `agent`, and its `level`;
+- the `action` and its `class` (`routine`, `admin`, `sensitive`);
+- what a cooperating agent says it wants: `title` and `changes`, for example
+  `"+ package vlc"`;
+- the time: `hour` and `weekday`.
+
+Whatever your rules say, no agent may change Starah itself, user accounts, or polkit
+and sudo rules. A rule that fails asks you rather than allowing.
+
 ## ⚠ Agents installed outside TulsiOS
 
 Starah starts an agent under its own account only if TulsiOS installed it. An agent you

@@ -13,6 +13,11 @@ repo (ADR 0024). This directory holds it:
 There is no `LINGUAS` file: the build makes one from the `.po` files that exist,
 so a language appears as soon as its `.po` file is added.
 
+Starah's window (Agent Privileges, Compare Levels, Agent Request) has its own
+catalogue, in the Starah repository's `po/`, with the same 78 languages and a brief
+of its own (`po/README.md` there). If you are translating both, do them in the
+same session, with the same terms.
+
 ## Today: the AI Agents launcher
 
 Only one file is translated so far:

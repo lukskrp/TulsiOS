@@ -101,5 +101,13 @@
           window("Agent Privileges", timeout=60)
           machine.sleep(2)
           machine.screenshot("starah_summary")
+
+      with subtest("the levels compared side by side"):
+          machine.succeed(f"su - alice -c '{X} starah-session --compare >/tmp/compare.log 2>&1 &'")
+          window("Compare Levels", timeout=60)
+          focus("Compare Levels")
+          machine.sleep(2)
+          machine.fail("grep -q Traceback /tmp/compare.log")
+          machine.screenshot("starah_compare")
   '';
 }

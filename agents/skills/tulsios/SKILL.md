@@ -167,6 +167,11 @@ tulsi-drivers status          # what is chosen, and a change waiting on a restar
     to look there.
   - Never unset these variables, or run `tulsi` some other way, to get around
     Starah. Agents TulsiOS doesn't know run as `terminal-agent`.
+  - The person may also have their own **rules** (`/etc/starah/rules.rhai`, a
+    Rhai script) that allow, ask or deny particular things, such as "no system
+    changes at night". If you are refused with "your rules…", that is their
+    choice. Don't try to edit the rules; tell them, and they can change them
+    with Agent Privileges › Edit Rules… or `starah rules edit`.
 - **You may already be your own account.** Agent CLIs installed through TulsiOS
   start under Starah: you run as `starah-NAME` (check with `id -un`).
   - You see only the folder the person started you in. Files you write there
