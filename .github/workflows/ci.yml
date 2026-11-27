@@ -19,4 +19,10 @@ jobs:
         with:
           extra_nix_config: |
             system-features = nixos-test benchmark big-parallel kvm
+            # The unfree printer drivers (checks.printing-scanning) are not on
+            # cache.nixos.org, and their upstream mirrors (bchemnet, canon,
+            # sourceforge) serve bad bodies often enough to fail the hash check.
+            # They come from the TulsiOS cache instead.
+            extra-substituters = https://cache.skarptech.org/tulsi
+            extra-trusted-public-keys = tulsi:kyxaHhnwTqig/QD918khKlj2eX70SRcLBdv7hl1miw0=
       - run: nix flake check -L
